@@ -1,8 +1,8 @@
 package oodlehttp
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"terraform-provider-oodle/internal/oodlehttp/models"
@@ -60,19 +60,50 @@ func (c *Client) GetMonitor(monitorId string) (*models.Monitor, error) {
 	req.Header = c.headers
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrapf(err, "ASDASDASD 1: %v", req.URL.String())
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 	var monitor models.Monitor
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrapf(err, "ASDASDASD 2")
+		return nil, err
 	}
 
 	if err = monitor.UnmarshalJSON(bodyBytes); err != nil {
-		return nil, errors.Wrapf(err, "ASDASDASD %v", string(bodyBytes))
+		return nil, err
 	}
 
 	return &monitor, nil
+}
+
+func (c *Client) CreateMonitor(monitor *models.Monitor) (*models.Monitor, error) {
+	reqBody, err := monitor.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf(`%v/v1/api/instance/%v/monitors`, c.deploymentUrl, c.instance),
+		bytes.NewReader(reqBody),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = c.headers
+	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
+	var resMonitor models.Monitor
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = resMonitor.UnmarshalJSON(bodyBytes); err != nil {
+		return nil, err
+	}
+
+	return &resMonitor, nil
 }

@@ -40,6 +40,25 @@ func (o ConditionOp) String() string {
 	}
 }
 
+func ConditionOpFromString(op string) (ConditionOp, error) {
+	switch op {
+	case "==":
+		return ConditionOpEqual, nil
+	case "!=":
+		return ConditionOpNotEqual, nil
+	case ">":
+		return ConditionOpGreaterThan, nil
+	case ">=":
+		return ConditionOpGreaterThanOrEqual, nil
+	case "<":
+		return ConditionOpLessThan, nil
+	case "<=":
+		return ConditionOpLessThanOrEqual, nil
+	default:
+		return ConditionOpEqual, fmt.Errorf("unknown condition operator: %s", op)
+	}
+}
+
 // Condition is a model for a condition to be evaluated in monitors.
 type Condition struct {
 	Op    ConditionOp `json:"op" yaml:"op"`
