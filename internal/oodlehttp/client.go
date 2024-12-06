@@ -11,6 +11,7 @@ import (
 const (
 	maxConnections    = 30
 	OodleApiKeyHeader = "X-API-KEY"
+	monitorsPath      = "%v/v1/api/instance/%v/monitors"
 )
 
 type Client struct {
@@ -50,7 +51,7 @@ func NewClient(
 func (c *Client) GetMonitor(monitorId string) (*models.Monitor, error) {
 	req, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf(`%v/v1/api/instance/%v/monitors/%v`, c.deploymentUrl, c.instance, monitorId),
+		fmt.Sprintf(monitorsPath+"/%v", c.deploymentUrl, c.instance, monitorId),
 		nil,
 	)
 	if err != nil {
@@ -77,6 +78,22 @@ func (c *Client) GetMonitor(monitorId string) (*models.Monitor, error) {
 	return &monitor, nil
 }
 
+func (c *Client) DeleteMonitor(id string) error {
+	req, err := http.NewRequest(
+		http.MethodDelete,
+		fmt.Sprintf(monitorsPath, c.deploymentUrl, c.instance),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	req.Header = c.headers
+	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
+	return nil
+}
+
 func (c *Client) CreateMonitor(monitor *models.Monitor) (*models.Monitor, error) {
 	reqBody, err := monitor.MarshalJSON()
 	if err != nil {
@@ -85,7 +102,38 @@ func (c *Client) CreateMonitor(monitor *models.Monitor) (*models.Monitor, error)
 
 	req, err := http.NewRequest(
 		http.MethodPost,
-		fmt.Sprintf(`%v/v1/api/instance/%v/monitors`, c.deploymentUrl, c.instance),
+		fmt.Sprintf(monitorsPath, c.deploymentUrl, c.instance),
+		bytes.NewReader(reqBody),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = c.headers
+	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
+	var resMonitor models.Monitor
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = resMonitor.UnmarshalJSON(bodyBytes); err != nil {
+		return nil, err
+	}
+
+	return &resMonitor, nil
+}
+
+func (c *Client) UpdateMonitor(monitor *models.Monitor) (*models.Monitor, error) {
+	reqBody, err := monitor.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPut,
+		fmt.Sprintf(monitorsPath+"/%v", c.deploymentUrl, c.instance, monitor.ID.UUID.String()),
 		bytes.NewReader(reqBody),
 	)
 	if err != nil {

@@ -28,7 +28,11 @@ func (c comparatorValidator) ValidateString(
 	request validator.StringRequest,
 	response *validator.StringResponse,
 ) {
-	switch request.ConfigValue.String() {
+	if request.ConfigValue.IsNull() {
+		return
+	}
+
+	switch request.ConfigValue.ValueString() {
 	case "==", "!=", ">", "<", ">=", "<=":
 		return
 	}
@@ -38,7 +42,7 @@ func (c comparatorValidator) ValidateString(
 		"Invalid comparator",
 		fmt.Sprintf(
 			"The value %v is not a valid comparator like '==', '!=', '>', '<', '>=', '<='",
-			request.ConfigValue.String(),
+			request.ConfigValue.ValueString(),
 		),
 	)
 }

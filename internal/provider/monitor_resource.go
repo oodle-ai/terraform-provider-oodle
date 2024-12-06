@@ -59,25 +59,36 @@ func newConditionFromModel(model *models.Condition) *conditionModel {
 	c := conditionModel{}
 	c.Operation = types.StringValue(model.Op.String())
 	c.Value = types.Float64Value(model.Value)
-	c.For = types.StringValue(model.For.String())
-	c.KeepFiringFor = types.StringValue(model.KeepFiringFor.String())
+	if model.For > 0 {
+		c.For = types.StringValue(validatorutils.ShortDur(model.For))
+	}
+
+	if model.KeepFiringFor > 0 {
+		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
+	}
 	return &c
 }
 
 func (c *conditionModel) toModel() (*models.Condition, error) {
 	op, err := models.ConditionOpFromString(c.Operation.ValueString())
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse ConditionOp: %w", err)
+		return nil, fmt.Errorf("failed to parse ConditionOp: %v", err)
 	}
 
-	forVal, err := time.ParseDuration(c.For.ValueString())
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse warning forVal: %w", err)
+	var forVal time.Duration
+	if !c.For.IsNull() && !c.For.IsUnknown() && len(c.For.ValueString()) > 0 {
+		forVal, err = time.ParseDuration(c.For.ValueString())
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse warning forVal: %v", err)
+		}
 	}
 
-	keepFiringForVal, err := time.ParseDuration(c.KeepFiringFor.ValueString())
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse warning keepFiringFor: %w", err)
+	var keepFiringForVal time.Duration
+	if !c.KeepFiringFor.IsNull() && !c.KeepFiringFor.IsUnknown() && len(c.KeepFiringFor.ValueString()) > 0 {
+		keepFiringForVal, err = time.ParseDuration(c.KeepFiringFor.ValueString())
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse warning keepFiringFor: %v", err)
+		}
 	}
 
 	return &models.Condition{
@@ -119,13 +130,14 @@ func (m *monitorResourceModel) fromModel(
 	diagnosticsOut diag.Diagnostics,
 ) {
 	// Reset the model to clear any existing data.
-	*m = monitorResourceModel{
-		Grouping: &grouping{},
-	}
+	*m = monitorResourceModel{}
 
 	m.ID = types.StringValue(model.ID.UUID.String())
 	m.Name = types.StringValue(model.Name)
 	m.PromQLQuery = types.StringValue(model.PromQLQuery)
+	if model.Interval > 0 {
+		m.Interval = types.StringValue(validatorutils.ShortDur(model.Interval))
+	}
 	if model.Conditions.Warn != nil {
 		if m.Conditions == nil {
 			m.Conditions = &conditionsModel{}
@@ -145,38 +157,44 @@ func (m *monitorResourceModel) fromModel(
 	if len(model.Labels) > 0 {
 		m.Labels = validatorutils.ToAttrMap(model.Labels, &diagnosticsOut)
 	} else {
-		m.Labels, _ = types.MapValue(basetypes.StringType{}, nil)
+		m.Labels = types.MapNull(basetypes.StringType{})
 	}
 
 	if len(model.Annotations) > 0 {
 		m.Annotations = validatorutils.ToAttrMap(model.Annotations, &diagnosticsOut)
 	} else {
-		m.Annotations, _ = types.MapValue(basetypes.StringType{}, nil)
+		m.Annotations = types.MapNull(basetypes.StringType{})
 	}
 
-	m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
-	if len(model.Grouping.ByLabels) > 0 {
-		m.Grouping.ByLabels = validatorutils.ToAttrList(model.Grouping.ByLabels, &diagnosticsOut)
-		m.Grouping.Disabled = types.BoolValue(model.Grouping.Disabled)
+	if model.Grouping != nil {
+		m.Grouping = &grouping{}
+		diagnosticsOut.AddError("ASDASDASD", fmt.Sprintf("%+v", model.Grouping))
 		m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
-	} else {
-		m.Grouping.ByLabels, _ = types.ListValue(basetypes.StringType{}, nil)
+		if len(model.Grouping.ByLabels) > 0 {
+			m.Grouping.ByLabels = validatorutils.ToAttrList(model.Grouping.ByLabels, &diagnosticsOut)
+			m.Grouping.Disabled = types.BoolValue(model.Grouping.Disabled)
+			m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
+		} else {
+			m.Grouping.ByLabels = types.ListNull(basetypes.StringType{})
+		}
 	}
+
+	diagnosticsOut.AddError("ASDASDASD 2", fmt.Sprintf("%+v", model.Grouping))
 
 	if model.NotificationPolicyID != nil {
 		m.NotificationPolicyID = types.StringValue(model.NotificationPolicyID.UUID.String())
 	}
 
 	if model.GroupWait != nil {
-		m.GroupWait = types.StringValue(model.GroupWait.String())
+		m.GroupWait = types.StringValue(validatorutils.ShortDur(*model.GroupWait))
 	}
 
 	if model.GroupInterval != nil {
-		m.GroupInterval = types.StringValue(model.GroupInterval.String())
+		m.GroupInterval = types.StringValue(validatorutils.ShortDur(*model.GroupInterval))
 	}
 
 	if model.RepeatInterval != nil {
-		m.RepeatInterval = types.StringValue(model.RepeatInterval.String())
+		m.RepeatInterval = types.StringValue(validatorutils.ShortDur(*model.RepeatInterval))
 	}
 }
 
@@ -184,25 +202,34 @@ func (m *monitorResourceModel) toModel(
 	model *models.Monitor,
 ) error {
 	var err error
-	model.ID.UUID, err = uuid.Parse(m.ID.String())
-	if err != nil {
-		return fmt.Errorf("failed to parse UUID: %w", err)
+	if !m.ID.IsNull() && !m.ID.IsUnknown() {
+		model.ID.UUID, err = uuid.Parse(m.ID.ValueString())
+		if err != nil {
+			return fmt.Errorf("failed to parse ID UUID %v: %v", m.ID.ValueString(), err)
+		}
 	}
 
 	model.Name = m.Name.ValueString()
 	model.PromQLQuery = m.PromQLQuery.ValueString()
+	if !m.Interval.IsNull() {
+		model.Interval, err = time.ParseDuration(m.Interval.ValueString())
+		if err != nil {
+			return fmt.Errorf("failed to parse interval duration: %v", err)
+		}
+	}
+
 	if m.Conditions != nil {
 		if m.Conditions.Warning != nil {
 			model.Conditions.Warn, err = m.Conditions.Warning.toModel()
 			if err != nil {
-				return fmt.Errorf("failed to parse warning condition: %w", err)
+				return fmt.Errorf("failed to parse warning condition: %v", err)
 			}
 		}
 
 		if m.Conditions.Critical != nil {
 			model.Conditions.Critical, err = m.Conditions.Critical.toModel()
 			if err != nil {
-				return fmt.Errorf("failed to parse critical condition: %w", err)
+				return fmt.Errorf("failed to parse critical condition: %v", err)
 			}
 		}
 	}
@@ -221,15 +248,18 @@ func (m *monitorResourceModel) toModel(
 		}
 	}
 
-	model.Grouping.ByMonitor = m.Grouping.ByMonitor.ValueBool()
-	if len(m.Grouping.ByLabels.Elements()) > 0 {
-		model.Grouping.ByLabels = make([]string, 0, len(m.Grouping.ByLabels.Elements()))
-		for _, v := range m.Grouping.ByLabels.Elements() {
-			model.Grouping.ByLabels = append(model.Grouping.ByLabels, v.String())
-		}
-
-		model.Grouping.Disabled = m.Grouping.Disabled.ValueBool()
+	if m.Grouping != nil {
+		model.Grouping = &models.Grouping{}
 		model.Grouping.ByMonitor = m.Grouping.ByMonitor.ValueBool()
+		if len(m.Grouping.ByLabels.Elements()) > 0 {
+			model.Grouping.ByLabels = make([]string, 0, len(m.Grouping.ByLabels.Elements()))
+			for _, v := range m.Grouping.ByLabels.Elements() {
+				model.Grouping.ByLabels = append(model.Grouping.ByLabels, v.String())
+			}
+
+			model.Grouping.Disabled = m.Grouping.Disabled.ValueBool()
+			model.Grouping.ByMonitor = m.Grouping.ByMonitor.ValueBool()
+		}
 	}
 
 	if len(m.NotificationPolicyID.ValueString()) > 0 {
@@ -244,7 +274,7 @@ func (m *monitorResourceModel) toModel(
 	if len(m.GroupWait.ValueString()) > 0 {
 		dur, err := time.ParseDuration(m.GroupWait.ValueString())
 		if err != nil {
-			return fmt.Errorf("failed to parse group wait duration: %w", err)
+			return fmt.Errorf("failed to parse group wait duration: %v", err)
 		}
 
 		model.GroupWait = &dur
@@ -253,7 +283,7 @@ func (m *monitorResourceModel) toModel(
 	if len(m.GroupInterval.ValueString()) > 0 {
 		dur, err := time.ParseDuration(m.GroupInterval.ValueString())
 		if err != nil {
-			return fmt.Errorf("failed to parse group interval duration: %w", err)
+			return fmt.Errorf("failed to parse group interval duration: %v", err)
 		}
 
 		model.GroupInterval = &dur
@@ -262,7 +292,7 @@ func (m *monitorResourceModel) toModel(
 	if len(m.RepeatInterval.ValueString()) > 0 {
 		dur, err := time.ParseDuration(m.RepeatInterval.ValueString())
 		if err != nil {
-			return fmt.Errorf("failed to parse repeat interval duration: %w", err)
+			return fmt.Errorf("failed to parse repeat interval duration: %v", err)
 		}
 
 		model.RepeatInterval = &dur
@@ -293,6 +323,9 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID of the monitor.",
+				Validators: []validator.String{
+					validatorutils.NewUUIDValidator(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -463,12 +496,13 @@ func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Update plan with newly created monitor.
-	plan.fromModel(createdMonitor, resp.Diagnostics)
+	var newPlan monitorResourceModel
+	newPlan.fromModel(createdMonitor, resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	diags = resp.State.Set(ctx, plan)
+	diags = resp.State.Set(ctx, newPlan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -510,88 +544,63 @@ func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	//// Retrieve values from plan
-	//var plan orderResourceModel
-	//diags := req.Plan.Get(ctx, &plan)
-	//resp.Diagnostics.Append(diags...)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//// Generate API request body from plan
-	//var hashicupsItems []hashicups.OrderItem
-	//for _, item := range plan.Items {
-	//	hashicupsItems = append(hashicupsItems, hashicups.OrderItem{
-	//		Coffee: hashicups.Coffee{
-	//			ID: int(item.Coffee.ID.ValueInt64()),
-	//		},
-	//		Quantity: int(item.Quantity.ValueInt64()),
-	//	})
-	//}
-	//
-	//// Update existing order
-	//_, err := r.client.UpdateOrder(plan.ID.ValueString(), hashicupsItems)
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Error Updating HashiCups Order",
-	//		"Could not update order, unexpected error: "+err.Error(),
-	//	)
-	//	return
-	//}
-	//
-	//// Fetch updated items from GetOrder as UpdateOrder items are not
-	//// populated.
-	//order, err := r.client.GetOrder(plan.ID.ValueString())
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Error Reading HashiCups Order",
-	//		"Could not read HashiCups order ID "+plan.ID.ValueString()+": "+err.Error(),
-	//	)
-	//	return
-	//}
-	//
-	//// Update resource state with updated items and timestamp
-	//plan.Items = []orderItemModel{}
-	//for _, item := range order.Items {
-	//	plan.Items = append(plan.Items, orderItemModel{
-	//		Coffee: orderItemCoffeeModel{
-	//			ID:          types.Int64Value(int64(item.Coffee.ID)),
-	//			Name:        types.StringValue(item.Coffee.Name),
-	//			Teaser:      types.StringValue(item.Coffee.Teaser),
-	//			Description: types.StringValue(item.Coffee.Description),
-	//			Price:       types.Float64Value(item.Coffee.Price),
-	//			Image:       types.StringValue(item.Coffee.Image),
-	//		},
-	//		Quantity: types.Int64Value(int64(item.Quantity)),
-	//	})
-	//}
-	//plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
-	//
-	//diags = resp.State.Set(ctx, plan)
-	//resp.Diagnostics.Append(diags...)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
+	// Retrieve values from plan
+	var plan monitorResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	monitor := &models.Monitor{}
+	err := plan.toModel(monitor)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to convert plan to model", err.Error())
+		return
+	}
+
+	// Create new monitor
+	createdMonitor, err := r.client.UpdateMonitor(monitor)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Creating Monitor",
+			"Could not create monitor, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	// Update plan with newly created monitor.
+	var newPlan monitorResourceModel
+	newPlan.fromModel(createdMonitor, resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	diags = resp.State.Set(ctx, newPlan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
 func (r *monitorResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
-	var state orderResourceModel
+	var state monitorResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	//// Delete existing order
-	//err := r.client.DeleteOrder(state.ID.ValueString())
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Error Deleting HashiCups Order",
-	//		"Could not delete order, unexpected error: "+err.Error(),
-	//	)
-	//	return
-	//}
+	// Delete existing order
+	err := r.client.DeleteMonitor(state.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Deleting Monitor",
+			fmt.Sprintf("Could not delete monitor ID %s: %v", state.ID.ValueString(), err),
+		)
+		return
+	}
 }
 
 // Configure adds the provider configured client to the resource.
