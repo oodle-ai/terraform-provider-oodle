@@ -3,8 +3,19 @@ package validatorutils
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
+
+var validComparators = map[string]struct{}{
+	"==": {},
+	"!=": {},
+	">":  {},
+	"<":  {},
+	">=": {},
+	"<=": {},
+}
 
 type comparatorValidator struct {
 }
@@ -32,16 +43,21 @@ func (c comparatorValidator) ValidateString(
 		return
 	}
 
-	switch request.ConfigValue.ValueString() {
-	case "==", "!=", ">", "<", ">=", "<=":
+	_, ok := validComparators[request.ConfigValue.ValueString()]
+	if ok {
 		return
+	}
+
+	var validComparatorsList []string
+	for k := range validComparators {
+		validComparatorsList = append(validComparatorsList, k)
 	}
 
 	response.Diagnostics.AddAttributeError(
 		request.Path,
 		"Invalid comparator",
 		fmt.Sprintf(
-			"The value %v is not a valid comparator like '==', '!=', '>', '<', '>=', '<='",
+			"The value %v is not a valid comparator like "+strings.Join(validComparatorsList, ", "),
 			request.ConfigValue.ValueString(),
 		),
 	)

@@ -2,11 +2,12 @@ package provider
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/function"
+	"os"
+
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"os"
+
 	"terraform-provider-oodle/internal/oodlehttp"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -30,8 +31,7 @@ type oodleProviderModel struct {
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ provider.Provider              = &oodleProvider{}
-	_ provider.ProviderWithFunctions = &oodleProvider{}
+	_ provider.Provider = &oodleProvider{}
 )
 
 // New is a helper function to simplify provider server and testing implementation.
@@ -210,9 +210,6 @@ func (p *oodleProvider) DataSources(_ context.Context) []func() datasource.DataS
 func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewMonitorResource,
+		NewNotifierResource,
 	}
-}
-
-func (p *oodleProvider) Functions(_ context.Context) []func() function.Function {
-	return nil
 }

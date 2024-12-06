@@ -3,18 +3,18 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"terraform-provider-oodle/internal/oodlehttp"
+
 	"terraform-provider-oodle/internal/oodlehttp/models"
 	"terraform-provider-oodle/internal/validatorutils"
-	"time"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -87,7 +87,7 @@ type grouping struct {
 	Disabled  types.Bool `tfsdk:"disabled"`
 }
 
-type monitorResourceModel struct {
+type MonitorResourceModel struct {
 	ID                   types.String     `tfsdk:"id"`
 	Name                 types.String     `tfsdk:"name"`
 	Interval             types.String     `tfsdk:"interval"`
@@ -102,12 +102,12 @@ type monitorResourceModel struct {
 	RepeatInterval       types.String     `tfsdk:"repeat_interval"`
 }
 
-func (m *monitorResourceModel) fromModel(
+func (m *MonitorResourceModel) fromModel(
 	model *models.Monitor,
 	diagnosticsOut *diag.Diagnostics,
 ) {
 	// Reset the model to clear any existing data.
-	*m = monitorResourceModel{}
+	*m = MonitorResourceModel{}
 
 	m.ID = types.StringValue(model.ID.UUID.String())
 	m.Name = types.StringValue(model.Name)
@@ -168,7 +168,7 @@ func (m *monitorResourceModel) fromModel(
 	}
 }
 
-func (m *monitorResourceModel) toModel(
+func (m *MonitorResourceModel) toModel(
 	model *models.Monitor,
 ) error {
 	var err error
@@ -277,7 +277,7 @@ func NewMonitorResource() resource.Resource {
 
 // monitorResource is the resource implementation.
 type monitorResource struct {
-	client *oodlehttp.Client
+	baseResource
 }
 
 // Metadata returns the resource type name.
@@ -440,7 +440,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 // Create a new resource.
 func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan monitorResourceModel
+	var plan MonitorResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -465,7 +465,7 @@ func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Update plan with newly created monitor.
-	var newPlan monitorResourceModel
+	var newPlan MonitorResourceModel
 	newPlan.fromModel(createdMonitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -480,7 +480,7 @@ func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest
 
 // Read resource information.
 func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state monitorResourceModel
+	var state MonitorResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -517,7 +517,7 @@ func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
-	var plan monitorResourceModel
+	var plan MonitorResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -525,7 +525,7 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Assign ID to plan from state.
-	var state monitorResourceModel
+	var state MonitorResourceModel
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -556,7 +556,7 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Update plan with newly created monitor.
-	var newState monitorResourceModel
+	var newState MonitorResourceModel
 	newState.fromModel(updatedMonitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -571,7 +571,7 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 
 func (r *monitorResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
-	var state monitorResourceModel
+	var state MonitorResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -592,31 +592,4 @@ func (r *monitorResource) Delete(ctx context.Context, req resource.DeleteRequest
 		)
 		return
 	}
-}
-
-// Configure adds the provider configured client to the resource.
-func (r *monitorResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*oodlehttp.Client)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *oodlehttp.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
-}
-
-func (r *monitorResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
