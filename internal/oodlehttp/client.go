@@ -78,10 +78,10 @@ func (c *Client) GetMonitor(monitorId string) (*models.Monitor, error) {
 	return &monitor, nil
 }
 
-func (c *Client) DeleteMonitor(id string) error {
+func (c *Client) DeleteMonitor(monitorId string) error {
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		fmt.Sprintf(monitorsPath, c.deploymentUrl, c.instance),
+		fmt.Sprintf(monitorsPath+"/%v", c.deploymentUrl, c.instance, monitorId),
 		nil,
 	)
 	if err != nil {
@@ -91,6 +91,16 @@ func (c *Client) DeleteMonitor(id string) error {
 	req.Header = c.headers
 	resp, err := c.httpClient.Do(req)
 	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to delete monitor: %v, body: %v", resp.Status, string(bodyBytes))
+	}
+
 	return nil
 }
 
@@ -116,6 +126,10 @@ func (c *Client) CreateMonitor(monitor *models.Monitor) (*models.Monitor, error)
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to update monitor: %v, body: %v", resp.Status, string(bodyBytes))
 	}
 
 	if err = resMonitor.UnmarshalJSON(bodyBytes); err != nil {
@@ -147,6 +161,10 @@ func (c *Client) UpdateMonitor(monitor *models.Monitor) (*models.Monitor, error)
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to update monitor: %v, body: %v", resp.Status, string(bodyBytes))
 	}
 
 	if err = resMonitor.UnmarshalJSON(bodyBytes); err != nil {

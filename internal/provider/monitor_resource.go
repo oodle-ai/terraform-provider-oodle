@@ -127,7 +127,7 @@ type monitorResourceModel struct {
 
 func (m *monitorResourceModel) fromModel(
 	model *models.Monitor,
-	diagnosticsOut diag.Diagnostics,
+	diagnosticsOut *diag.Diagnostics,
 ) {
 	// Reset the model to clear any existing data.
 	*m = monitorResourceModel{}
@@ -155,31 +155,27 @@ func (m *monitorResourceModel) fromModel(
 	}
 
 	if len(model.Labels) > 0 {
-		m.Labels = validatorutils.ToAttrMap(model.Labels, &diagnosticsOut)
+		m.Labels = validatorutils.ToAttrMap(model.Labels, diagnosticsOut)
 	} else {
 		m.Labels = types.MapNull(basetypes.StringType{})
 	}
 
 	if len(model.Annotations) > 0 {
-		m.Annotations = validatorutils.ToAttrMap(model.Annotations, &diagnosticsOut)
+		m.Annotations = validatorutils.ToAttrMap(model.Annotations, diagnosticsOut)
 	} else {
 		m.Annotations = types.MapNull(basetypes.StringType{})
 	}
 
-	if model.Grouping != nil {
+	//diagnosticsOut.AddError("ASDASDASD", fmt.Sprintf("%+v", model.Grouping))
+	if len(model.Grouping.ByLabels) > 0 || model.Grouping.Disabled || model.Grouping.ByMonitor {
 		m.Grouping = &grouping{}
-		diagnosticsOut.AddError("ASDASDASD", fmt.Sprintf("%+v", model.Grouping))
 		m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
-		if len(model.Grouping.ByLabels) > 0 {
-			m.Grouping.ByLabels = validatorutils.ToAttrList(model.Grouping.ByLabels, &diagnosticsOut)
-			m.Grouping.Disabled = types.BoolValue(model.Grouping.Disabled)
-			m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
-		} else {
-			m.Grouping.ByLabels = types.ListNull(basetypes.StringType{})
-		}
+		m.Grouping.ByLabels = validatorutils.ToAttrList(model.Grouping.ByLabels, diagnosticsOut)
+		m.Grouping.Disabled = types.BoolValue(model.Grouping.Disabled)
+		m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
 	}
 
-	diagnosticsOut.AddError("ASDASDASD 2", fmt.Sprintf("%+v", model.Grouping))
+	//diagnosticsOut.AddError("ASDASDASD 2", fmt.Sprintf("%+v", model.Grouping))
 
 	if model.NotificationPolicyID != nil {
 		m.NotificationPolicyID = types.StringValue(model.NotificationPolicyID.UUID.String())
@@ -249,7 +245,6 @@ func (m *monitorResourceModel) toModel(
 	}
 
 	if m.Grouping != nil {
-		model.Grouping = &models.Grouping{}
 		model.Grouping.ByMonitor = m.Grouping.ByMonitor.ValueBool()
 		if len(m.Grouping.ByLabels.Elements()) > 0 {
 			model.Grouping.ByLabels = make([]string, 0, len(m.Grouping.ByLabels.Elements()))
@@ -425,16 +420,16 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"by_monitor": schema.BoolAttribute{
-						Optional:    true,
+						Required:    true,
 						Description: "If true, only one notification will be sent for this monitor irrespective of how many series match.",
 					},
 					"by_labels": schema.ListAttribute{
-						Optional:    true,
+						Required:    true,
 						ElementType: types.StringType,
 						Description: "List of labels to group by. One notification is sent for each unique grouping when the monitor fires.",
 					},
 					"disabled": schema.BoolAttribute{
-						Optional:    true,
+						Required:    true,
 						Description: "If true, grouping is disabled.",
 					},
 				},
@@ -497,7 +492,7 @@ func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest
 
 	// Update plan with newly created monitor.
 	var newPlan monitorResourceModel
-	newPlan.fromModel(createdMonitor, resp.Diagnostics)
+	newPlan.fromModel(createdMonitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -518,6 +513,11 @@ func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
+	if state.ID.IsNull() || state.ID.IsUnknown() {
+		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to read monitor: %+v", state))
+		return
+	}
+
 	// Get refreshed order value from HashiCups
 	monitor, err := r.client.GetMonitor(state.ID.ValueString())
 	if err != nil {
@@ -528,9 +528,9 @@ func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	state.fromModel(monitor, resp.Diagnostics)
+	state.fromModel(monitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
-		resp.Diagnostics.AddError("ASDASDASD1", "ASDASDASD1")
+		//resp.Diagnostics.AddError("ASDASDASD1", "ASDASDASD1")
 		return
 	}
 
@@ -538,7 +538,7 @@ func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, re
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
-		resp.Diagnostics.AddError("ASDASDASD2", fmt.Sprintf("%+v", state.Labels))
+		//resp.Diagnostics.AddError("ASDASDASD2", fmt.Sprintf("%+v", state.Labels))
 		return
 	}
 }
@@ -552,6 +552,21 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
+	// Assign ID to plan from state.
+	var state monitorResourceModel
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.ID = state.ID
+
+	if plan.ID.IsNull() || plan.ID.IsUnknown() {
+		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to update monitor: %+v", plan))
+		return
+	}
+
 	monitor := &models.Monitor{}
 	err := plan.toModel(monitor)
 	if err != nil {
@@ -559,24 +574,24 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Create new monitor
-	createdMonitor, err := r.client.UpdateMonitor(monitor)
+	updatedMonitor, err := r.client.UpdateMonitor(monitor)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error Creating Monitor",
-			"Could not create monitor, unexpected error: "+err.Error(),
+			"Error Updating Monitor",
+			"Could not update monitor, unexpected error: "+err.Error(),
 		)
 		return
 	}
 
+	//resp.Diagnostics.AddError("ASDASDASD", fmt.Sprintf("%+v", updatedMonitor))
 	// Update plan with newly created monitor.
-	var newPlan monitorResourceModel
-	newPlan.fromModel(createdMonitor, resp.Diagnostics)
+	var newState monitorResourceModel
+	newState.fromModel(updatedMonitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	diags = resp.State.Set(ctx, newPlan)
+	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -589,6 +604,14 @@ func (r *monitorResource) Delete(ctx context.Context, req resource.DeleteRequest
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.AddError("ASDASDASD", fmt.Sprintf("ID is required to delete monitor: %+v", req.State))
+	resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to delete monitor: %+v", state))
+	return
+	if state.ID.IsNull() || state.ID.IsUnknown() {
+		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to delete monitor: %+v", state))
 		return
 	}
 

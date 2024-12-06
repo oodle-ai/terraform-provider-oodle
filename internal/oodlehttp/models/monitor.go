@@ -23,7 +23,7 @@ type Monitor struct {
 	// Annotations are the annotations for the monitor.
 	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 	// Grouping is the grouping configuration for the monitor.
-	Grouping *Grouping `json:"grouping,omitempty" yaml:"grouping,omitempty"`
+	Grouping Grouping `json:"grouping,omitempty" yaml:"grouping,omitempty"`
 	// NotificationPolicyID is the ID of the notification policy associated with the monitor.
 	// It is an optional field.
 	NotificationPolicyID *ID `json:"notification_policy_id,omitempty" yaml:"notification_policy_id,omitempty"`
