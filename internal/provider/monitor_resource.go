@@ -24,29 +24,6 @@ var (
 	_ resource.ResourceWithImportState = &monitorResource{}
 )
 
-// orderResourceModel maps the resource schema data.
-type orderResourceModel struct {
-	ID          types.String     `tfsdk:"id"`
-	Items       []orderItemModel `tfsdk:"items"`
-	LastUpdated types.String     `tfsdk:"last_updated"`
-}
-
-// orderItemModel maps order item data.
-type orderItemModel struct {
-	Coffee   orderItemCoffeeModel `tfsdk:"coffee"`
-	Quantity types.Int64          `tfsdk:"quantity"`
-}
-
-// orderItemCoffeeModel maps coffee order item data.
-type orderItemCoffeeModel struct {
-	ID          types.Int64   `tfsdk:"id"`
-	Name        types.String  `tfsdk:"name"`
-	Teaser      types.String  `tfsdk:"teaser"`
-	Description types.String  `tfsdk:"description"`
-	Price       types.Float64 `tfsdk:"price"`
-	Image       types.String  `tfsdk:"image"`
-}
-
 type conditionModel struct {
 	// Operation - The operation to perform for the condition. Possible values are: ">", "<", ">=", "<=", "==", "!=".
 	Operation     types.String  `tfsdk:"operation"`
@@ -166,7 +143,6 @@ func (m *monitorResourceModel) fromModel(
 		m.Annotations = types.MapNull(basetypes.StringType{})
 	}
 
-	//diagnosticsOut.AddError("ASDASDASD", fmt.Sprintf("%+v", model.Grouping))
 	if len(model.Grouping.ByLabels) > 0 || model.Grouping.Disabled || model.Grouping.ByMonitor {
 		m.Grouping = &grouping{}
 		m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
@@ -174,8 +150,6 @@ func (m *monitorResourceModel) fromModel(
 		m.Grouping.Disabled = types.BoolValue(model.Grouping.Disabled)
 		m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
 	}
-
-	//diagnosticsOut.AddError("ASDASDASD 2", fmt.Sprintf("%+v", model.Grouping))
 
 	if model.NotificationPolicyID != nil {
 		m.NotificationPolicyID = types.StringValue(model.NotificationPolicyID.UUID.String())
@@ -530,7 +504,6 @@ func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 	state.fromModel(monitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
-		//resp.Diagnostics.AddError("ASDASDASD1", "ASDASDASD1")
 		return
 	}
 
@@ -538,7 +511,6 @@ func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, re
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
-		//resp.Diagnostics.AddError("ASDASDASD2", fmt.Sprintf("%+v", state.Labels))
 		return
 	}
 }
@@ -583,7 +555,6 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	//resp.Diagnostics.AddError("ASDASDASD", fmt.Sprintf("%+v", updatedMonitor))
 	// Update plan with newly created monitor.
 	var newState monitorResourceModel
 	newState.fromModel(updatedMonitor, &resp.Diagnostics)
@@ -607,9 +578,6 @@ func (r *monitorResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	resp.Diagnostics.AddError("ASDASDASD", fmt.Sprintf("ID is required to delete monitor: %+v", req.State))
-	resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to delete monitor: %+v", state))
-	return
 	if state.ID.IsNull() || state.ID.IsUnknown() {
 		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to delete monitor: %+v", state))
 		return

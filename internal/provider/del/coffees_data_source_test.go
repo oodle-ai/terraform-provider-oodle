@@ -1,6 +1,7 @@
-package provider
+package del
 
 import (
+	"terraform-provider-oodle/internal/provider"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -8,11 +9,11 @@ import (
 
 func TestAccCoffeesDataSource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: provider.testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: providerConfig + `data "oodle_coffees" "test" {}`,
+				Config: provider.providerConfig + `data "oodle_coffees" "test" {}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify number of coffees returned
 					resource.TestCheckResourceAttr("data.oodle_coffees.test", "coffees.#", "9"),
