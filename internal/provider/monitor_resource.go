@@ -24,6 +24,15 @@ var (
 	_ resource.ResourceWithImportState = &monitorResource{}
 )
 
+var validComparators = map[string]struct{}{
+	"==": {},
+	"!=": {},
+	">":  {},
+	"<":  {},
+	">=": {},
+	"<=": {},
+}
+
 type conditionModel struct {
 	// Operation - The operation to perform for the condition. Possible values are: ">", "<", ">=", "<=", "==", "!=".
 	Operation     types.String  `tfsdk:"operation"`
@@ -87,7 +96,7 @@ type grouping struct {
 	Disabled  types.Bool `tfsdk:"disabled"`
 }
 
-type MonitorResourceModel struct {
+type monitorResourceModel struct {
 	ID                   types.String     `tfsdk:"id"`
 	Name                 types.String     `tfsdk:"name"`
 	Interval             types.String     `tfsdk:"interval"`
@@ -102,12 +111,12 @@ type MonitorResourceModel struct {
 	RepeatInterval       types.String     `tfsdk:"repeat_interval"`
 }
 
-func (m *MonitorResourceModel) fromModel(
+func (m *monitorResourceModel) fromModel(
 	model *models.Monitor,
 	diagnosticsOut *diag.Diagnostics,
 ) {
 	// Reset the model to clear any existing data.
-	*m = MonitorResourceModel{}
+	*m = monitorResourceModel{}
 
 	m.ID = types.StringValue(model.ID.UUID.String())
 	m.Name = types.StringValue(model.Name)
@@ -168,7 +177,7 @@ func (m *MonitorResourceModel) fromModel(
 	}
 }
 
-func (m *MonitorResourceModel) toModel(
+func (m *monitorResourceModel) toModel(
 	model *models.Monitor,
 ) error {
 	var err error
@@ -270,7 +279,6 @@ func (m *MonitorResourceModel) toModel(
 	return nil
 }
 
-// NewMonitorResource is a helper function to simplify the provider implementation.
 func NewMonitorResource() resource.Resource {
 	return &monitorResource{}
 }
@@ -324,7 +332,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Required:    true,
 								Description: "The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.",
 								Validators: []validator.String{
-									validatorutils.NewComparatorValidator(),
+									validatorutils.NewChoiceValidator(validComparators),
 								},
 							},
 							"value": schema.Float64Attribute{
@@ -354,7 +362,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Required:    true,
 								Description: "The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.",
 								Validators: []validator.String{
-									validatorutils.NewComparatorValidator(),
+									validatorutils.NewChoiceValidator(validComparators),
 								},
 							},
 							"value": schema.Float64Attribute{
@@ -440,7 +448,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 // Create a new resource.
 func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan MonitorResourceModel
+	var plan monitorResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -465,7 +473,7 @@ func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Update plan with newly created monitor.
-	var newPlan MonitorResourceModel
+	var newPlan monitorResourceModel
 	newPlan.fromModel(createdMonitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -480,7 +488,7 @@ func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest
 
 // Read resource information.
 func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state MonitorResourceModel
+	var state monitorResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -517,7 +525,7 @@ func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
-	var plan MonitorResourceModel
+	var plan monitorResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -525,7 +533,7 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Assign ID to plan from state.
-	var state MonitorResourceModel
+	var state monitorResourceModel
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -556,7 +564,7 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Update plan with newly created monitor.
-	var newState MonitorResourceModel
+	var newState monitorResourceModel
 	newState.fromModel(updatedMonitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -571,7 +579,7 @@ func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest
 
 func (r *monitorResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
-	var state MonitorResourceModel
+	var state monitorResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

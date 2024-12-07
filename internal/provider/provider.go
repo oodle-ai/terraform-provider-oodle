@@ -211,5 +211,6 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 	return []func() resource.Resource{
 		NewMonitorResource,
 		NewNotifierResource,
+		NewNotiicationPolicyResource,
 	}
 }
