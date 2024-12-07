@@ -14,6 +14,10 @@ type NotificationPolicy struct {
 	MuteNonGlobal bool `json:"mute_non_global,omitempty" yaml:"mute_non_global,omitempty"`
 }
 
+func (np *NotificationPolicy) GetID() string {
+	return np.ID.UUID.String()
+}
+
 // NotifiersBySeverity represents notifiers for each severity level.
 type NotifiersBySeverity struct {
 	Warn     []ID `json:"warn,omitempty" yaml:"warn,omitempty"`

@@ -57,7 +57,7 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "ID of the monitor.",
+				Description: "ID of the notifier.",
 				Validators: []validator.String{
 					validatorutils.NewUUIDValidator(),
 				},

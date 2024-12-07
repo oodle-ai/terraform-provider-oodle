@@ -1,11 +1,13 @@
-package notifier
+package notificationPolicy
 
 import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
@@ -13,34 +15,34 @@ import (
 	"terraform-provider-oodle/internal/validatorutils"
 )
 
-const notifiersResource = "notifiers"
+const notificationPoliciesResource = "notification-policies"
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &notifierResource{}
-	_ resource.ResourceWithConfigure   = &notifierResource{}
-	_ resource.ResourceWithImportState = &notifierResource{}
+	_ resource.Resource                = &notificationPolicyResource{}
+	_ resource.ResourceWithConfigure   = &notificationPolicyResource{}
+	_ resource.ResourceWithImportState = &notificationPolicyResource{}
 )
 
-type notifierResource struct {
-	oresource.BaseResource[*clientmodels.Notifier, *notifierResourceModel]
+type notificationPolicyResource struct {
+	oresource.BaseResource[*clientmodels.NotificationPolicy, *notificationPolicyResourceModel]
 }
 
-func NewNotifierResource() resource.Resource {
-	modelCreator := func() *clientmodels.Notifier {
-		return &clientmodels.Notifier{}
+func NewNotificationPolicyResource() resource.Resource {
+	modelCreator := func() *clientmodels.NotificationPolicy {
+		return &clientmodels.NotificationPolicy{}
 	}
 
-	return &notifierResource{
+	return &notificationPolicyResource{
 		BaseResource: oresource.NewBaseResource(
-			func() *notifierResourceModel {
-				return &notifierResourceModel{}
+			func() *notificationPolicyResourceModel {
+				return &notificationPolicyResourceModel{}
 			},
 			modelCreator,
-			func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[*clientmodels.Notifier] {
-				return oodlehttp.NewModelClient[*clientmodels.Notifier](
+			func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[*clientmodels.NotificationPolicy] {
+				return oodlehttp.NewModelClient[*clientmodels.NotificationPolicy](
 					oodleHttpClient,
-					notifiersResource,
+					notificationPoliciesResource,
 					modelCreator,
 				)
 			},
@@ -48,101 +50,57 @@ func NewNotifierResource() resource.Resource {
 	}
 }
 
-func (n *notifierResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_notifier"
+func (n *notificationPolicyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_notification_policy"
 }
 
-func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (n *notificationPolicyResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "ID of the monitor.",
+				Description: "ID of the notification policy.",
 				Validators: []validator.String{
 					validatorutils.NewUUIDValidator(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Description: "Name of the notifier.",
 				Required:    true,
+				Description: "Name of the notification policy.",
 			},
-			"type": schema.StringAttribute{
-				Description: "Type of the notifier.",
+			"notifiers": schema.SingleNestedAttribute{
 				Required:    true,
-				Validators: []validator.String{
-					validatorutils.NewChoiceValidator(clientmodels.NotifierNames),
-				},
-			},
-			"pagerduty_config": schema.SingleNestedAttribute{
-				Optional:    true,
-				Description: "PagerDuty notifier configuration.",
+				Description: "Notifiers by severity.",
 				Attributes: map[string]schema.Attribute{
-					"service_key": schema.StringAttribute{
-						Required:    true,
-						Sensitive:   true,
-						Description: "PagerDuty service key.",
-					},
-					"send_resolved": schema.BoolAttribute{
+					"warn": schema.ListAttribute{
 						Optional:    true,
-						Description: "Send notifications when incident is resolved.",
+						Description: "Notifier IDs for warning severity.",
+						ElementType: types.StringType,
+					},
+					"critical": schema.ListAttribute{
+						Optional:    true,
+						Description: "Notifier IDs for critical severity.",
+						ElementType: types.StringType,
 					},
 				},
 			},
-			"slack_config": schema.SingleNestedAttribute{
+			"global": schema.BoolAttribute{
 				Optional:    true,
-				Description: "Slack notifier configuration.",
-				Attributes: map[string]schema.Attribute{
-					"api_url": schema.StringAttribute{
-						Required:    true,
-						Description: "Slack API URL.",
-						Sensitive:   true,
-					},
-					"channel": schema.StringAttribute{
-						Required:    true,
-						Description: "Slack channel to post notifications in.",
-					},
-					"title_link": schema.StringAttribute{
-						Optional:    true,
-						Description: "Optional link to include in the notification title.",
-					},
-					"text": schema.StringAttribute{
-						Required:    true,
-						Description: "Additional text to add to the notification.",
-					},
-					"send_resolved": schema.BoolAttribute{
-						Optional:    true,
-						Description: "Send notifications when incident is resolved.",
-					},
-				},
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+				Description: "Whether the notification policy is a global notification policy.",
 			},
-			"opsgenie_config": schema.SingleNestedAttribute{
+			"mute_global": schema.BoolAttribute{
 				Optional:    true,
-				Description: "OpsGenie notifier configuration.",
-				Attributes: map[string]schema.Attribute{
-					"api_key": schema.StringAttribute{
-						Required:    true,
-						Description: "OpsGenie API key.",
-						Sensitive:   true,
-					},
-					"send_resolved": schema.BoolAttribute{
-						Optional:    true,
-						Description: "Send notifications when incident is resolved.",
-					},
-				},
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+				Description: "Whether to mute global notification policy.",
 			},
-			"webhook_config": schema.SingleNestedAttribute{
+			"mute_non_global": schema.BoolAttribute{
 				Optional:    true,
-				Description: "Webhook notifier configuration.",
-				Attributes: map[string]schema.Attribute{
-					"url": schema.StringAttribute{
-						Required:  true,
-						Sensitive: true,
-					},
-					"send_resolved": schema.BoolAttribute{
-						Optional:    true,
-						Description: "Send notifications when incident is resolved.",
-					},
-				},
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+				Description: "Whether to mute non-global notification policies.",
 			},
 		},
 	}

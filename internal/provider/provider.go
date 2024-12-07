@@ -14,6 +14,7 @@ import (
 
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/provider/oresource/monitor"
+	notificationPolicy "terraform-provider-oodle/internal/provider/oresource/notificationpolicy"
 	"terraform-provider-oodle/internal/provider/oresource/notifier"
 )
 
@@ -212,6 +213,6 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 	return []func() resource.Resource{
 		monitor.NewMonitorResource,
 		notifier.NewNotifierResource,
-		//NewNotiicationPolicyResource,
+		notificationPolicy.NewNotificationPolicyResource,
 	}
 }

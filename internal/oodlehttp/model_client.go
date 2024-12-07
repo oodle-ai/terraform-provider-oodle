@@ -55,6 +55,9 @@ func (c *ModelClient[T]) Get(id string) (T, error) {
 	if err != nil {
 		return c.nilVal, err
 	}
+	if resp.StatusCode != http.StatusOK {
+		return c.nilVal, fmt.Errorf("failed to get model %T: %v, body: %v", c.nilVal, resp.Status, string(bodyBytes))
+	}
 
 	if err = jsoniter.Unmarshal(bodyBytes, model); err != nil {
 		return c.nilVal, err

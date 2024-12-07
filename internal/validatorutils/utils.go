@@ -1,10 +1,13 @@
 package validatorutils
 
 import (
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 )
 
 func ToAttrMap(values map[string]string, diagnostics *diag.Diagnostics) types.Map {
@@ -27,4 +30,29 @@ func ToAttrList(values []string, diagnostics *diag.Diagnostics) types.List {
 	convertedList, listDiag := types.ListValue(basetypes.StringType{}, attrList)
 	diagnostics.Append(listDiag...)
 	return convertedList
+}
+
+func IDsToAttrList(values []clientmodels.ID, diagnostics *diag.Diagnostics) types.List {
+	attrList := make([]attr.Value, len(values))
+	for i, v := range values {
+		attrList[i] = types.StringValue(v.UUID.String())
+	}
+
+	convertedList, listDiag := types.ListValue(basetypes.StringType{}, attrList)
+	diagnostics.Append(listDiag...)
+	return convertedList
+}
+
+func AttrListToIDs(values types.List) ([]clientmodels.ID, error) {
+	var ids []clientmodels.ID
+	for _, id := range values.Elements() {
+		uid, err := uuid.Parse(id.String())
+		if err != nil {
+			return nil, err
+		}
+
+		ids = append(ids, clientmodels.ID{UUID: uid})
+	}
+
+	return ids, nil
 }

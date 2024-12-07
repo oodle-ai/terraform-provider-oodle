@@ -8,6 +8,22 @@ terraform {
 
 provider "oodle" {}
 
+resource "oodle_notifier" "notifier_test1" {
+  name = "terraform_test_notifier"
+  type = "pagerduty"
+  pagerduty_config = {
+    service_key = "foo"
+    send_resolved = true
+  }
+}
+
+resource "oodle_notification_policy" "test1" {
+  name = "terraform_test_policy"
+  notifiers = {
+    critical = [oodle_notifier.notifier_test1.id]
+  }
+}
+
 resource "oodle_monitor" "test1" {
   name = "terraform_test"
   promql_query = "sum(rate(oober_food_delivery_revenue_usd[3m]))"
@@ -18,14 +34,5 @@ resource "oodle_monitor" "test1" {
       for = "3m"
     }
   }
-  notification_policy_id = "01918078-4424-762b-aaf9-ef33fc94fd51"
-}
-
-resource "oodle_notifier" "notifier_test1" {
-  name = "terraform_test_notifier"
-  type = "pagerduty"
-  pagerduty_config = {
-    service_key = "foo"
-    send_resolved = true
-  }
+  notification_policy_id = oodle_notification_policy.test1.id
 }
