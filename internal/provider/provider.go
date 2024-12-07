@@ -4,18 +4,17 @@ import (
 	"context"
 	"os"
 
-	"terraform-provider-oodle/internal/provider/resource/monitor"
-
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"terraform-provider-oodle/internal/oodlehttp"
-
-	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
-	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"terraform-provider-oodle/internal/provider/oresource/monitor"
+	"terraform-provider-oodle/internal/provider/oresource/notifier"
 )
 
 const (
@@ -212,7 +211,7 @@ func (p *oodleProvider) DataSources(_ context.Context) []func() datasource.DataS
 func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		monitor.NewMonitorResource,
-		NewNotifierResource,
+		notifier.NewNotifierResource,
 		//NewNotiicationPolicyResource,
 	}
 }

@@ -3,9 +3,10 @@ package validatorutils
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 type durationValidator struct {

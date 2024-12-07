@@ -3,9 +3,10 @@ package validatorutils
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/prometheus/prometheus/promql/parser"
-	"sync"
 )
 
 type promqlValidator struct {

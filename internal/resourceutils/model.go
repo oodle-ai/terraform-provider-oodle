@@ -8,14 +8,20 @@ import (
 )
 
 type ResourceModel[M clientmodels.ClientModel] interface {
-	FromModel(
+	// FromClientModel converts a client model received
+	// from oodle APIs to a resource model.
+	FromClientModel(
 		model M,
 		diagnosticsOut *diag.Diagnostics,
 	)
 
-	ToModel(model M) error
+	// ToClientModel converts a resource model to a client model to
+	// use in oodle APIs.
+	ToClientModel(model M) error
 
+	// SetID sets the ID of the resource model.
 	SetID(id types.String)
 
+	// GetID returns the ID of the resource model.
 	GetID() types.String
 }

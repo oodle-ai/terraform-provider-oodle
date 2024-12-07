@@ -5,7 +5,6 @@ package del
 
 import (
 	"regexp"
-	"terraform-provider-oodle/internal/provider"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"

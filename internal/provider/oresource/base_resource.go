@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"terraform-provider-oodle/internal/resourceutils"
-
-	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
-
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"terraform-provider-oodle/internal/oodlehttp"
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
+	"terraform-provider-oodle/internal/resourceutils"
 )
 
 type BaseResource[M clientmodels.ClientModel, R resourceutils.ResourceModel[M]] struct {
@@ -71,7 +69,7 @@ func (r *BaseResource[M, R]) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	clientModel := r.newClientModel()
-	err := plan.ToModel(clientModel)
+	err := plan.ToClientModel(clientModel)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to convert plan to model", err.Error())
 		return
@@ -89,7 +87,7 @@ func (r *BaseResource[M, R]) Create(ctx context.Context, req resource.CreateRequ
 
 	// Update plan with newly created monitor.
 	newPlan := r.newResourceModel()
-	newPlan.FromModel(createdMonitor, &resp.Diagnostics)
+	newPlan.FromClientModel(createdMonitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -126,7 +124,7 @@ func (r *BaseResource[M, R]) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	state.FromModel(monitor, &resp.Diagnostics)
+	state.FromClientModel(monitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -165,7 +163,7 @@ func (r *BaseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	model := r.newClientModel()
-	err := plan.ToModel(model)
+	err := plan.ToClientModel(model)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to convert plan to model", err.Error())
 		return
@@ -182,7 +180,7 @@ func (r *BaseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequ
 
 	// Update plan with newly created monitor.
 	newState := r.newResourceModel()
-	newState.FromModel(updatedMonitor, &resp.Diagnostics)
+	newState.FromClientModel(updatedMonitor, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
