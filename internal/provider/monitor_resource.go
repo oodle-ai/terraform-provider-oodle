@@ -24,6 +24,15 @@ var (
 	_ resource.ResourceWithImportState = &monitorResource{}
 )
 
+var validComparators = map[string]struct{}{
+	"==": {},
+	"!=": {},
+	">":  {},
+	"<":  {},
+	">=": {},
+	"<=": {},
+}
+
 type conditionModel struct {
 	// Operation - The operation to perform for the condition. Possible values are: ">", "<", ">=", "<=", "==", "!=".
 	Operation     types.String  `tfsdk:"operation"`
@@ -324,7 +333,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Required:    true,
 								Description: "The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.",
 								Validators: []validator.String{
-									validatorutils.NewComparatorValidator(),
+									validatorutils.NewChoiceValidator(validComparators),
 								},
 							},
 							"value": schema.Float64Attribute{
@@ -354,7 +363,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Required:    true,
 								Description: "The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.",
 								Validators: []validator.String{
-									validatorutils.NewComparatorValidator(),
+									validatorutils.NewChoiceValidator(validComparators),
 								},
 							},
 							"value": schema.Float64Attribute{

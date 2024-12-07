@@ -13,7 +13,7 @@ resource "oodle_monitor" "test1" {
   promql_query = "sum(rate(oober_food_delivery_revenue_usd[3m]))"
   conditions = {
     critical = {
-      value = 1240000
+      value = 1210000
       operation = ">"
       for = "3m"
     }
