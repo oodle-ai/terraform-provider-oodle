@@ -12,7 +12,7 @@ import (
 )
 
 type notificationPolicyResource struct {
-	baseResource
+	//baseResource
 }
 
 func NewNotiicationPolicyResource() resource.Resource {
@@ -21,9 +21,9 @@ func NewNotiicationPolicyResource() resource.Resource {
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &notificationPolicyResource{}
-	_ resource.ResourceWithConfigure   = &notificationPolicyResource{}
-	_ resource.ResourceWithImportState = &notificationPolicyResource{}
+	_ resource.Resource = &notificationPolicyResource{}
+	//_ resource.ResourceWithConfigure   = &notificationPolicyResource{}
+	//_ resource.ResourceWithImportState = &notificationPolicyResource{}
 )
 
 func (n *notificationPolicyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {

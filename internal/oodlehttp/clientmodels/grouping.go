@@ -1,4 +1,4 @@
-package models
+package clientmodels
 
 // Grouping is a model for grouping alerts.
 type Grouping struct {

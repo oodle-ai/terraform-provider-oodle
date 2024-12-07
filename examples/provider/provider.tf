@@ -20,3 +20,12 @@ resource "oodle_monitor" "test1" {
   }
   notification_policy_id = "01918078-4424-762b-aaf9-ef33fc94fd51"
 }
+
+resource "oodle_notifier" "notifier_test1" {
+  name = "terraform_test_notifier"
+  type = "pagerduty"
+  pagerduty_config = {
+    service_key = "foo"
+    send_resolved = true
+  }
+}

@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"terraform-provider-oodle/internal/oodlehttp"
+
+	"terraform-provider-oodle/internal/resourceutils"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
-	"terraform-provider-oodle/internal/oodlehttp/models"
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/validatorutils"
 )
 
@@ -23,6 +27,8 @@ var (
 	_ resource.ResourceWithConfigure   = &monitorResource{}
 	_ resource.ResourceWithImportState = &monitorResource{}
 )
+
+const monitorsResource = "monitors"
 
 var validComparators = map[string]struct{}{
 	"==": {},
@@ -41,7 +47,7 @@ type conditionModel struct {
 	KeepFiringFor types.String  `tfsdk:"keep_firing_for"`
 }
 
-func newConditionFromModel(model *models.Condition) *conditionModel {
+func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 	c := conditionModel{}
 	c.Operation = types.StringValue(model.Op.String())
 	c.Value = types.Float64Value(model.Value)
@@ -55,8 +61,8 @@ func newConditionFromModel(model *models.Condition) *conditionModel {
 	return &c
 }
 
-func (c *conditionModel) toModel() (*models.Condition, error) {
-	op, err := models.ConditionOpFromString(c.Operation.ValueString())
+func (c *conditionModel) toModel() (*clientmodels.Condition, error) {
+	op, err := clientmodels.ConditionOpFromString(c.Operation.ValueString())
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse ConditionOp: %v", err)
 	}
@@ -77,7 +83,7 @@ func (c *conditionModel) toModel() (*models.Condition, error) {
 		}
 	}
 
-	return &models.Condition{
+	return &clientmodels.Condition{
 		Op:            op,
 		Value:         c.Value.ValueFloat64(),
 		For:           forVal,
@@ -111,8 +117,18 @@ type monitorResourceModel struct {
 	RepeatInterval       types.String     `tfsdk:"repeat_interval"`
 }
 
-func (m *monitorResourceModel) fromModel(
-	model *models.Monitor,
+var _ resourceutils.ResourceModel[*clientmodels.Monitor] = &monitorResourceModel{}
+
+func (m *monitorResourceModel) GetID() types.String {
+	return m.ID
+}
+
+func (m *monitorResourceModel) SetID(id types.String) {
+	m.ID = id
+}
+
+func (m *monitorResourceModel) FromModel(
+	model *clientmodels.Monitor,
 	diagnosticsOut *diag.Diagnostics,
 ) {
 	// Reset the model to clear any existing data.
@@ -177,8 +193,8 @@ func (m *monitorResourceModel) fromModel(
 	}
 }
 
-func (m *monitorResourceModel) toModel(
-	model *models.Monitor,
+func (m *monitorResourceModel) ToModel(
+	model *clientmodels.Monitor,
 ) error {
 	var err error
 	if !m.ID.IsNull() && !m.ID.IsUnknown() {
@@ -246,7 +262,7 @@ func (m *monitorResourceModel) toModel(
 			return fmt.Errorf("failed to parse notification policy UUID: %v", err)
 		}
 
-		model.NotificationPolicyID = &models.ID{UUID: uid}
+		model.NotificationPolicyID = &clientmodels.ID{UUID: uid}
 	}
 
 	if len(m.GroupWait.ValueString()) > 0 {
@@ -279,13 +295,30 @@ func (m *monitorResourceModel) toModel(
 	return nil
 }
 
-func NewMonitorResource() resource.Resource {
-	return &monitorResource{}
-}
-
 // monitorResource is the resource implementation.
 type monitorResource struct {
-	baseResource
+	baseResource[*clientmodels.Monitor, *monitorResourceModel]
+}
+
+func NewMonitorResource() resource.Resource {
+	modelCreator := func() *clientmodels.Monitor {
+		return &clientmodels.Monitor{}
+	}
+	return &monitorResource{
+		baseResource: newBaseResource[*clientmodels.Monitor, *monitorResourceModel](
+			func() *monitorResourceModel {
+				return &monitorResourceModel{}
+			},
+			modelCreator,
+			func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[*clientmodels.Monitor] {
+				return oodlehttp.NewModelClient[*clientmodels.Monitor](
+					oodleHttpClient,
+					monitorsResource,
+					modelCreator,
+				)
+			},
+		),
+	}
 }
 
 // Metadata returns the resource type name.
@@ -442,162 +475,5 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "Interval at which to send alerts for the same alert after firing. RepeatInterval should be a multiple of GroupInterval.",
 			},
 		},
-	}
-}
-
-// Create a new resource.
-func (r *monitorResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Retrieve values from plan
-	var plan monitorResourceModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	monitor := &models.Monitor{}
-	err := plan.toModel(monitor)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to convert plan to model", err.Error())
-		return
-	}
-
-	// Create new monitor
-	createdMonitor, err := r.client.CreateMonitor(monitor)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Creating Monitor",
-			"Could not create monitor, unexpected error: "+err.Error(),
-		)
-		return
-	}
-
-	// Update plan with newly created monitor.
-	var newPlan monitorResourceModel
-	newPlan.fromModel(createdMonitor, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	diags = resp.State.Set(ctx, newPlan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-}
-
-// Read resource information.
-func (r *monitorResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state monitorResourceModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if state.ID.IsNull() || state.ID.IsUnknown() {
-		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to read monitor: %+v", state))
-		return
-	}
-
-	// Get refreshed order value from HashiCups
-	monitor, err := r.client.GetMonitor(state.ID.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading Monitors",
-			"Could not read Oodle Monitor ID "+state.ID.ValueString()+": "+err.Error(),
-		)
-		return
-	}
-
-	state.fromModel(monitor, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Set refreshed state
-	diags = resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-}
-
-func (r *monitorResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Retrieve values from plan
-	var plan monitorResourceModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Assign ID to plan from state.
-	var state monitorResourceModel
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.ID = state.ID
-
-	if plan.ID.IsNull() || plan.ID.IsUnknown() {
-		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to update monitor: %+v", plan))
-		return
-	}
-
-	monitor := &models.Monitor{}
-	err := plan.toModel(monitor)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to convert plan to model", err.Error())
-		return
-	}
-
-	updatedMonitor, err := r.client.UpdateMonitor(monitor)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Updating Monitor",
-			"Could not update monitor, unexpected error: "+err.Error(),
-		)
-		return
-	}
-
-	// Update plan with newly created monitor.
-	var newState monitorResourceModel
-	newState.fromModel(updatedMonitor, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	diags = resp.State.Set(ctx, newState)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-}
-
-func (r *monitorResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// Retrieve values from state
-	var state monitorResourceModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if state.ID.IsNull() || state.ID.IsUnknown() {
-		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to delete monitor: %+v", state))
-		return
-	}
-
-	// Delete existing order
-	err := r.client.DeleteMonitor(state.ID.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Deleting Monitor",
-			fmt.Sprintf("Could not delete monitor ID %s: %v", state.ID.ValueString(), err),
-		)
-		return
 	}
 }

@@ -4,15 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prometheus/alertmanager/config"
+	"terraform-provider-oodle/internal/oodlehttp"
 
-	"terraform-provider-oodle/internal/oodlehttp/models/oprom"
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels/oprom"
+
+	"github.com/prometheus/alertmanager/config"
 
 	"github.com/google/uuid"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 
-	"terraform-provider-oodle/internal/oodlehttp/models"
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -24,12 +26,32 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
+const notifiersResource = "notifiers"
+
 type notifierResource struct {
-	baseResource
+	baseResource[*clientmodels.Notifier, *notifierResourceModel]
 }
 
 func NewNotifierResource() resource.Resource {
-	return &notifierResource{}
+	modelCreator := func() *clientmodels.Notifier {
+		return &clientmodels.Notifier{}
+	}
+
+	return &notifierResource{
+		baseResource: newBaseResource(
+			func() *notifierResourceModel {
+				return &notifierResourceModel{}
+			},
+			modelCreator,
+			func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[*clientmodels.Notifier] {
+				return oodlehttp.NewModelClient[*clientmodels.Notifier](
+					oodleHttpClient,
+					notifiersResource,
+					modelCreator,
+				)
+			},
+		),
+	}
 }
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -72,12 +94,20 @@ type notifierResourceModel struct {
 	Type            types.String          `tfsdk:"type"`
 	PagerdutyConfig *pagerdutyConfigModel `tfsdk:"pagerduty_config"`
 	SlackConfig     *slackConfigModel     `tfsdk:"slack_config"`
-	OpsGenieConfig  *opsgenieConfigModel
-	WebhookConfig   *webhookConfigModel
+	OpsGenieConfig  *opsgenieConfigModel  `tfsdk:"opsgenie_config"`
+	WebhookConfig   *webhookConfigModel   `tfsdk:"webhook_config"`
 }
 
-func (n *notifierResourceModel) fromModel(
-	model *models.Notifier,
+func (n *notifierResourceModel) GetID() types.String {
+	return n.ID
+}
+
+func (n *notifierResourceModel) SetID(id types.String) {
+	n.ID = id
+}
+
+func (n *notifierResourceModel) FromModel(
+	model *clientmodels.Notifier,
 	diagnosticsOut *diag.Diagnostics,
 ) {
 	n.ID = types.StringValue(model.ID.UUID.String())
@@ -88,7 +118,7 @@ func (n *notifierResourceModel) fromModel(
 	}
 
 	switch model.Type {
-	case models.NotifierConfigPagerduty:
+	case clientmodels.NotifierConfigPagerduty:
 		if model.PagerdutyConfig == nil {
 			diagnosticsOut.AddError("Missing PagerDuty config", "PagerDuty config is required for PagerDuty notifier")
 			return
@@ -97,7 +127,7 @@ func (n *notifierResourceModel) fromModel(
 		n.PagerdutyConfig = &pagerdutyConfigModel{}
 		n.PagerdutyConfig.SendResolved = types.BoolValue(model.PagerdutyConfig.SendResolved())
 		n.PagerdutyConfig.ServiceKey = types.StringValue(model.PagerdutyConfig.ServiceKey)
-	case models.NotifierConfigSlack:
+	case clientmodels.NotifierConfigSlack:
 		if model.SlackConfig == nil {
 			diagnosticsOut.AddError("Missing Slack config", "Slack config is required for Slack notifier")
 			return
@@ -109,7 +139,7 @@ func (n *notifierResourceModel) fromModel(
 		n.SlackConfig.Channel = types.StringValue(model.SlackConfig.Channel)
 		n.SlackConfig.TitleLink = types.StringValue(model.SlackConfig.TitleLink)
 		n.SlackConfig.Text = types.StringValue(model.SlackConfig.Text)
-	case models.NotifierConfigOpsGenie:
+	case clientmodels.NotifierConfigOpsGenie:
 		if model.OpsGenieConfig == nil {
 			diagnosticsOut.AddError("Missing OpsGenie config", "OpsGenie config is required for OpsGenie notifier")
 			return
@@ -118,7 +148,7 @@ func (n *notifierResourceModel) fromModel(
 		n.OpsGenieConfig = &opsgenieConfigModel{}
 		n.OpsGenieConfig.SendResolved = types.BoolValue(model.OpsGenieConfig.SendResolved())
 		n.OpsGenieConfig.APIKey = types.StringValue(model.OpsGenieConfig.APIKey)
-	case models.NotifierConfigWebhook:
+	case clientmodels.NotifierConfigWebhook:
 		if model.WebhookConfig == nil {
 			diagnosticsOut.AddError("Missing Webhook config", "Webhook config is required for Webhook notifier")
 			return
@@ -133,8 +163,8 @@ func (n *notifierResourceModel) fromModel(
 	}
 }
 
-func (n *notifierResourceModel) toModel(
-	model *models.Notifier,
+func (n *notifierResourceModel) ToModel(
+	model *clientmodels.Notifier,
 ) error {
 	var err error
 	if !n.ID.IsNull() && !n.ID.IsUnknown() {
@@ -145,13 +175,13 @@ func (n *notifierResourceModel) toModel(
 	}
 
 	model.Name = n.Name.ValueString()
-	model.Type, err = models.GetNotifierType(n.Type.ValueString())
+	model.Type, err = clientmodels.GetNotifierType(n.Type.ValueString())
 	if err != nil {
 		return fmt.Errorf("failed to parse notifier type %v: %v", n.Type.ValueString(), err)
 	}
 
 	switch model.Type {
-	case models.NotifierConfigPagerduty:
+	case clientmodels.NotifierConfigPagerduty:
 		if n.PagerdutyConfig == nil {
 			return fmt.Errorf("missing PagerDuty config")
 		}
@@ -162,7 +192,7 @@ func (n *notifierResourceModel) toModel(
 				VSendResolved: n.PagerdutyConfig.SendResolved.ValueBool(),
 			},
 		}
-	case models.NotifierConfigSlack:
+	case clientmodels.NotifierConfigSlack:
 		if n.SlackConfig == nil {
 			return fmt.Errorf("missing Slack config")
 		}
@@ -176,7 +206,7 @@ func (n *notifierResourceModel) toModel(
 				VSendResolved: n.SlackConfig.SendResolved.ValueBool(),
 			},
 		}
-	case models.NotifierConfigOpsGenie:
+	case clientmodels.NotifierConfigOpsGenie:
 		if n.OpsGenieConfig == nil {
 			return fmt.Errorf("missing OpsGenie config")
 		}
@@ -187,7 +217,7 @@ func (n *notifierResourceModel) toModel(
 				VSendResolved: n.OpsGenieConfig.SendResolved.ValueBool(),
 			},
 		}
-	case models.NotifierConfigWebhook:
+	case clientmodels.NotifierConfigWebhook:
 		if n.WebhookConfig == nil {
 			return fmt.Errorf("missing Webhook config")
 		}
@@ -227,14 +257,16 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 				Description: "Type of the notifier.",
 				Required:    true,
 				Validators: []validator.String{
-					validatorutils.NewChoiceValidator(models.NotifierNames),
+					validatorutils.NewChoiceValidator(clientmodels.NotifierNames),
 				},
 			},
 			"pagerduty_config": schema.SingleNestedAttribute{
+				Optional:    true,
 				Description: "PagerDuty notifier configuration.",
 				Attributes: map[string]schema.Attribute{
 					"service_key": schema.StringAttribute{
 						Required:    true,
+						Sensitive:   true,
 						Description: "PagerDuty service key.",
 					},
 					"send_resolved": schema.BoolAttribute{
@@ -244,11 +276,13 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"slack_config": schema.SingleNestedAttribute{
+				Optional:    true,
 				Description: "Slack notifier configuration.",
 				Attributes: map[string]schema.Attribute{
 					"api_url": schema.StringAttribute{
 						Required:    true,
 						Description: "Slack API URL.",
+						Sensitive:   true,
 					},
 					"channel": schema.StringAttribute{
 						Required:    true,
@@ -269,11 +303,13 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"opsgenie_config": schema.SingleNestedAttribute{
+				Optional:    true,
 				Description: "OpsGenie notifier configuration.",
 				Attributes: map[string]schema.Attribute{
 					"api_key": schema.StringAttribute{
 						Required:    true,
 						Description: "OpsGenie API key.",
+						Sensitive:   true,
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
@@ -282,10 +318,12 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"webhook_config": schema.SingleNestedAttribute{
+				Optional:    true,
 				Description: "Webhook notifier configuration.",
 				Attributes: map[string]schema.Attribute{
 					"url": schema.StringAttribute{
-						Required: true,
+						Required:  true,
+						Sensitive: true,
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
@@ -295,24 +333,4 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 			},
 		},
 	}
-}
-
-func (n *notifierResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (n *notifierResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (n *notifierResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (n *notifierResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	//TODO implement me
-	panic("implement me")
 }

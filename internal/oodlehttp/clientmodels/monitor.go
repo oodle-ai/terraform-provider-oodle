@@ -1,4 +1,4 @@
-package models
+package clientmodels
 
 import (
 	"time"
@@ -35,6 +35,8 @@ type Monitor struct {
 	// RepeatInterval should be a multiple of GroupInterval
 	RepeatInterval *time.Duration `json:"repeat_interval,omitempty" yaml:"repeat_interval,omitempty"`
 }
+
+var _ ClientModel = (*Monitor)(nil)
 
 // MarshalJSON customizes the JSON marshaling for Monitor.
 func (m Monitor) MarshalJSON() ([]byte, error) {
@@ -75,6 +77,10 @@ func (m *Monitor) UnmarshalJSON(data []byte) error {
 	m.GroupInterval = FromPromDuration(aux.GroupInterval)
 	m.RepeatInterval = FromPromDuration(aux.RepeatInterval)
 	return nil
+}
+
+func (m Monitor) GetID() string {
+	return m.ID.UUID.String()
 }
 
 func toPromDuration(d *time.Duration) *model.Duration {

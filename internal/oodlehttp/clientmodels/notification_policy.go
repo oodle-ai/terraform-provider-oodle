@@ -1,4 +1,4 @@
-package models
+package clientmodels
 
 // NotificationPolicy represents a policy for sending notifications based on severity.
 // A notification policy is associated with a monitor.

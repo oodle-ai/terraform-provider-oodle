@@ -1,4 +1,4 @@
-package models
+package clientmodels
 
 import (
 	"github.com/cockroachdb/errors"

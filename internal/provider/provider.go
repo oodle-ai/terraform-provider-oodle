@@ -183,13 +183,13 @@ func (p *oodleProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	}
 
 	// Create a new Oodle client using the configuration values
-	client, err := oodlehttp.NewClient(deployment, instance, apiKey)
+	client, err := oodlehttp.NewInstanceClient(deployment, instance, apiKey)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to Create Oodle API Client",
+			"Unable to Create Oodle API OodleApiClient",
 			"An unexpected error occurred when creating the Oodle API client. "+
 				"If the error is not clear, please contact the provider developers.\n\n"+
-				"Oodle Client Error: "+err.Error(),
+				"Oodle OodleApiClient Error: "+err.Error(),
 		)
 		return
 	}
@@ -211,6 +211,6 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 	return []func() resource.Resource{
 		NewMonitorResource,
 		NewNotifierResource,
-		NewNotiicationPolicyResource,
+		//NewNotiicationPolicyResource,
 	}
 }

@@ -1,7 +1,7 @@
-package models
+package clientmodels
 
 import (
-	"terraform-provider-oodle/internal/oodlehttp/models/oprom"
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels/oprom"
 )
 
 // Notifier represents a single notification target.
@@ -13,4 +13,8 @@ type Notifier struct {
 	SlackConfig     *oprom.SlackConfig     `json:"slack_config,omitempty" yaml:"slack_config,omitempty"`
 	OpsGenieConfig  *oprom.OpsGenieConfig  `json:"opsgenie_config,omitempty" yaml:"opsgenie_config,omitempty"`
 	WebhookConfig   *oprom.WebhookConfig   `json:"webhook_config,omitempty" yaml:"webhook_config,omitempty"`
+}
+
+func (n *Notifier) GetID() string {
+	return n.ID.UUID.String()
 }
