@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"terraform-provider-oodle/internal/provider/resource/monitor"
+
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -209,7 +211,7 @@ func (p *oodleProvider) DataSources(_ context.Context) []func() datasource.DataS
 // Resources defines the resources implemented in the provider.
 func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewMonitorResource,
+		monitor.NewMonitorResource,
 		NewNotifierResource,
 		//NewNotiicationPolicyResource,
 	}

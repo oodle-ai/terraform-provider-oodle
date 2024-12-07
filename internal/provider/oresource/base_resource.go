@@ -1,4 +1,4 @@
-package provider
+package oresource
 
 import (
 	"context"
@@ -14,19 +14,19 @@ import (
 	"terraform-provider-oodle/internal/oodlehttp"
 )
 
-type baseResource[M clientmodels.ClientModel, R resourceutils.ResourceModel[M]] struct {
+type BaseResource[M clientmodels.ClientModel, R resourceutils.ResourceModel[M]] struct {
 	client           *oodlehttp.ModelClient[M]
 	newResourceModel func() R
 	newClientModel   func() M
 	clientCreator    func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[M]
 }
 
-func newBaseResource[M clientmodels.ClientModel, R resourceutils.ResourceModel[M]](
+func NewBaseResource[M clientmodels.ClientModel, R resourceutils.ResourceModel[M]](
 	newResourceModel func() R,
 	newClientModel func() M,
 	clientCreator func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[M],
-) baseResource[M, R] {
-	return baseResource[M, R]{
+) BaseResource[M, R] {
+	return BaseResource[M, R]{
 		newResourceModel: newResourceModel,
 		newClientModel:   newClientModel,
 		clientCreator:    clientCreator,
@@ -34,7 +34,7 @@ func newBaseResource[M clientmodels.ClientModel, R resourceutils.ResourceModel[M
 }
 
 // Configure adds the provider configured client to the resource.
-func (r *baseResource[M, R]) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *BaseResource[M, R]) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Add a nil check when handling ProviderData because Terraform
 	// sets that data after it calls the ConfigureProvider RPC.
 	if req.ProviderData == nil {
@@ -55,13 +55,13 @@ func (r *baseResource[M, R]) Configure(_ context.Context, req resource.Configure
 	r.client = r.clientCreator(client)
 }
 
-func (r *baseResource[M, R]) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *BaseResource[M, R]) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Retrieve import ID and save to id attribute
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Create a new resource.
-func (r *baseResource[M, R]) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *BaseResource[M, R]) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
 	plan := r.newResourceModel()
 	diags := req.Plan.Get(ctx, &plan)
@@ -102,7 +102,7 @@ func (r *baseResource[M, R]) Create(ctx context.Context, req resource.CreateRequ
 }
 
 // Read resource information.
-func (r *baseResource[M, R]) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *BaseResource[M, R]) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	state := r.newResourceModel()
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -139,7 +139,7 @@ func (r *baseResource[M, R]) Read(ctx context.Context, req resource.ReadRequest,
 	}
 }
 
-func (r *baseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *BaseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
 	plan := r.newResourceModel()
 	diags := req.Plan.Get(ctx, &plan)
@@ -149,7 +149,7 @@ func (r *baseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	// Assign ID to plan from state.
-	var state monitorResourceModel
+	state := r.newResourceModel()
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -194,7 +194,7 @@ func (r *baseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequ
 	}
 }
 
-func (r *baseResource[M, R]) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *BaseResource[M, R]) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	state := r.newResourceModel()
 	diags := req.State.Get(ctx, &state)

@@ -3,6 +3,10 @@ package provider
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
@@ -11,20 +15,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-type notificationPolicyResource struct {
-	//baseResource
-}
-
-func NewNotiicationPolicyResource() resource.Resource {
-	return &notificationPolicyResource{}
-}
-
 // Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.Resource = &notificationPolicyResource{}
 	//_ resource.ResourceWithConfigure   = &notificationPolicyResource{}
 	//_ resource.ResourceWithImportState = &notificationPolicyResource{}
 )
+
+type notificationPolicyResource struct {
+	resource2.baseResource[*clientmodels.NotificationPolicy, *notificationPolicyResourceModel]
+}
+
+func NewNotiicationPolicyResource() resource.Resource {
+	return &notificationPolicyResource{}
+}
+
+type notificationPolicyResourceModel struct {
+	ID types.String `tfsdk:"id"`
+}
+
+var _ resource.ResourceModel = &notificationPolicyResourceModel{}
+
+func (n *notificationPolicyResourceModel) GetID() types.String {
+	return n.ID
+}
+
+func (n *notificationPolicyResourceModel) SetID(id types.String) {
+	n.ID = id
+}
 
 func (n *notificationPolicyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_notificationPolicy"

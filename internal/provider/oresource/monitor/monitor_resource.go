@@ -1,9 +1,11 @@
-package provider
+package monitor
 
 import (
 	"context"
 	"fmt"
 	"time"
+
+	"terraform-provider-oodle/internal/provider/oresource"
 
 	"terraform-provider-oodle/internal/oodlehttp"
 
@@ -117,7 +119,7 @@ type monitorResourceModel struct {
 	RepeatInterval       types.String     `tfsdk:"repeat_interval"`
 }
 
-var _ resourceutils.ResourceModel[*clientmodels.Monitor] = &monitorResourceModel{}
+var _ resourceutils.ResourceModel[*clientmodels.Monitor] = (*monitorResourceModel)(nil)
 
 func (m *monitorResourceModel) GetID() types.String {
 	return m.ID
@@ -297,7 +299,7 @@ func (m *monitorResourceModel) ToModel(
 
 // monitorResource is the resource implementation.
 type monitorResource struct {
-	baseResource[*clientmodels.Monitor, *monitorResourceModel]
+	oresource.BaseResource[*clientmodels.Monitor, *monitorResourceModel]
 }
 
 func NewMonitorResource() resource.Resource {
@@ -305,7 +307,7 @@ func NewMonitorResource() resource.Resource {
 		return &clientmodels.Monitor{}
 	}
 	return &monitorResource{
-		baseResource: newBaseResource[*clientmodels.Monitor, *monitorResourceModel](
+		BaseResource: oresource.NewBaseResource[*clientmodels.Monitor, *monitorResourceModel](
 			func() *monitorResourceModel {
 				return &monitorResourceModel{}
 			},

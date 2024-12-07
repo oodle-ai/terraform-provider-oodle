@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"terraform-provider-oodle/internal/resourceutils"
+
 	"terraform-provider-oodle/internal/oodlehttp"
 
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels/oprom"
@@ -28,8 +30,15 @@ import (
 
 const notifiersResource = "notifiers"
 
+// Ensure the implementation satisfies the expected interfaces.
+var (
+	_ resource.Resource                = &notifierResource{}
+	_ resource.ResourceWithConfigure   = &notifierResource{}
+	_ resource.ResourceWithImportState = &notifierResource{}
+)
+
 type notifierResource struct {
-	baseResource[*clientmodels.Notifier, *notifierResourceModel]
+	resource2.baseResource[*clientmodels.Notifier, *notifierResourceModel]
 }
 
 func NewNotifierResource() resource.Resource {
@@ -38,7 +47,7 @@ func NewNotifierResource() resource.Resource {
 	}
 
 	return &notifierResource{
-		baseResource: newBaseResource(
+		baseResource: resource2.newBaseResource(
 			func() *notifierResourceModel {
 				return &notifierResourceModel{}
 			},
@@ -53,13 +62,6 @@ func NewNotifierResource() resource.Resource {
 		),
 	}
 }
-
-// Ensure the implementation satisfies the expected interfaces.
-var (
-	_ resource.Resource                = &notifierResource{}
-	_ resource.ResourceWithConfigure   = &notifierResource{}
-	_ resource.ResourceWithImportState = &notifierResource{}
-)
 
 type notifierConfigCommonModel struct {
 	SendResolved types.Bool `tfsdk:"send_resolved"`
@@ -97,6 +99,8 @@ type notifierResourceModel struct {
 	OpsGenieConfig  *opsgenieConfigModel  `tfsdk:"opsgenie_config"`
 	WebhookConfig   *webhookConfigModel   `tfsdk:"webhook_config"`
 }
+
+var _ resourceutils.ResourceModel[*clientmodels.Notifier] = (*notifierResourceModel)(nil)
 
 func (n *notifierResourceModel) GetID() types.String {
 	return n.ID
