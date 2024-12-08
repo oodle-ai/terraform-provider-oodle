@@ -1,0 +1,1 @@
+terraform import oodle_notification_policy.test1 monitor_uuid

@@ -1,0 +1,42 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package cmp
+
+import (
+	"fmt"
+	"reflect"
+)
+
+// Nil returns ok=true if `nullable is a nullable type or the zero value type.
+func Nil(nullable interface{}) (ok bool, err error) {
+	nullableVal := reflect.ValueOf(nullable)
+
+	if !nullableVal.IsValid() {
+		return true, nil
+	}
+
+	switch nullableVal.Kind() {
+	case reflect.Chan:
+	case reflect.Func:
+	case reflect.Interface:
+	case reflect.Map:
+	case reflect.Ptr:
+	case reflect.Slice:
+	case reflect.UnsafePointer:
+	default:
+		return false, nil
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			if recErr, recOK := r.(error); !recOK {
+				err = fmt.Errorf("%v", r)
+			} else {
+				err = recErr
+			}
+		}
+	}()
+
+	return nullableVal.IsNil(), nil
+}
