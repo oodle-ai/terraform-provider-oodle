@@ -40,7 +40,7 @@ func NewModelClient[T clientmodels.ClientModel](
 func (c *ModelClient[T]) Get(id string) (T, error) {
 	req, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf(apiBasePath+c.resourcePath+"/%v", c.DeploymentUrl, c.Instance, id),
+		fmt.Sprintf(apiBasePath+c.resourcePath+"/%s", c.DeploymentUrl, c.Instance, id),
 		nil,
 	)
 	if err != nil {
@@ -73,7 +73,7 @@ func (c *ModelClient[T]) Get(id string) (T, error) {
 func (c *ModelClient[T]) Delete(id string) error {
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		fmt.Sprintf(apiBasePath+c.resourcePath+"/%v", c.DeploymentUrl, c.Instance, id),
+		fmt.Sprintf(apiBasePath+c.resourcePath+"/%s", c.DeploymentUrl, c.Instance, id),
 		nil,
 	)
 	if err != nil {
@@ -147,7 +147,7 @@ func (c *ModelClient[T]) Update(model T) (T, error) {
 
 	req, err := http.NewRequest(
 		http.MethodPut,
-		fmt.Sprintf(apiBasePath+c.resourcePath+"/%v", c.DeploymentUrl, c.Instance, model.GetID()),
+		fmt.Sprintf(apiBasePath+c.resourcePath+"/%s", c.DeploymentUrl, c.Instance, model.GetID()),
 		bytes.NewReader(reqBody),
 	)
 	if err != nil {

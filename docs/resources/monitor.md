@@ -40,7 +40,7 @@ resource "oodle_monitor" "test1" {
 
 - `annotations` (Map of String) Additional metadata to attach to each monitor.
 - `group_interval` (String) Interval at which to send alerts for the same group of alerts after the first alert.
-- `group_wait` (String) Interval at which to send alerts for the same group of alerts after the first alert.
+- `group_wait` (String) Time to wait before sending the first alert for a group of alerts.
 - `grouping` (Attributes) (see [below for nested schema](#nestedatt--grouping))
 - `interval` (String) Interval at which the monitor should be evaluated. Default is 1m.
 - `labels` (Map of String) Additional labels to attach to the fired alerts.

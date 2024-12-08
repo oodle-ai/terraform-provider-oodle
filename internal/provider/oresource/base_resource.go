@@ -19,18 +19,18 @@ type BaseResource[M clientmodels.ClientModel, R resourceutils.ResourceModel[M]] 
 	client           *oodlehttp.ModelClient[M]
 	newResourceModel func() R
 	newClientModel   func() M
-	clientCreator    func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[M]
+	createClient     func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[M]
 }
 
 func NewBaseResource[M clientmodels.ClientModel, R resourceutils.ResourceModel[M]](
 	newResourceModel func() R,
 	newClientModel func() M,
-	clientCreator func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[M],
+	createClient func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[M],
 ) BaseResource[M, R] {
 	return BaseResource[M, R]{
 		newResourceModel: newResourceModel,
 		newClientModel:   newClientModel,
-		clientCreator:    clientCreator,
+		createClient:     createClient,
 	}
 }
 
@@ -53,7 +53,7 @@ func (r *BaseResource[M, R]) Configure(_ context.Context, req resource.Configure
 		return
 	}
 
-	r.client = r.clientCreator(client)
+	r.client = r.createClient(client)
 }
 
 func (r *BaseResource[M, R]) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

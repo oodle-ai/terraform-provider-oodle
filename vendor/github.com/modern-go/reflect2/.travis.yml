@@ -1,0 +1,18 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+language: go
+
+go:
+  - 1.9.x
+  - 1.x
+
+before_install:
+  - go get -t -v ./...
+  - go get -t -v github.com/modern-go/reflect2-tests/...
+
+script:
+  - ./test.sh
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

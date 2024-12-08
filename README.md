@@ -5,7 +5,7 @@ This is the repository for the Terraform provider for Oodle.
 Manage your monitors and notification policies via terraform!
 
 # Docs
-Terraform spec for each resourceG is documented in [here](docs/resources)
+Terraform spec for each resource is documented in [here](docs/resources)
 
 # Example:
 
