@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package clientmodels
 
 // NotificationPolicy represents a policy for sending notifications based on severity.

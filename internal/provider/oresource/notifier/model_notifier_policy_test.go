@@ -1,20 +1,15 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package notifier
 
 import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/prometheus/alertmanager/config"
-
-	"terraform-provider-oodle/internal/oodlehttp/clientmodels/oprom"
-
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/prometheus/alertmanager/config"
 	"github.com/rubrikinc/testwell/assert"
 
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels/oprom"
 )
 
 func TestNotificationPolicyModel(t *testing.T) {
