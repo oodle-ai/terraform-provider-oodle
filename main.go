@@ -29,7 +29,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/hashicorp/oodle",
+		Address: "registry.terraform.io/oodle-ai/oodle",
 		Debug:   debug,
 	}
 
