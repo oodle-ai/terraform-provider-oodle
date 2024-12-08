@@ -89,10 +89,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "Interval at which the monitor should be evaluated. Default is 1m.",
 			},
 			"promql_query": schema.StringAttribute{
-				Required: true,
-				Validators: []validator.String{
-					validatorutils.NewPromQLValidator(),
-				},
+				Required:    true,
 				Description: "Prometheus query for the monitor.",
 			},
 			"conditions": schema.SingleNestedAttribute{

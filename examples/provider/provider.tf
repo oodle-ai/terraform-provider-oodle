@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     oodle = {
-      source = "registry.terraform.io/hashicorp/oodle"
+      source = "registry.terraform.io/oodle-ai/oodle"
     }
   }
 }
