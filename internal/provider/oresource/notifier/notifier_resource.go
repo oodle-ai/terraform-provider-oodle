@@ -5,7 +5,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
@@ -84,6 +86,8 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
 						Description: "Send notifications when incident is resolved.",
 					},
 				},
@@ -103,6 +107,8 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 					"title_link": schema.StringAttribute{
 						Optional:    true,
+						Computed:    true,
+						Default:     validatorutils.NewDefaultString(types.StringValue("")),
 						Description: "Optional link to include in the notification title.",
 					},
 					"text": schema.StringAttribute{
@@ -111,6 +117,8 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
 						Description: "Send notifications when incident is resolved.",
 					},
 				},
@@ -126,6 +134,8 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
 						Description: "Send notifications when incident is resolved.",
 					},
 				},
@@ -140,6 +150,8 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
 						Description: "Send notifications when incident is resolved.",
 					},
 				},
