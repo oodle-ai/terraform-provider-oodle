@@ -79,8 +79,8 @@ func (r *BaseResource[M, R]) Create(ctx context.Context, req resource.CreateRequ
 	createdMonitor, err := r.client.Create(clientModel)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error Creating Monitor",
-			"Could not create monitor, unexpected error: "+err.Error(),
+			"Error Creating Model",
+			"Could not create model, unexpected error: "+err.Error(),
 		)
 		return
 	}
