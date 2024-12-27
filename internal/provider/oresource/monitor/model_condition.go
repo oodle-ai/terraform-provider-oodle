@@ -27,9 +27,7 @@ func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 	c := conditionModel{}
 	c.Operation = types.StringValue(model.Op.String())
 	c.Value = types.Float64Value(model.Value)
-	if model.For > 0 {
-		c.For = types.StringValue(validatorutils.ShortDur(model.For))
-	}
+	c.For = types.StringValue(validatorutils.ShortDur(model.For))
 
 	if model.KeepFiringFor > 0 {
 		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
