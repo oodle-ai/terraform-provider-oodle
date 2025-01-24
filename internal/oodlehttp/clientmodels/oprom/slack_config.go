@@ -5,9 +5,6 @@ import (
 )
 
 // SlackConfig configures notifications via Slack.
-// It is copied from prometheus/alertmanager/config with following changes:
-// 1. Replaced SecretURL to string which maintains wire compatibility.
-// 2. Removed APIURLFile.
 type SlackConfig struct {
 	config.NotifierConfig `yaml:",inline" json:",inline"`
 

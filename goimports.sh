@@ -24,7 +24,7 @@ find internal -name \*.go | xargs -P 8 -I{} sed -i -e '
 ' {} 
 
 else
-    echo -e  "${RED}Please run the command in linux dev container or mac.${NC}"
+    echo -e  "${RED}Please run the command in Linux or Mac.${NC}"
     exit 1
 fi
 

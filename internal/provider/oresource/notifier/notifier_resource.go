@@ -156,6 +156,22 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 				},
 			},
+			"googlechat_config": schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "Google chat notifier configuration.",
+				Attributes: map[string]schema.Attribute{
+					"url": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+					},
+					"send_resolved": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "Send notifications when incident is resolved.",
+					},
+				},
+			},
 		},
 	}
 }
