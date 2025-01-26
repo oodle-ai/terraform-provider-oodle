@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 // Package ssocreds provides a credential provider for retrieving temporary AWS credentials using an SSO access token.
 //
 // IMPORTANT: The provider in this package does not initiate or perform the AWS SSO login flow. The SDK provider

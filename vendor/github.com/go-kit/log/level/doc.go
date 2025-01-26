@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 // Package level implements leveled logging on top of Go kit's log package. To
 // use the level package, create a logger as per normal in your func main, and
 // wrap it with level.NewFilter.

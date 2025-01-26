@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 // Package restjson provides RESTful JSON serialization of AWS
 // requests and responses.
 package restjson

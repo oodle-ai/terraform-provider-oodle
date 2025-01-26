@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package sentry
 
 // A SamplingContext is passed to a TracesSampler to determine a sampling

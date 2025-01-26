@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 /*
 Package stscreds are credential Providers to retrieve STS AWS credentials.
 

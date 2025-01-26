@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 // Package log provides a structured logger.
 //
 // Structured logging produces logs easily consumed later by humans or
