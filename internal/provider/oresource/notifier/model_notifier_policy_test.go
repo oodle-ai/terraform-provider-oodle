@@ -58,6 +58,14 @@ func TestNotificationPolicyModel(t *testing.T) {
 				Text:      "baz",
 			},
 		},
+		{
+			ID:   clientmodels.ID{UUID: uuid.New()},
+			Name: "test",
+			Type: clientmodels.NotifierConfigGoogleChat,
+			GoogleChatConfig: &oprom.GoogleChatConfig{
+				URL: "https://chat.googleapis.com/v1/spaces/XXXXXX/messages?key=YYYYYY&token=ZZZZZ",
+			},
+		},
 	}
 
 	for _, clientModel := range testCases {

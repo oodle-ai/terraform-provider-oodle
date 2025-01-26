@@ -14,13 +14,14 @@ import (
 )
 
 type notifierResourceModel struct {
-	ID              types.String          `tfsdk:"id"`
-	Name            types.String          `tfsdk:"name"`
-	Type            types.String          `tfsdk:"type"`
-	PagerdutyConfig *pagerdutyConfigModel `tfsdk:"pagerduty_config"`
-	SlackConfig     *slackConfigModel     `tfsdk:"slack_config"`
-	OpsGenieConfig  *opsgenieConfigModel  `tfsdk:"opsgenie_config"`
-	WebhookConfig   *webhookConfigModel   `tfsdk:"webhook_config"`
+	ID               types.String           `tfsdk:"id"`
+	Name             types.String           `tfsdk:"name"`
+	Type             types.String           `tfsdk:"type"`
+	PagerdutyConfig  *pagerdutyConfigModel  `tfsdk:"pagerduty_config"`
+	SlackConfig      *slackConfigModel      `tfsdk:"slack_config"`
+	OpsGenieConfig   *opsgenieConfigModel   `tfsdk:"opsgenie_config"`
+	WebhookConfig    *webhookConfigModel    `tfsdk:"webhook_config"`
+	GoogleChatConfig *googleChatConfigModel `tfsdk:"googlechat_config"`
 }
 
 var _ resourceutils.ResourceModel[*clientmodels.Notifier] = (*notifierResourceModel)(nil)
@@ -84,6 +85,15 @@ func (n *notifierResourceModel) FromClientModel(
 		n.WebhookConfig = &webhookConfigModel{}
 		n.WebhookConfig.SendResolved = types.BoolValue(model.WebhookConfig.SendResolved())
 		n.WebhookConfig.URL = types.StringValue(model.WebhookConfig.URL)
+	case clientmodels.NotifierConfigGoogleChat:
+		if model.GoogleChatConfig == nil {
+			diagnosticsOut.AddError("Missing Google chat config", "Google chat config is required for Google chat notifier")
+			return
+		}
+
+		n.GoogleChatConfig = &googleChatConfigModel{}
+		n.GoogleChatConfig.SendResolved = types.BoolValue(model.GoogleChatConfig.SendResolved())
+		n.GoogleChatConfig.URL = types.StringValue(model.GoogleChatConfig.URL)
 	default:
 		diagnosticsOut.AddError("Unknown type", fmt.Sprintf("Unknown notifier type %v", model.Type))
 		return
@@ -153,6 +163,17 @@ func (n *notifierResourceModel) ToClientModel(
 			URL: n.WebhookConfig.URL.ValueString(),
 			NotifierConfig: config.NotifierConfig{
 				VSendResolved: n.WebhookConfig.SendResolved.ValueBool(),
+			},
+		}
+	case clientmodels.NotifierConfigGoogleChat:
+		if n.GoogleChatConfig == nil {
+			return fmt.Errorf("missing Google chat config")
+		}
+
+		model.GoogleChatConfig = &oprom.GoogleChatConfig{
+			URL: n.GoogleChatConfig.URL.ValueString(),
+			NotifierConfig: config.NotifierConfig{
+				VSendResolved: n.GoogleChatConfig.SendResolved.ValueBool(),
 			},
 		}
 	default:

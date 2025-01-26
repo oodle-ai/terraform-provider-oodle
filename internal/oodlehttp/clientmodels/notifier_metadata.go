@@ -12,14 +12,16 @@ const (
 	NotifierConfigSlack
 	NotifierConfigOpsGenie
 	NotifierConfigWebhook
+	NotifierConfigGoogleChat
 )
 
 var notifierTypeToName = map[NotifierType]string{
-	NotifierConfigEmail:     "email",
-	NotifierConfigPagerduty: "pagerduty",
-	NotifierConfigSlack:     "slack",
-	NotifierConfigOpsGenie:  "opsgenie",
-	NotifierConfigWebhook:   "webhook",
+	NotifierConfigEmail:      "email",
+	NotifierConfigPagerduty:  "pagerduty",
+	NotifierConfigSlack:      "slack",
+	NotifierConfigOpsGenie:   "opsgenie",
+	NotifierConfigWebhook:    "webhook",
+	NotifierConfigGoogleChat: "googlechat",
 }
 
 var notifierNameToType = map[string]NotifierType{}

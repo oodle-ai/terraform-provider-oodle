@@ -79,7 +79,7 @@ func (r *BaseResource[M, R]) Create(ctx context.Context, req resource.CreateRequ
 	createdMonitor, err := r.client.Create(clientModel)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error Creating Model",
+			"Error creating model",
 			"Could not create model, unexpected error: "+err.Error(),
 		)
 		return
@@ -118,8 +118,8 @@ func (r *BaseResource[M, R]) Read(ctx context.Context, req resource.ReadRequest,
 	monitor, err := r.client.Get(id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error Reading Monitors",
-			"Could not read Oodle Monitor ID "+id.ValueString()+": "+err.Error(),
+			"Error reading model",
+			fmt.Sprintf("Could not read %q: %v", id.ValueString(), err),
 		)
 		return
 	}
@@ -172,8 +172,8 @@ func (r *BaseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequ
 	updatedMonitor, err := r.client.Update(model)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error Updating Monitor",
-			"Could not update monitor, unexpected error: "+err.Error(),
+			"Error updating model",
+			fmt.Sprintf("Could not update %q, unexpected error: %v", id.ValueString(), err),
 		)
 		return
 	}
@@ -211,8 +211,8 @@ func (r *BaseResource[M, R]) Delete(ctx context.Context, req resource.DeleteRequ
 	err := r.client.Delete(id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error Deleting Monitor",
-			fmt.Sprintf("Could not delete monitor ID %s: %v", id.ValueString(), err),
+			"Error deleting model",
+			fmt.Sprintf("Could not delete %q: %v", id.ValueString(), err),
 		)
 		return
 	}

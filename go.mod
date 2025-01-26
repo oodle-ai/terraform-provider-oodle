@@ -13,6 +13,8 @@ require (
 	github.com/rubrikinc/testwell v1.0.3
 )
 
+replace github.com/prometheus/alertmanager => github.com/oodle-ai/alertmanager v0.0.0-20250114054842-28d8d0903509
+
 require (
 	github.com/aws/aws-sdk-go v1.55.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

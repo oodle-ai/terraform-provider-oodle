@@ -33,6 +33,7 @@ resource "oodle_notifier" "notifier_test1" {
 
 ### Optional
 
+- `googlechat_config` (Attributes) Google chat notifier configuration. (see [below for nested schema](#nestedatt--googlechat_config))
 - `opsgenie_config` (Attributes) OpsGenie notifier configuration. (see [below for nested schema](#nestedatt--opsgenie_config))
 - `pagerduty_config` (Attributes) PagerDuty notifier configuration. (see [below for nested schema](#nestedatt--pagerduty_config))
 - `slack_config` (Attributes) Slack notifier configuration. (see [below for nested schema](#nestedatt--slack_config))
@@ -41,6 +42,18 @@ resource "oodle_notifier" "notifier_test1" {
 ### Read-Only
 
 - `id` (String) ID of the notifier.
+
+<a id="nestedatt--googlechat_config"></a>
+### Nested Schema for `googlechat_config`
+
+Required:
+
+- `url` (String, Sensitive)
+
+Optional:
+
+- `send_resolved` (Boolean) Send notifications when incident is resolved.
+
 
 <a id="nestedatt--opsgenie_config"></a>
 ### Nested Schema for `opsgenie_config`
