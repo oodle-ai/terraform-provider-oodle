@@ -32,6 +32,13 @@ var validComparators = map[string]struct{}{
 	"<=": {},
 }
 
+var validMatchTypes = map[string]struct{}{
+	"=":  {},
+	"!=": {},
+	"=~": {},
+	"!~": {},
+}
+
 // monitorResource is the resource implementation.
 type monitorResource struct {
 	oresource.BaseResource[*clientmodels.Monitor, *monitorResourceModel]
@@ -186,6 +193,44 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"notification_policy_id": schema.StringAttribute{
 				Optional:    true,
 				Description: "ID of the notification policy to use for the monitor.",
+			},
+			"label_matcher_notification_policies": schema.ListNestedAttribute{
+				Optional:    true,
+				Description: "List of label matcher notification policies. These policies are evaluated in order, and the first matching policy is used. Within a label matcher, all matchers must match for policy to be effective. If no policy matches, the default notification_policy_id is used if set.",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"matchers": schema.ListNestedAttribute{
+							Required:    true,
+							Description: "List of label matchers that determine when this policy applies.",
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"type": schema.StringAttribute{
+										Required:    true,
+										Description: "The type of match to perform. Valid values are: '=' (equals), '!=' (not equals), '=~' (regex match), '!~' (regex not match).",
+										Validators: []validator.String{
+											validatorutils.NewChoiceValidator(validMatchTypes),
+										},
+									},
+									"name": schema.StringAttribute{
+										Required:    true,
+										Description: "The name of the label to match against.",
+									},
+									"value": schema.StringAttribute{
+										Required:    true,
+										Description: "The value to match against. For regex matches, this must be a valid regular expression.",
+									},
+								},
+							},
+						},
+						"notification_policy_id": schema.StringAttribute{
+							Required:    true,
+							Description: "ID of the notification policy to use when labels match.",
+							Validators: []validator.String{
+								validatorutils.NewUUIDValidator(),
+							},
+						},
+					},
+				},
 			},
 			"group_wait": schema.StringAttribute{
 				Optional: true,

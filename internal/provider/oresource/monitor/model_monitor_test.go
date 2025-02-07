@@ -51,6 +51,19 @@ func TestMonitorModel(t *testing.T) {
 		NotificationPolicyID: &clientmodels.ID{
 			UUID: uuid.New(),
 		},
+		LabelMatcherNotificationPolicies: []clientmodels.LabelMatcherNotificationPolicy{
+			{
+				Matchers: []clientmodels.LabelMatcher{
+					{
+						Name:  "test1",
+						Value: "test2",
+					},
+				},
+				NotificationPolicyID: clientmodels.ID{
+					UUID: uuid.New(),
+				},
+			},
+		},
 		GroupWait:      &dur1,
 		GroupInterval:  &dur2,
 		RepeatInterval: &dur3,

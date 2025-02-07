@@ -1,13 +1,16 @@
 package monitor
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/prometheus/alertmanager/pkg/labels"
 
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/resourceutils"
@@ -15,18 +18,30 @@ import (
 )
 
 type monitorResourceModel struct {
-	ID                   types.String     `tfsdk:"id"`
-	Name                 types.String     `tfsdk:"name"`
-	Interval             types.String     `tfsdk:"interval"`
-	PromQLQuery          types.String     `tfsdk:"promql_query"`
-	Conditions           *conditionsModel `tfsdk:"conditions"`
-	Labels               types.Map        `tfsdk:"labels"`
-	Annotations          types.Map        `tfsdk:"annotations"`
-	Grouping             *grouping        `tfsdk:"grouping"`
-	NotificationPolicyID types.String     `tfsdk:"notification_policy_id"`
-	GroupWait            types.String     `tfsdk:"group_wait"`
-	GroupInterval        types.String     `tfsdk:"group_interval"`
-	RepeatInterval       types.String     `tfsdk:"repeat_interval"`
+	ID                               types.String     `tfsdk:"id"`
+	Name                             types.String     `tfsdk:"name"`
+	Interval                         types.String     `tfsdk:"interval"`
+	PromQLQuery                      types.String     `tfsdk:"promql_query"`
+	Conditions                       *conditionsModel `tfsdk:"conditions"`
+	Labels                           types.Map        `tfsdk:"labels"`
+	Annotations                      types.Map        `tfsdk:"annotations"`
+	Grouping                         *grouping        `tfsdk:"grouping"`
+	NotificationPolicyID             types.String     `tfsdk:"notification_policy_id"`
+	LabelMatcherNotificationPolicies types.List       `tfsdk:"label_matcher_notification_policies"`
+	GroupWait                        types.String     `tfsdk:"group_wait"`
+	GroupInterval                    types.String     `tfsdk:"group_interval"`
+	RepeatInterval                   types.String     `tfsdk:"repeat_interval"`
+}
+
+type labelMatcherNotificationPolicyModel struct {
+	Matchers             types.List   `tfsdk:"matchers"`
+	NotificationPolicyID types.String `tfsdk:"notification_policy_id"`
+}
+
+type labelMatcherModel struct {
+	Type  types.String `tfsdk:"type"`
+	Name  types.String `tfsdk:"name"`
+	Value types.String `tfsdk:"value"`
 }
 
 var _ resourceutils.ResourceModel[*clientmodels.Monitor] = (*monitorResourceModel)(nil)
@@ -90,6 +105,94 @@ func (m *monitorResourceModel) FromClientModel(
 
 	if model.NotificationPolicyID != nil {
 		m.NotificationPolicyID = types.StringValue(model.NotificationPolicyID.UUID.String())
+	}
+
+	if len(model.LabelMatcherNotificationPolicies) > 0 {
+		policies := make([]attr.Value, 0, len(model.LabelMatcherNotificationPolicies))
+		for _, policy := range model.LabelMatcherNotificationPolicies {
+			matchers := make([]attr.Value, 0, len(policy.Matchers))
+			for _, matcher := range policy.Matchers {
+				matcherObj, diags := types.ObjectValue(
+					map[string]attr.Type{
+						"type":  types.StringType,
+						"name":  types.StringType,
+						"value": types.StringType,
+					},
+					map[string]attr.Value{
+						"type":  types.StringValue(matcher.Type.String()),
+						"name":  types.StringValue(matcher.Name),
+						"value": types.StringValue(matcher.Value),
+					},
+				)
+				if diags.HasError() {
+					diagnosticsOut.Append(diags...)
+					continue
+				}
+				matchers = append(matchers, matcherObj)
+			}
+
+			matchersList, diags := types.ListValue(
+				types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"type":  types.StringType,
+						"name":  types.StringType,
+						"value": types.StringType,
+					},
+				},
+				matchers,
+			)
+			if diags.HasError() {
+				diagnosticsOut.Append(diags...)
+				continue
+			}
+
+			policyObj, diags := types.ObjectValue(
+				map[string]attr.Type{
+					"matchers":               matchersList.Type(context.Background()),
+					"notification_policy_id": types.StringType,
+				},
+				map[string]attr.Value{
+					"matchers":               matchersList,
+					"notification_policy_id": types.StringValue(policy.NotificationPolicyID.UUID.String()),
+				},
+			)
+			if diags.HasError() {
+				diagnosticsOut.Append(diags...)
+				continue
+			}
+			policies = append(policies, policyObj)
+		}
+
+		listType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"matchers": types.ListType{
+					ElemType: types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"type":  types.StringType,
+							"name":  types.StringType,
+							"value": types.StringType,
+						},
+					},
+				},
+				"notification_policy_id": types.StringType,
+			},
+		}
+		m.LabelMatcherNotificationPolicies = types.ListValueMust(listType, policies)
+	} else {
+		m.LabelMatcherNotificationPolicies = types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"matchers": types.ListType{
+					ElemType: types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"type":  types.StringType,
+							"name":  types.StringType,
+							"value": types.StringType,
+						},
+					},
+				},
+				"notification_policy_id": types.StringType,
+			},
+		})
 	}
 
 	if model.GroupWait != nil {
@@ -190,6 +293,67 @@ func (m *monitorResourceModel) ToClientModel(
 		}
 
 		model.NotificationPolicyID = &clientmodels.ID{UUID: uid}
+	}
+
+	if !m.LabelMatcherNotificationPolicies.IsNull() && !m.LabelMatcherNotificationPolicies.IsUnknown() {
+		policies := make([]clientmodels.LabelMatcherNotificationPolicy, 0, len(m.LabelMatcherNotificationPolicies.Elements()))
+		for _, policyElem := range m.LabelMatcherNotificationPolicies.Elements() {
+			policyObj, ok := policyElem.(types.Object)
+			if !ok {
+				return fmt.Errorf("failed to parse label matcher notification policy: %v, type is %T", policyElem, policyElem)
+			}
+
+			var policy labelMatcherNotificationPolicyModel
+			diags := policyObj.As(context.Background(), &policy, basetypes.ObjectAsOptions{})
+			if diags.HasError() {
+				return fmt.Errorf("failed to parse label matcher notification policy: %v", diags)
+			}
+
+			matchers := make([]clientmodels.LabelMatcher, 0, len(policy.Matchers.Elements()))
+			for _, matcherElem := range policy.Matchers.Elements() {
+				matcherObj, ok := matcherElem.(types.Object)
+				if !ok {
+					return fmt.Errorf("failed to parse label matcher: %v, type is %T", matcherElem, matcherElem)
+				}
+
+				var matcher labelMatcherModel
+				diags = matcherObj.As(context.Background(), &matcher, basetypes.ObjectAsOptions{})
+				if diags.HasError() {
+					return fmt.Errorf("failed to parse label matcher fields: %v", diags)
+				}
+
+				var matchType labels.MatchType
+				switch matcher.Type.ValueString() {
+				case "=":
+					matchType = labels.MatchEqual
+				case "!=":
+					matchType = labels.MatchNotEqual
+				case "=~":
+					matchType = labels.MatchRegexp
+				case "!~":
+					matchType = labels.MatchNotRegexp
+				default:
+					return fmt.Errorf("invalid match type: %s", matcher.Type.ValueString())
+				}
+
+				matchers = append(matchers, clientmodels.LabelMatcher{
+					Type:  matchType,
+					Name:  matcher.Name.ValueString(),
+					Value: matcher.Value.ValueString(),
+				})
+			}
+
+			uid, err := uuid.Parse(policy.NotificationPolicyID.ValueString())
+			if err != nil {
+				return fmt.Errorf("failed to parse notification policy UUID: %v", err)
+			}
+
+			policies = append(policies, clientmodels.LabelMatcherNotificationPolicy{
+				Matchers:             matchers,
+				NotificationPolicyID: clientmodels.ID{UUID: uid},
+			})
+		}
+		model.LabelMatcherNotificationPolicies = policies
 	}
 
 	if len(m.GroupWait.ValueString()) > 0 {

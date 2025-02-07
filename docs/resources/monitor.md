@@ -13,17 +13,65 @@ description: |-
 ## Example Usage
 
 ```terraform
-resource "oodle_monitor" "test1" {
-  name         = "terraform_test"
-  promql_query = "sum(rate(oober_food_delivery_revenue_usd[3m]))"
+resource "oodle_monitor" "service_monitor" {
+  name         = "service_health_monitor"
+  promql_query = "sum(rate(service_errors_total[5m])) by (service, region, team) / sum(rate(service_requests_total[5m])) by (service, region, team) > 0.01"
+  interval     = "1m"
+
   conditions = {
+    warning = {
+      value     = 0.01 # 1% error rate
+      operation = ">"
+      for       = "5m"
+    }
     critical = {
-      value     = 1210000
+      value     = 0.05 # 5% error rate
       operation = ">"
       for       = "3m"
     }
   }
-  notification_policy_id = "oodle_notification_policy.test1.id"
+
+  # Labels that will be attached to all alerts from this monitor
+  labels = {
+    monitor_type = "service_health"
+    severity     = "high"
+  }
+
+  # Annotations provide additional context in notifications
+  annotations = {
+    summary     = "High error rate detected"
+    description = "Service error rate has exceeded threshold"
+    runbook_url = "https://wiki.example.com/runbooks/service-errors"
+  }
+
+  # Default policy for alerts that don't match any matchers
+  notification_policy_id = oodle_notification_policy.default.id
+
+  # Route alerts to different policies based on labels
+  label_matcher_notification_policies = [
+    {
+      # Critical services get highest priority routing
+      matchers = [
+        {
+          type  = "=~"
+          name  = "service"
+          value = "(auth|payment|core)-.*" # Regex to match critical services
+        }
+      ]
+      notification_policy_id = oodle_notification_policy.critical_services.id
+    },
+    {
+      # Platform team gets their own routing
+      matchers = [
+        {
+          type  = "="
+          name  = "team"
+          value = "platform"
+        }
+      ]
+      notification_policy_id = oodle_notification_policy.platform_team.id
+    }
+  ]
 }
 ```
 
@@ -43,6 +91,7 @@ resource "oodle_monitor" "test1" {
 - `group_wait` (String) Time to wait before sending the first alert for a group of alerts.
 - `grouping` (Attributes) (see [below for nested schema](#nestedatt--grouping))
 - `interval` (String) Interval at which the monitor should be evaluated. Default is 1m.
+- `label_matcher_notification_policies` (Attributes List) List of label matcher notification policies. These policies are evaluated in order, and the first matching policy is used. Within a label matcher, all matchers must match for policy to be effective. If no policy matches, the default notification_policy_id is used if set. (see [below for nested schema](#nestedatt--label_matcher_notification_policies))
 - `labels` (Map of String) Additional labels to attach to the fired alerts.
 - `notification_policy_id` (String) ID of the notification policy to use for the monitor.
 - `repeat_interval` (String) Interval at which to send alerts for the same alert after firing. RepeatInterval should be a multiple of GroupInterval.
@@ -97,10 +146,29 @@ Required:
 - `by_monitor` (Boolean) If true, only one notification will be sent for this monitor irrespective of how many series match.
 - `disabled` (Boolean) If true, grouping is disabled.
 
+
+<a id="nestedatt--label_matcher_notification_policies"></a>
+### Nested Schema for `label_matcher_notification_policies`
+
+Required:
+
+- `matchers` (Attributes List) List of label matchers that determine when this policy applies. (see [below for nested schema](#nestedatt--label_matcher_notification_policies--matchers))
+- `notification_policy_id` (String) ID of the notification policy to use when labels match.
+
+<a id="nestedatt--label_matcher_notification_policies--matchers"></a>
+### Nested Schema for `label_matcher_notification_policies.matchers`
+
+Required:
+
+- `name` (String) The name of the label to match against.
+- `type` (String) The type of match to perform. Valid values are: '=' (equals), '!=' (not equals), '=~' (regex match), '!~' (regex not match).
+- `value` (String) The value to match against. For regex matches, this must be a valid regular expression.
+
 ## Import
 
 Import is supported using the following syntax:
 
 ```shell
-terraform import oodle_monitor.test1 monitor_uuid
+# Import an existing monitor using its UUID
+terraform import oodle_monitor.service_monitor 123e4567-e89b-12d3-a456-426614174000
 ```

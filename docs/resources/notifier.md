@@ -13,11 +13,34 @@ description: |-
 ## Example Usage
 
 ```terraform
-resource "oodle_notifier" "notifier_test1" {
-  name = "terraform_test_notifier"
-  type = "pagerduty"
-  pagerduty_config = {
-    service_key   = "foo"
+# Opsgenie notifier for critical alerts from platform team
+resource "oodle_notifier" "platform_opsgenie" {
+  name = "platform_team_opsgenie"
+  type = "opsgenie"
+  opsgenie_config = {
+    api_key       = "platform_team_key"
+    send_resolved = true
+  }
+}
+
+# Slack notifier for critical service alerts
+resource "oodle_notifier" "critical_slack" {
+  name = "critical_alerts_slack"
+  type = "slack"
+  slack_config = {
+    api_url       = "https://hooks.slack.com/services/xxx/yyy/zzz"
+    channel       = "#critical-alerts"
+    send_resolved = true
+  }
+}
+
+# General Slack notifier for all other alerts
+resource "oodle_notifier" "general_slack" {
+  name = "general_alerts_slack"
+  type = "slack"
+  slack_config = {
+    api_url       = "https://hooks.slack.com/services/xxx/yyy/zzz"
+    channel       = "#alerts"
     send_resolved = true
   }
 }
@@ -110,5 +133,12 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-terraform import oodle_notifier.test1 monitor_uuid
+# Import an existing Opsgenie notifier using its UUID
+terraform import oodle_notifier.platform_opsgenie 123e4567-e89b-12d3-a456-426614174001
+
+# Import an existing Slack notifier for critical alerts using its UUID
+terraform import oodle_notifier.critical_slack 123e4567-e89b-12d3-a456-426614174002
+
+# Import an existing Slack notifier for general alerts using its UUID
+terraform import oodle_notifier.general_slack 123e4567-e89b-12d3-a456-426614174003
 ```

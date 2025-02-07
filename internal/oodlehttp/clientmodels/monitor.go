@@ -27,6 +27,11 @@ type Monitor struct {
 	// NotificationPolicyID is the ID of the notification policy associated with the monitor.
 	// It is an optional field.
 	NotificationPolicyID *ID `json:"notification_policy_id,omitempty" yaml:"notification_policy_id,omitempty"`
+	// LabelMatcherNotificationPolicies is the list of label matcher notification policies for the monitor.
+	// These policies are evaluated in order, and the first matching policy is used. Within a label matcher,
+	// all matchers must match for policy to be effective.
+	// If no policy matches, the default NotificationPolicyID is used if set.
+	LabelMatcherNotificationPolicies []LabelMatcherNotificationPolicy `json:"label_matcher_notification_policies,omitempty" yaml:"label_matcher_notification_policies,omitempty"`
 	// GroupWait is the time to wait before sending the first alert for a group of alerts.
 	GroupWait *time.Duration `json:"group_wait,omitempty" yaml:"group_wait,omitempty"`
 	// GroupInterval is the interval at which to send alerts for the same group of alerts after the first alert.
