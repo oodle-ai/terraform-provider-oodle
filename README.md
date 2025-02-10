@@ -9,12 +9,17 @@ Terraform spec for each resource is documented in [here](docs/resources)
 
 # Example:
 
-Export credentials
+## Prerequisites
+You can get your instance name and Oodle API key from `Settings` -> `View API Key` in the Oodle UI. E.g.
+if your deployment URL is `https://us1.oodle.ai/`, you can go to `https://us1.oodle.ai/settings/viewApiKey=true`
+to access this information.
+
+Export credentials, e.g.
 ```bash
-export OODLE_API_KEY="my-api-key"
-export OODLE_INSTANCE="my-instance"
-export OODLE_DEPLOYMENT=https://us1.oodle.ai/
-````
+export OODLE_API_KEY="<your-api-key>"
+export OODLE_INSTANCE="<your-instance>"
+export OODLE_DEPLOYMENT="<your-deployment-url>"
+```
 
 Sample terraform script
 ```terraform

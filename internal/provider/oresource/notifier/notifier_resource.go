@@ -109,11 +109,13 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 						Optional:    true,
 						Computed:    true,
 						Default:     validatorutils.NewDefaultString(types.StringValue("")),
-						Description: "Optional link to include in the notification title.",
+						Description: "Link to be included in the notification title.",
 					},
 					"text": schema.StringAttribute{
-						Required:    true,
-						Description: "Additional text to add to the notification.",
+						Optional:    true,
+						Computed:    true,
+						Default:     validatorutils.NewDefaultString(types.StringValue("")),
+						Description: "Text to be included in the Slack notification.",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
