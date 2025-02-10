@@ -109,12 +109,12 @@ Required:
 
 - `api_url` (String, Sensitive) Slack API URL.
 - `channel` (String) Slack channel to post notifications in.
-- `text` (String) Additional text to add to the notification.
 
 Optional:
 
 - `send_resolved` (Boolean) Send notifications when incident is resolved.
-- `title_link` (String) Optional link to include in the notification title.
+- `text` (String) Text to be included in the Slack notification.
+- `title_link` (String) Link to be included in the notification title.
 
 
 <a id="nestedatt--webhook_config"></a>

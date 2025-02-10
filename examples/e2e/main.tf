@@ -9,56 +9,54 @@ terraform {
 provider "oodle" {}
 
 # Notifiers for different teams/scenarios
-resource "oodle_notifier" "platform_pagerduty" {
-  name = "platform_team_pagerduty"
-  type = "pagerduty"
-  pagerduty_config = {
-    service_key   = "platform_team_key"
+resource "oodle_notifier" "platform_opsgenie" {
+  name = "tf_platform_team_opsgenie"
+  type = "opsgenie"
+  opsgenie_config = {
+    api_key       = "platform_team_key"
     send_resolved = true
   }
 }
 
 resource "oodle_notifier" "critical_slack" {
-  name = "critical_alerts_slack"
+  name = "tf_critical_alerts_slack"
   type = "slack"
   slack_config = {
     api_url       = "https://hooks.slack.com/services/xxx/yyy/zzz"
     channel       = "#critical-alerts"
-    title_link    = "https://grafana.example.com"
     send_resolved = true
   }
 }
 
 resource "oodle_notifier" "general_slack" {
-  name = "general_alerts_slack"
+  name = "tf_general_alerts_slack"
   type = "slack"
   slack_config = {
     api_url       = "https://hooks.slack.com/services/xxx/yyy/zzz"
     channel       = "#alerts"
-    title_link    = "https://grafana.example.com"
     send_resolved = true
   }
 }
 
 # Notification policies for different scenarios
 resource "oodle_notification_policy" "platform_team" {
-  name = "platform_team_policy"
+  name = "tf_platform_team_policy"
   notifiers = {
-    critical = [oodle_notifier.platform_pagerduty.id]
+    critical = [oodle_notifier.platform_opsgenie.id]
     warning  = [oodle_notifier.general_slack.id]
   }
 }
 
 resource "oodle_notification_policy" "critical_services" {
-  name = "critical_services_policy"
+  name = "tf_critical_services_policy"
   notifiers = {
-    critical = [oodle_notifier.platform_pagerduty.id, oodle_notifier.critical_slack.id]
+    critical = [oodle_notifier.platform_opsgenie.id, oodle_notifier.critical_slack.id]
     warning  = [oodle_notifier.critical_slack.id]
   }
 }
 
 resource "oodle_notification_policy" "default" {
-  name = "default_policy"
+  name = "tf_default_policy"
   notifiers = {
     critical = [oodle_notifier.general_slack.id]
     warning  = [oodle_notifier.general_slack.id]
@@ -67,7 +65,7 @@ resource "oodle_notification_policy" "default" {
 
 # Monitor with label-based routing
 resource "oodle_monitor" "service_monitor" {
-  name         = "service_health_monitor"
+  name         = "tf_service_health_monitor"
   promql_query = "sum(rate(service_errors_total[5m])) by (service, region, team) / sum(rate(service_requests_total[5m])) by (service, region, team) > 0.01"
   interval     = "1m"
 
