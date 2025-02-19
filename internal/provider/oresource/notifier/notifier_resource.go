@@ -166,6 +166,12 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 						Required:  true,
 						Sensitive: true,
 					},
+					"threading": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "Enable threading - subsequent messages for the same group of alerts are posted in a thread",
+					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
 						Computed:    true,
