@@ -38,6 +38,16 @@ resource "oodle_notifier" "general_slack" {
   }
 }
 
+resource "oodle_notifier" "general_googlechat" {
+  name = "tf_general_alerts_googlechat"
+  type = "googlechat"
+  googlechat_config = {
+    url           = "https://chat.googleapis.com/v1/spaces/XXXXXX/messages?key=YYYYYY&token=ZZZZZ"
+    threading     = false
+    send_resolved = true
+  }
+}
+
 # Notification policies for different scenarios
 resource "oodle_notification_policy" "platform_team" {
   name = "tf_platform_team_policy"

@@ -94,6 +94,7 @@ func (n *notifierResourceModel) FromClientModel(
 		n.GoogleChatConfig = &googleChatConfigModel{}
 		n.GoogleChatConfig.SendResolved = types.BoolValue(model.GoogleChatConfig.SendResolved())
 		n.GoogleChatConfig.URL = types.StringValue(model.GoogleChatConfig.URL)
+		n.GoogleChatConfig.Threading = types.BoolValue(model.GoogleChatConfig.Threading)
 	default:
 		diagnosticsOut.AddError("Unknown type", fmt.Sprintf("Unknown notifier type %v", model.Type))
 		return
@@ -171,7 +172,8 @@ func (n *notifierResourceModel) ToClientModel(
 		}
 
 		model.GoogleChatConfig = &oprom.GoogleChatConfig{
-			URL: n.GoogleChatConfig.URL.ValueString(),
+			URL:       n.GoogleChatConfig.URL.ValueString(),
+			Threading: n.GoogleChatConfig.Threading.ValueBool(),
 			NotifierConfig: config.NotifierConfig{
 				VSendResolved: n.GoogleChatConfig.SendResolved.ValueBool(),
 			},

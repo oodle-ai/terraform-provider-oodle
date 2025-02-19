@@ -76,6 +76,7 @@ Required:
 Optional:
 
 - `send_resolved` (Boolean) Send notifications when incident is resolved.
+- `threading` (Boolean) Enable threading - subsequent messages for the same group of alerts are posted in a thread
 
 
 <a id="nestedatt--opsgenie_config"></a>
