@@ -1,7 +1,4 @@
 #!/bin/bash
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
-
 set -eu -o pipefail
 
 # Small convenience script for running the tests with various combinations of
