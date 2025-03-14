@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 // Package pretty provides pretty-printing for Go values. This is
 // useful during debugging, to avoid wrapping long output lines in
 // the terminal.

@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package types
 
 func (m *Any) ProtoSize() (n int)               { return m.Size() }
