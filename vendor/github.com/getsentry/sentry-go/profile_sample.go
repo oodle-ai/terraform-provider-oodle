@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package sentry
 
 // Based on https://github.com/getsentry/vroom/blob/d11c26063e802d66b9a592c4010261746ca3dfa4/internal/sample/sample.go

@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package metadata
 
 // ClientInfo wraps immutable data from the client.Client structure.
