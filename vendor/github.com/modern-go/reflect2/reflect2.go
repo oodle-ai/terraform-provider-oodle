@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package reflect2
 
 import (
@@ -285,6 +282,7 @@ func likePtrType(typ reflect.Type) bool {
 // output depends on the input.  noescape is inlined and currently
 // compiles down to zero instructions.
 // USE CAREFULLY!
+//
 //go:nosplit
 func NoEscape(p unsafe.Pointer) unsafe.Pointer {
 	x := uintptr(p)

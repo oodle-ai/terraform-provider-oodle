@@ -2,6 +2,7 @@ package oodlehttp
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,8 +35,9 @@ func NewModelClient[T clientmodels.ClientModel](
 	}
 }
 
-func (c *ModelClient[T]) Get(id string) (T, error) {
-	req, err := http.NewRequest(
+func (c *ModelClient[T]) Get(ctx context.Context, id string) (T, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodGet,
 		fmt.Sprintf(apiBasePath+c.resourcePath+"/%s", c.DeploymentUrl, c.Instance, id),
 		nil,
@@ -67,8 +69,9 @@ func (c *ModelClient[T]) Get(id string) (T, error) {
 	return model, nil
 }
 
-func (c *ModelClient[T]) Delete(id string) error {
-	req, err := http.NewRequest(
+func (c *ModelClient[T]) Delete(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodDelete,
 		fmt.Sprintf(apiBasePath+c.resourcePath+"/%s", c.DeploymentUrl, c.Instance, id),
 		nil,
@@ -97,13 +100,14 @@ func (c *ModelClient[T]) Delete(id string) error {
 	return nil
 }
 
-func (c *ModelClient[T]) Create(model T) (T, error) {
+func (c *ModelClient[T]) Create(ctx context.Context, model T) (T, error) {
 	reqBody, err := jsoniter.Marshal(model)
 	if err != nil {
 		return c.nilVal, err
 	}
 
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodPost,
 		fmt.Sprintf(apiBasePath+c.resourcePath, c.DeploymentUrl, c.Instance),
 		bytes.NewReader(reqBody),
@@ -136,13 +140,14 @@ func (c *ModelClient[T]) Create(model T) (T, error) {
 	return resModel, nil
 }
 
-func (c *ModelClient[T]) Update(model T) (T, error) {
+func (c *ModelClient[T]) Update(ctx context.Context, model T) (T, error) {
 	reqBody, err := jsoniter.Marshal(model)
 	if err != nil {
 		return c.nilVal, err
 	}
 
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodPut,
 		fmt.Sprintf(apiBasePath+c.resourcePath+"/%s", c.DeploymentUrl, c.Instance, model.GetID()),
 		bytes.NewReader(reqBody),

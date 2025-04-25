@@ -1,6 +1,7 @@
 package notifier
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -35,6 +36,7 @@ func (n *notifierResourceModel) SetID(id types.String) {
 }
 
 func (n *notifierResourceModel) FromClientModel(
+	ctx context.Context,
 	model *clientmodels.Notifier,
 	diagnosticsOut *diag.Diagnostics,
 ) {
@@ -102,6 +104,7 @@ func (n *notifierResourceModel) FromClientModel(
 }
 
 func (n *notifierResourceModel) ToClientModel(
+	ctx context.Context,
 	model *clientmodels.Notifier,
 ) error {
 	var err error

@@ -1,6 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
+//go:build !gccgo
 // +build !gccgo
 
 package reflect2
@@ -12,6 +10,7 @@ import (
 )
 
 // typelinks2 for 1.7 ~
+//
 //go:linkname typelinks2 reflect.typelinks
 func typelinks2() (sections []unsafe.Pointer, offset [][]int32)
 

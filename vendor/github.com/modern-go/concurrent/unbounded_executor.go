@@ -1,16 +1,13 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package concurrent
 
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"runtime"
 	"runtime/debug"
 	"sync"
 	"time"
-	"reflect"
 )
 
 // HandlePanic logs goroutine panic by default

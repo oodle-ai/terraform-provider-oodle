@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package pretty
 
 import (
@@ -24,7 +21,7 @@ type formatter struct {
 // breaks and tabs. Object f responds to the "%v" formatting verb when both the
 // "#" and " " (space) flags are set, for example:
 //
-//     fmt.Sprintf("%# v", Formatter(x))
+//	fmt.Sprintf("%# v", Formatter(x))
 //
 // If one of these two flags is not set, or any other verb is used, f will
 // format x according to the usual rules of package fmt.

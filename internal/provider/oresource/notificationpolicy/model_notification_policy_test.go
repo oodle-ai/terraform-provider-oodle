@@ -1,6 +1,7 @@
 package notificationPolicy
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 )
 
 func TestNotificationPolicyModel(t *testing.T) {
+	ctx := context.Background()
 	clientModel := &clientmodels.NotificationPolicy{
 		ID: clientmodels.ID{
 			UUID: uuid.New(),
@@ -27,11 +29,11 @@ func TestNotificationPolicyModel(t *testing.T) {
 
 	resourceModel := &notificationPolicyResourceModel{}
 	diags := &diag.Diagnostics{}
-	resourceModel.FromClientModel(clientModel, diags)
+	resourceModel.FromClientModel(ctx, clientModel, diags)
 	assert.False(t, diags.HasError())
 
 	newClientModel := &clientmodels.NotificationPolicy{}
-	assert.Nil(t, resourceModel.ToClientModel(newClientModel))
+	assert.Nil(t, resourceModel.ToClientModel(ctx, newClientModel))
 
 	assert.DeepEqual(t, clientModel, newClientModel)
 }
