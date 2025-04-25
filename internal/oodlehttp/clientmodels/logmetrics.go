@@ -93,11 +93,12 @@ type MatchNone struct {
 }
 
 // LogFilter is for filtering logs using match conditions.
+//
 // It is an oneof type that can be one of the following:
 // - Match
 // - MatchAll
 // - MatchAny
-// - MatchNone
+// - MatchNone.
 type LogFilter struct {
 	*Match
 	*MatchAll

@@ -62,7 +62,7 @@ func NewLogMetricsResource() resource.Resource {
 	}
 }
 
-// getFilterSchema returns the schema for a filter
+// getFilterSchema returns the schema for a filter.
 func getFilterSchema() map[string]schema.Attribute {
 	matchSchema := map[string]schema.Attribute{
 		"field": schema.StringAttribute{

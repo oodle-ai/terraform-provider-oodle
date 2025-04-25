@@ -47,16 +47,16 @@ func (f filterValidator) ValidateObject(
 	count := 0
 
 	// Check each field
-	if match, ok := attrs["match"].(attr.Value); ok && !match.IsNull() {
+	if matchAttr, ok := attrs["match"].(attr.Value); ok && !matchAttr.IsNull() {
 		count++
 	}
-	if all, ok := attrs["all"].(attr.Value); ok && !all.IsNull() {
+	if allAttr, ok := attrs["all"].(attr.Value); ok && !allAttr.IsNull() {
 		count++
 	}
-	if any, ok := attrs["any"].(attr.Value); ok && !any.IsNull() {
+	if anyAttr, ok := attrs["any"].(attr.Value); ok && !anyAttr.IsNull() {
 		count++
 	}
-	if not, ok := attrs["not"].(attr.Value); ok && !not.IsNull() {
+	if notAttr, ok := attrs["not"].(attr.Value); ok && !notAttr.IsNull() {
 		count++
 	}
 
