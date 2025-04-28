@@ -282,7 +282,7 @@ func (m *logMetricsResourceModel) ToClientModel(
 						},
 					}
 				}
-				if filter.All != nil && len(filter.All) > 0 {
+				if len(filter.All) > 0 {
 					model.Filter.MatchAny.Any[i] = &clientmodels.LogFilter{
 						MatchAll: &clientmodels.MatchAll{
 							All: make([]*clientmodels.LogFilter, len(filter.All)),

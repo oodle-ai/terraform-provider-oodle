@@ -3,7 +3,6 @@ package validatorutils
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
@@ -47,16 +46,16 @@ func (f filterValidator) ValidateObject(
 	count := 0
 
 	// Check each field
-	if matchAttr, ok := attrs["match"].(attr.Value); ok && !matchAttr.IsNull() {
+	if matchAttr, ok := attrs["match"]; ok && !matchAttr.IsNull() {
 		count++
 	}
-	if allAttr, ok := attrs["all"].(attr.Value); ok && !allAttr.IsNull() {
+	if allAttr, ok := attrs["all"]; ok && !allAttr.IsNull() {
 		count++
 	}
-	if anyAttr, ok := attrs["any"].(attr.Value); ok && !anyAttr.IsNull() {
+	if anyAttr, ok := attrs["any"]; ok && !anyAttr.IsNull() {
 		count++
 	}
-	if notAttr, ok := attrs["not"].(attr.Value); ok && !notAttr.IsNull() {
+	if notAttr, ok := attrs["not"]; ok && !notAttr.IsNull() {
 		count++
 	}
 
