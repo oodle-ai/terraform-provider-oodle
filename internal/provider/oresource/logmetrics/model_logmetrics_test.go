@@ -66,7 +66,7 @@ func TestLogMetricsModel(t *testing.T) {
 					},
 				},
 			},
-			MatchNone: &clientmodels.MatchNone{
+			MatchNot: &clientmodels.MatchNot{
 				Not: &clientmodels.LogFilter{
 					Match: &clientmodels.Match{
 						Field:    "field4",

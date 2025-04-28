@@ -30,35 +30,38 @@ resource "oodle_logmetrics" "coverage" {
   ]
 
   filter = {
-    any = [{
-      all = [{
-        match = {
-          field    = "level"
-          operator = "is"
-          value    = "error"
-        },
-        },
-        {
-          match = {
-            field    = "container"
-            operator = "matches regex"
-            value    = "(checkout|payment)"
+    any = [
+      {
+        all = [
+          {
+            match = {
+              field    = "level"
+              operator = "is"
+              value    = "error"
+            },
           },
-        },
-        {
-          match = {
-            field     = "log"
-            operator  = "contains"
-            json_path = "service.id"
-            value     = "123"
+          {
+            match = {
+              field    = "container"
+              operator = "matches regex"
+              value    = "(checkout|payment)"
+            },
           },
-        },
-        {
-          match = {
-            field    = "namespace"
-            operator = "exists"
+          {
+            match = {
+              field     = "log"
+              operator  = "contains"
+              json_path = "service.id"
+              value     = "123"
+            },
+          },
+          {
+            match = {
+              field    = "namespace"
+              operator = "exists"
+            }
           }
-      }],
+        ],
       },
       {
         not = {
@@ -68,7 +71,8 @@ resource "oodle_logmetrics" "coverage" {
             value    = "otel-demo"
           }
         }
-    }]
+      }
+    ]
   }
 
   metric_definitions = [

@@ -130,10 +130,10 @@ func (m *logMetricsResourceModel) FromClientModel(
 						Match: m.fromClientModelMatchModel(allElem.Match),
 					}
 				}
-				if allElem.MatchNone != nil && allElem.MatchNone.Not != nil && allElem.MatchNone.Not.Match != nil {
+				if allElem.MatchNot != nil && allElem.MatchNot.Not != nil && allElem.MatchNot.Not.Match != nil {
 					m.Filter.All[i] = allNestedFilterModel{
 						Not: &notNestedFilterModel{
-							Match: m.fromClientModelMatchModel(allElem.MatchNone.Not.Match),
+							Match: m.fromClientModelMatchModel(allElem.MatchNot.Not.Match),
 						},
 					}
 				}
@@ -147,7 +147,7 @@ func (m *logMetricsResourceModel) FromClientModel(
 						Match: m.fromClientModelMatchModel(anyElem.Match),
 					}
 				}
-				if anyElem.MatchNone != nil && anyElem.MatchNone.Not != nil && anyElem.Not.Match != nil {
+				if anyElem.MatchNot != nil && anyElem.MatchNot.Not != nil && anyElem.Not.Match != nil {
 					m.Filter.Any[i] = anyNestedFilterModel{
 						Not: &notNestedFilterModel{
 							Match: m.fromClientModelMatchModel(anyElem.Not.Match),
@@ -166,9 +166,9 @@ func (m *logMetricsResourceModel) FromClientModel(
 				}
 			}
 		}
-		if model.Filter.MatchNone != nil && model.Filter.MatchNone.Not != nil && model.Filter.MatchNone.Not.Match != nil {
+		if model.Filter.MatchNot != nil && model.Filter.MatchNot.Not != nil && model.Filter.MatchNot.Not.Match != nil {
 			m.Filter.Not = &notNestedFilterModel{
-				Match: m.fromClientModelMatchModel(model.Filter.MatchNone.Not.Match),
+				Match: m.fromClientModelMatchModel(model.Filter.MatchNot.Not.Match),
 			}
 		}
 	}
@@ -275,7 +275,7 @@ func (m *logMetricsResourceModel) ToClientModel(
 				}
 				if filter.Not != nil && filter.Not.Match != nil {
 					model.Filter.MatchAny.Any[i] = &clientmodels.LogFilter{
-						MatchNone: &clientmodels.MatchNone{
+						MatchNot: &clientmodels.MatchNot{
 							Not: &clientmodels.LogFilter{
 								Match: m.toClientModelFilterMatch(filter.Not.Match),
 							},
@@ -297,7 +297,7 @@ func (m *logMetricsResourceModel) ToClientModel(
 			}
 		}
 		if m.Filter.Not != nil && m.Filter.Not.Match != nil {
-			model.Filter.MatchNone = &clientmodels.MatchNone{
+			model.Filter.MatchNot = &clientmodels.MatchNot{
 				Not: &clientmodels.LogFilter{
 					Match: m.toClientModelFilterMatch(m.Filter.Not.Match),
 				},

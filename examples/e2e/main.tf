@@ -210,7 +210,7 @@ resource "oodle_logmetrics" "coverage" {
   metric_definitions = [
     {
       name = "oodle_logs_app_log_count"
-      type = "count"
+      type = "log_count"
     },
     {
       name  = "oodle_logs_app_thread_count"

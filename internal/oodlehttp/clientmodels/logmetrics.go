@@ -47,8 +47,9 @@ type ValueExtractor struct {
 	JSONPath *string `json:"jsonPath,omitempty" yaml:"jsonPath,omitempty"`
 
 	// Regex is used to derive the label value by matching the
-	// regex pattern. If not set, the entire field value is used as the
-	// label value.
+	// regex pattern. Regex pattern should be a valid Rust regex, you can use
+	// https://rustexp.lpil.uk/ for trying out the pattern.
+	// If not set, the entire field value is used as the label value.
 	Regex *string `json:"regex,omitempty" yaml:"regex,omitempty"`
 }
 
@@ -87,8 +88,8 @@ type MatchAny struct {
 	Any []*LogFilter `json:"any,omitempty" yaml:"any,omitempty"`
 }
 
-// MatchNone is a filter where none of the filters must match.
-type MatchNone struct {
+// MatchNot is a filter where the given filter must not match.
+type MatchNot struct {
 	Not *LogFilter `json:"not,omitempty" yaml:"not,omitempty"`
 }
 
@@ -98,19 +99,19 @@ type MatchNone struct {
 // - Match
 // - MatchAll
 // - MatchAny
-// - MatchNone.
+// - MatchNot.
 type LogFilter struct {
 	*Match
 	*MatchAll
 	*MatchAny
-	*MatchNone
+	*MatchNot
 }
 
 // MetricType is the type of the metric to be created.
 type MetricType string
 
 const (
-	LogCountMetricDefinition  MetricType = "count"
+	LogCountMetricDefinition  MetricType = "log_count"
 	CounterMetricDefinition   MetricType = "counter"
 	GaugeMetricDefinition     MetricType = "gauge"
 	HistogramMetricDefinition MetricType = "histogram"

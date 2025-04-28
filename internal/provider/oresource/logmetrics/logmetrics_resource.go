@@ -30,7 +30,7 @@ var validOperators = map[string]struct{}{
 }
 
 var validMetricTypes = map[string]struct{}{
-	"count":     {},
+	"log_count": {},
 	"counter":   {},
 	"gauge":     {},
 	"histogram": {},
@@ -247,15 +247,19 @@ func (r *logMetricsResource) Schema(_ context.Context, _ resource.SchemaRequest,
 							},
 						},
 						"type": schema.StringAttribute{
-							Required:    true,
-							Description: "Type of metric to create. Possible values are: 'count', 'counter', 'gauge', 'histogram'.",
+							Required: true,
+							Description: "Type of metric to create. Possible values are:\n" +
+								"  - `log_count` - Counts the number of logs that match the filter.\n" +
+								"  - `counter` - Extracts and sums numeric values from fields.\n" +
+								"  - `gauge` - Records the latest numeric value from fields.\n" +
+								"  - `histogram` - Creates distribution buckets of numeric values from fields.",
 							Validators: []validator.String{
 								validatorutils.NewChoiceValidator(validMetricTypes),
 							},
 						},
 						"field": schema.StringAttribute{
 							Optional:    true,
-							Description: "Name of the log field to extract from. Only used when type is 'counter' or 'gauge'.",
+							Description: "Name of the log field to extract from. Only used when type is not 'log_count'.",
 						},
 						"json_path": schema.StringAttribute{
 							Optional:    true,

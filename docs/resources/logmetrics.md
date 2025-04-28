@@ -45,35 +45,38 @@ resource "oodle_logmetrics" "coverage" {
   ]
 
   filter = {
-    any = [{
-      all = [{
-        match = {
-          field    = "level"
-          operator = "is"
-          value    = "error"
-        },
-        },
-        {
-          match = {
-            field    = "container"
-            operator = "matches regex"
-            value    = "(checkout|payment)"
+    any = [
+      {
+        all = [
+          {
+            match = {
+              field    = "level"
+              operator = "is"
+              value    = "error"
+            },
           },
-        },
-        {
-          match = {
-            field     = "log"
-            operator  = "contains"
-            json_path = "service.id"
-            value     = "123"
+          {
+            match = {
+              field    = "container"
+              operator = "matches regex"
+              value    = "(checkout|payment)"
+            },
           },
-        },
-        {
-          match = {
-            field    = "namespace"
-            operator = "exists"
+          {
+            match = {
+              field     = "log"
+              operator  = "contains"
+              json_path = "service.id"
+              value     = "123"
+            },
+          },
+          {
+            match = {
+              field    = "namespace"
+              operator = "exists"
+            }
           }
-      }],
+        ],
       },
       {
         not = {
@@ -83,7 +86,8 @@ resource "oodle_logmetrics" "coverage" {
             value    = "otel-demo"
           }
         }
-    }]
+      }
+    ]
   }
 
   metric_definitions = [
@@ -135,11 +139,15 @@ resource "oodle_logmetrics" "coverage" {
 Required:
 
 - `name` (String) Name of the metric to be created. Must match Prometheus metric naming rules.
-- `type` (String) Type of metric to create. Possible values are: 'count', 'counter', 'gauge', 'histogram'.
+- `type` (String) Type of metric to create. Possible values are:
+  - `log_count` - Counts the number of logs that match the filter.
+  - `counter` - Extracts and sums numeric values from fields.
+  - `gauge` - Records the latest numeric value from fields.
+  - `histogram` - Creates distribution buckets of numeric values from fields.
 
 Optional:
 
-- `field` (String) Name of the log field to extract from. Only used when type is 'counter' or 'gauge'.
+- `field` (String) Name of the log field to extract from. Only used when type is not 'log_count'.
 - `json_path` (String) JSONPath to extract a numeric value from a JSON field. Cannot be used together with regex.
 - `regex` (String) Regex pattern to extract a numeric value from the field. Cannot be used together with json_path.
 
