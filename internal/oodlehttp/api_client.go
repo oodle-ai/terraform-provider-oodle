@@ -2,6 +2,8 @@ package oodlehttp
 
 import (
 	"net/http"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 )
 
 const (
@@ -25,7 +27,7 @@ func newHttpClient() *http.Client {
 	t.MaxConnsPerHost = maxConnections
 	t.MaxIdleConnsPerHost = maxConnections
 	return &http.Client{
-		Transport: t,
+		Transport: logging.NewLoggingHTTPTransport(t),
 	}
 }
 

@@ -1,7 +1,5 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
-//+build !jsoniter_sloppy
+//go:build !jsoniter_sloppy
+// +build !jsoniter_sloppy
 
 package jsoniter
 

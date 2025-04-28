@@ -55,6 +55,7 @@ func (m *monitorResourceModel) SetID(id types.String) {
 }
 
 func (m *monitorResourceModel) FromClientModel(
+	ctx context.Context,
 	model *clientmodels.Monitor,
 	diagnosticsOut *diag.Diagnostics,
 ) {
@@ -148,7 +149,7 @@ func (m *monitorResourceModel) FromClientModel(
 
 			policyObj, diags := types.ObjectValue(
 				map[string]attr.Type{
-					"matchers":               matchersList.Type(context.Background()),
+					"matchers":               matchersList.Type(ctx),
 					"notification_policy_id": types.StringType,
 				},
 				map[string]attr.Value{
@@ -209,6 +210,7 @@ func (m *monitorResourceModel) FromClientModel(
 }
 
 func (m *monitorResourceModel) ToClientModel(
+	ctx context.Context,
 	model *clientmodels.Monitor,
 ) error {
 	var err error
@@ -304,7 +306,7 @@ func (m *monitorResourceModel) ToClientModel(
 			}
 
 			var policy labelMatcherNotificationPolicyModel
-			diags := policyObj.As(context.Background(), &policy, basetypes.ObjectAsOptions{})
+			diags := policyObj.As(ctx, &policy, basetypes.ObjectAsOptions{})
 			if diags.HasError() {
 				return fmt.Errorf("failed to parse label matcher notification policy: %v", diags)
 			}
@@ -317,7 +319,7 @@ func (m *monitorResourceModel) ToClientModel(
 				}
 
 				var matcher labelMatcherModel
-				diags = matcherObj.As(context.Background(), &matcher, basetypes.ObjectAsOptions{})
+				diags = matcherObj.As(ctx, &matcher, basetypes.ObjectAsOptions{})
 				if diags.HasError() {
 					return fmt.Errorf("failed to parse label matcher fields: %v", diags)
 				}

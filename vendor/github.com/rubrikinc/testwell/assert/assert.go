@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 // @generated
 
 package assert
@@ -1472,8 +1469,9 @@ func NotEqualUintptr(t testing.T,
 // EqualTypes tests if `left` and `right` have the same type.
 // msg is an optional list of arguments following the `fmt.Printf()` format.
 // Example:
-//  var a int32 = 42;
-//  EqualType(t, int32(0), a)
+//
+//	var a int32 = 42;
+//	EqualType(t, int32(0), a)
 func EqualTypes(t testing.T,
 	left interface{},
 	right interface{},
@@ -1496,8 +1494,9 @@ func EqualTypes(t testing.T,
 // NotEqualTypes tests if `left` and `right` have different types.
 // msg is an optional list of arguments following the `fmt.Printf()` format.
 // Example:
-//  var a int32 = 42;
-//  NotEqualType(t, int64(0), a)
+//
+//	var a int32 = 42;
+//	NotEqualType(t, int64(0), a)
 func NotEqualTypes(t testing.T,
 	left interface{},
 	right interface{},
@@ -2937,7 +2936,8 @@ func Failed(t testing.T, fmtstr string, args ...interface{}) {
 }
 
 // Panics asserts that the code inside the specified function f panics.
-//   assert.Panics(t, func(){ GoCrazy() })
+//
+//	assert.Panics(t, func(){ GoCrazy() })
 func Panics(t testing.T, f func(), msg ...interface{}) bool {
 	if h, ok := t.(testing.Helper); ok {
 		h.Helper() // Go 1.9 compatibility
@@ -2953,7 +2953,8 @@ func Panics(t testing.T, f func(), msg ...interface{}) bool {
 
 // PanicsWith asserts that the code inside the specified function f
 // panics, and that the recovered panic value equals the expected panic value
-//   assert.PanicsWithValue(t, "crazy error", func(){ GoCrazy() })
+//
+//	assert.PanicsWithValue(t, "crazy error", func(){ GoCrazy() })
 func PanicsWith(t testing.T,
 	expected interface{},
 	f func(),

@@ -1,12 +1,9 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package concurrent
 
 import (
-	"os"
-	"log"
 	"io/ioutil"
+	"log"
+	"os"
 )
 
 // ErrorLogger is used to print out error, can be set to writer other than stderr

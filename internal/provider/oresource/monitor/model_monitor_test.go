@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 )
 
 func TestMonitorModel(t *testing.T) {
+	ctx := context.Background()
 	dur1 := time.Duration(1)
 	dur2 := time.Duration(2)
 	dur3 := time.Duration(3)
@@ -71,11 +73,11 @@ func TestMonitorModel(t *testing.T) {
 
 	resourceModel := &monitorResourceModel{}
 	diags := &diag.Diagnostics{}
-	resourceModel.FromClientModel(clientModel, diags)
+	resourceModel.FromClientModel(ctx, clientModel, diags)
 	assert.False(t, diags.HasError())
 
 	newClientModel := &clientmodels.Monitor{}
-	assert.Nil(t, resourceModel.ToClientModel(newClientModel))
+	assert.Nil(t, resourceModel.ToClientModel(ctx, newClientModel))
 
 	assert.DeepEqual(t, clientModel, newClientModel)
 }

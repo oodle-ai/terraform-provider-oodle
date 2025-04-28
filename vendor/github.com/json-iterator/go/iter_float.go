@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package jsoniter
 
 import (
@@ -69,7 +66,7 @@ func (iter *Iterator) ReadBigInt() (ret *big.Int) {
 	return ret
 }
 
-//ReadFloat32 read float32
+// ReadFloat32 read float32
 func (iter *Iterator) ReadFloat32() (ret float32) {
 	c := iter.nextToken()
 	if c == '-' {

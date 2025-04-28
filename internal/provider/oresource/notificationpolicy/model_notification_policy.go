@@ -1,6 +1,7 @@
 package notificationPolicy
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -28,7 +29,11 @@ type notifiersBySeverity struct {
 
 var _ resourceutils.ResourceModel[*clientmodels.NotificationPolicy] = (*notificationPolicyResourceModel)(nil)
 
-func (n *notificationPolicyResourceModel) FromClientModel(model *clientmodels.NotificationPolicy, diagnosticsOut *diag.Diagnostics) {
+func (n *notificationPolicyResourceModel) FromClientModel(
+	ctx context.Context,
+	model *clientmodels.NotificationPolicy,
+	diagnosticsOut *diag.Diagnostics,
+) {
 	n.ID = types.StringValue(model.ID.UUID.String())
 	n.Name = types.StringValue(model.Name)
 	n.Global = types.BoolValue(model.Global)
@@ -48,7 +53,7 @@ func (n *notificationPolicyResourceModel) FromClientModel(model *clientmodels.No
 	}
 }
 
-func (n *notificationPolicyResourceModel) ToClientModel(model *clientmodels.NotificationPolicy) error {
+func (n *notificationPolicyResourceModel) ToClientModel(ctx context.Context, model *clientmodels.NotificationPolicy) error {
 	var err error
 	if !n.ID.IsNull() && !n.ID.IsUnknown() {
 		model.ID.UUID, err = uuid.Parse(n.ID.ValueString())

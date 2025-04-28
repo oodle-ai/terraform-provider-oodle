@@ -69,14 +69,13 @@ func (r *BaseResource[M, R]) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	clientModel := r.newClientModel()
-	err := plan.ToClientModel(clientModel)
+	err := plan.ToClientModel(ctx, clientModel)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to convert plan to model", err.Error())
 		return
 	}
 
-	// Create new monitor
-	createdMonitor, err := r.client.Create(clientModel)
+	createdObj, err := r.client.Create(ctx, clientModel)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating model",
@@ -85,9 +84,9 @@ func (r *BaseResource[M, R]) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	// Update plan with newly created monitor.
+	// Update plan with newly created object.
 	newPlan := r.newResourceModel()
-	newPlan.FromClientModel(createdMonitor, &resp.Diagnostics)
+	newPlan.FromClientModel(ctx, createdObj, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -110,12 +109,11 @@ func (r *BaseResource[M, R]) Read(ctx context.Context, req resource.ReadRequest,
 
 	id := state.GetID()
 	if id.IsNull() || id.IsUnknown() {
-		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to read monitor: %+v", state))
+		resp.Diagnostics.AddError("ID is not set", fmt.Sprintf("ID is required to read obj: %+v", state))
 		return
 	}
 
-	// Get refreshed order value from HashiCups
-	monitor, err := r.client.Get(id.ValueString())
+	obj, err := r.client.Get(ctx, id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading model",
@@ -124,7 +122,7 @@ func (r *BaseResource[M, R]) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	state.FromClientModel(monitor, &resp.Diagnostics)
+	state.FromClientModel(ctx, obj, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -163,13 +161,13 @@ func (r *BaseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	model := r.newClientModel()
-	err := plan.ToClientModel(model)
+	err := plan.ToClientModel(ctx, model)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to convert plan to model", err.Error())
 		return
 	}
 
-	updatedMonitor, err := r.client.Update(model)
+	updatedObj, err := r.client.Update(ctx, model)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating model",
@@ -180,7 +178,7 @@ func (r *BaseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequ
 
 	// Update plan with newly created monitor.
 	newState := r.newResourceModel()
-	newState.FromClientModel(updatedMonitor, &resp.Diagnostics)
+	newState.FromClientModel(ctx, updatedObj, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -207,8 +205,7 @@ func (r *BaseResource[M, R]) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	// Delete existing order
-	err := r.client.Delete(id.ValueString())
+	err := r.client.Delete(ctx, id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting model",
