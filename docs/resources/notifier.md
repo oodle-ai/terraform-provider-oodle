@@ -94,13 +94,11 @@ Optional:
 <a id="nestedatt--pagerduty_config"></a>
 ### Nested Schema for `pagerduty_config`
 
-Required:
-
-- `service_key` (String, Sensitive) PagerDuty service key.
-
 Optional:
 
+- `routing_key` (String, Sensitive) PagerDuty routing key for Events API V2 integration.
 - `send_resolved` (Boolean) Send notifications when incident is resolved.
+- `service_key` (String, Sensitive) PagerDuty service key for Prometheus Integration.
 
 
 <a id="nestedatt--slack_config"></a>

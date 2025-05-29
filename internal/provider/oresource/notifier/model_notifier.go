@@ -57,6 +57,7 @@ func (n *notifierResourceModel) FromClientModel(
 		n.PagerdutyConfig = &pagerdutyConfigModel{}
 		n.PagerdutyConfig.SendResolved = types.BoolValue(model.PagerdutyConfig.SendResolved())
 		n.PagerdutyConfig.ServiceKey = types.StringValue(model.PagerdutyConfig.ServiceKey)
+		n.PagerdutyConfig.RoutingKey = types.StringValue(model.PagerdutyConfig.RoutingKey)
 	case clientmodels.NotifierConfigSlack:
 		if model.SlackConfig == nil {
 			diagnosticsOut.AddError("Missing Slack config", "Slack config is required for Slack notifier")
@@ -129,6 +130,7 @@ func (n *notifierResourceModel) ToClientModel(
 
 		model.PagerdutyConfig = &oprom.PagerdutyConfig{
 			ServiceKey: n.PagerdutyConfig.ServiceKey.ValueString(),
+			RoutingKey: n.PagerdutyConfig.RoutingKey.ValueString(),
 			NotifierConfig: config.NotifierConfig{
 				VSendResolved: n.PagerdutyConfig.SendResolved.ValueBool(),
 			},

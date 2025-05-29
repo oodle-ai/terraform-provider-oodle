@@ -80,9 +80,18 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 				Description: "PagerDuty notifier configuration.",
 				Attributes: map[string]schema.Attribute{
 					"service_key": schema.StringAttribute{
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     validatorutils.NewDefaultString(types.StringValue("")),
 						Sensitive:   true,
-						Description: "PagerDuty service key.",
+						Description: "PagerDuty service key for Prometheus Integration.",
+					},
+					"routing_key": schema.StringAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     validatorutils.NewDefaultString(types.StringValue("")),
+						Sensitive:   true,
+						Description: "PagerDuty routing key for Events API V2 integration.",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
