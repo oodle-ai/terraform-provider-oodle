@@ -30,6 +30,17 @@ func TestNotificationPolicyModel(t *testing.T) {
 		{
 			ID:   clientmodels.ID{UUID: uuid.New()},
 			Name: "test",
+			Type: clientmodels.NotifierConfigPagerduty,
+			PagerdutyConfig: &oprom.PagerdutyConfig{
+				NotifierConfig: config.NotifierConfig{
+					VSendResolved: true,
+				},
+				RoutingKey: "routing-key",
+			},
+		},
+		{
+			ID:   clientmodels.ID{UUID: uuid.New()},
+			Name: "test",
 			Type: clientmodels.NotifierConfigOpsGenie,
 			OpsGenieConfig: &oprom.OpsGenieConfig{
 				NotifierConfig: config.NotifierConfig{
