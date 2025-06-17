@@ -47,8 +47,7 @@ func TestMonitorModel(t *testing.T) {
 			"test7": "test8",
 		},
 		Grouping: clientmodels.Grouping{
-			ByLabels:  []string{"test9", "test10"},
-			ByMonitor: true,
+			ByLabels: []string{"test9", "test10"},
 		},
 		NotificationPolicyID: &clientmodels.ID{
 			UUID: uuid.New(),

@@ -140,7 +140,7 @@ Optional:
 <a id="nestedatt--grouping"></a>
 ### Nested Schema for `grouping`
 
-Required:
+Optional:
 
 - `by_labels` (List of String) List of labels to group by. One notification is sent for each unique grouping when the monitor fires.
 - `by_monitor` (Boolean) If true, only one notification will be sent for this monitor irrespective of how many series match.

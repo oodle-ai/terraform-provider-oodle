@@ -105,6 +105,10 @@ resource "oodle_monitor" "service_monitor" {
     runbook_url = "https://wiki.example.com/runbooks/service-errors"
   }
 
+  grouping = {
+    disabled = true
+  }
+
   # Default policy for alerts that don't match any matchers
   notification_policy_id = oodle_notification_policy.default.id
 
