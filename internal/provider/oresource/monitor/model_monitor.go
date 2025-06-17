@@ -98,10 +98,21 @@ func (m *monitorResourceModel) FromClientModel(
 
 	if len(model.Grouping.ByLabels) > 0 || model.Grouping.Disabled || model.Grouping.ByMonitor {
 		m.Grouping = &grouping{}
-		m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
-		m.Grouping.ByLabels = validatorutils.ToAttrList(model.Grouping.ByLabels, diagnosticsOut)
-		m.Grouping.Disabled = types.BoolValue(model.Grouping.Disabled)
-		m.Grouping.ByMonitor = types.BoolValue(model.Grouping.ByMonitor)
+
+		// Only set the fields that are actually configured
+		if model.Grouping.ByMonitor {
+			m.Grouping.ByMonitor = types.BoolValue(true)
+			m.Grouping.ByLabels = types.ListNull(types.StringType)
+			m.Grouping.Disabled = types.BoolNull()
+		} else if len(model.Grouping.ByLabels) > 0 {
+			m.Grouping.ByMonitor = types.BoolNull()
+			m.Grouping.ByLabels = validatorutils.ToAttrList(model.Grouping.ByLabels, diagnosticsOut)
+			m.Grouping.Disabled = types.BoolNull()
+		} else if model.Grouping.Disabled {
+			m.Grouping.ByMonitor = types.BoolNull()
+			m.Grouping.ByLabels = types.ListNull(types.StringType)
+			m.Grouping.Disabled = types.BoolValue(true)
+		}
 	}
 
 	if model.NotificationPolicyID != nil {
@@ -271,8 +282,15 @@ func (m *monitorResourceModel) ToClientModel(
 	}
 
 	if m.Grouping != nil {
-		model.Grouping.ByMonitor = m.Grouping.ByMonitor.ValueBool()
-		if len(m.Grouping.ByLabels.Elements()) > 0 {
+		// Only set values that are not null
+		if !m.Grouping.ByMonitor.IsNull() {
+			model.Grouping.ByMonitor = m.Grouping.ByMonitor.ValueBool()
+		}
+		if !m.Grouping.Disabled.IsNull() {
+			model.Grouping.Disabled = m.Grouping.Disabled.ValueBool()
+		}
+
+		if !m.Grouping.ByLabels.IsNull() && len(m.Grouping.ByLabels.Elements()) > 0 {
 			model.Grouping.ByLabels = make([]string, 0, len(m.Grouping.ByLabels.Elements()))
 			for _, v := range m.Grouping.ByLabels.Elements() {
 				strVal, ok := v.(validatorutils.StringValue)
@@ -282,9 +300,6 @@ func (m *monitorResourceModel) ToClientModel(
 
 				model.Grouping.ByLabels = append(model.Grouping.ByLabels, strVal.ValueString())
 			}
-
-			model.Grouping.Disabled = m.Grouping.Disabled.ValueBool()
-			model.Grouping.ByMonitor = m.Grouping.ByMonitor.ValueBool()
 		}
 	}
 

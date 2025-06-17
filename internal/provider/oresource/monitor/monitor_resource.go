@@ -176,18 +176,21 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"by_monitor": schema.BoolAttribute{
-						Required:    true,
+						Optional:    true,
 						Description: "If true, only one notification will be sent for this monitor irrespective of how many series match.",
 					},
 					"by_labels": schema.ListAttribute{
-						Required:    true,
+						Optional:    true,
 						ElementType: types.StringType,
 						Description: "List of labels to group by. One notification is sent for each unique grouping when the monitor fires.",
 					},
 					"disabled": schema.BoolAttribute{
-						Required:    true,
+						Optional:    true,
 						Description: "If true, grouping is disabled.",
 					},
+				},
+				Validators: []validator.Object{
+					validatorutils.NewGroupingValidator(),
 				},
 			},
 			"notification_policy_id": schema.StringAttribute{
