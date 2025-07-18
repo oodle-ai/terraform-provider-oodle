@@ -119,6 +119,7 @@ Required:
 
 Optional:
 
+- `alert_on_no_data` (Boolean) If true, the monitor is considered firing when there is no data for the query.
 - `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
 
 
