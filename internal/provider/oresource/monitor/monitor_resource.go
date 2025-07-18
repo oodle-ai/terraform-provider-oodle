@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -129,7 +130,9 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							},
 							"alert_on_no_data": schema.BoolAttribute{
 								Optional:    true,
+								Computed:    true,
 								Description: "If true, the monitor is considered firing when there is no data for the query.",
+								Default:     booldefault.StaticBool(false),
 							},
 						},
 					},
@@ -160,6 +163,12 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 									validatorutils.NewDurationValidator(),
 								},
 								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
+							},
+							"alert_on_no_data": schema.BoolAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: "If true, the monitor is considered firing when there is no data for the query.",
+								Default:     booldefault.StaticBool(false),
 							},
 						},
 					},
