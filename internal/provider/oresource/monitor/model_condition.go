@@ -21,6 +21,7 @@ type conditionModel struct {
 	Value         types.Float64 `tfsdk:"value"`
 	For           types.String  `tfsdk:"for"`
 	KeepFiringFor types.String  `tfsdk:"keep_firing_for"`
+	AlertOnNoData types.Bool    `json:"alert_on_no_data,omitempty" yaml:"alert_on_no_data,omitempty"`
 }
 
 func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
@@ -28,6 +29,7 @@ func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 	c.Operation = types.StringValue(model.Op.String())
 	c.Value = types.Float64Value(model.Value)
 	c.For = types.StringValue(validatorutils.ShortDur(model.For))
+	c.AlertOnNoData = types.BoolValue(model.AlertOnNoData)
 
 	if model.KeepFiringFor > 0 {
 		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
@@ -62,5 +64,6 @@ func (c *conditionModel) toModel() (*clientmodels.Condition, error) {
 		Value:         c.Value.ValueFloat64(),
 		For:           forVal,
 		KeepFiringFor: keepFiringForVal,
+		AlertOnNoData: c.AlertOnNoData.ValueBool(),
 	}, nil
 }
