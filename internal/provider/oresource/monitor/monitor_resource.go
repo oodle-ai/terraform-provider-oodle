@@ -127,6 +127,10 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								},
 								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
 							},
+							"alert_on_no_data": schema.BoolAttribute{
+								Optional:    true,
+								Description: "If true, the monitor is considered firing when there is no data for the query.",
+							},
 						},
 					},
 					"critical": schema.SingleNestedAttribute{

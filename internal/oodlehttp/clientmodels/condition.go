@@ -69,6 +69,9 @@ type Condition struct {
 	// KeepFiringFor is the duration for which the alert should keep firing
 	// after the condition is no longer true.
 	KeepFiringFor time.Duration `json:"keep_firing_for,omitempty" yaml:"keep_firing_for,omitempty"`
+	// AlertOnNoData indicates whether the alert should be triggered
+	// when there is no data for the metric.
+	AlertOnNoData bool `json:"alert_on_no_data,omitempty" yaml:"alert_on_no_data,omitempty"`
 }
 
 // ToCompString returns the string representation of the condition.
