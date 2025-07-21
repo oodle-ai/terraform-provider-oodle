@@ -147,20 +147,29 @@ func (m *logMetricsResourceModel) FromClientModel(
 						Match: m.fromClientModelMatchModel(anyElem.Match),
 					}
 				}
-				if anyElem.MatchNot != nil && anyElem.MatchNot.Not != nil && anyElem.Not.Match != nil {
+				if anyElem.MatchNot != nil && anyElem.MatchNot.Not != nil && anyElem.MatchNot.Not.Match != nil {
 					m.Filter.Any[i] = anyNestedFilterModel{
 						Not: &notNestedFilterModel{
-							Match: m.fromClientModelMatchModel(anyElem.Not.Match),
+							Match: m.fromClientModelMatchModel(anyElem.MatchNot.Not.Match),
 						},
 					}
 				}
 				if anyElem.MatchAll != nil && anyElem.MatchAll.All != nil && len(anyElem.MatchAll.All) > 0 {
 					m.Filter.Any[i] = anyNestedFilterModel{
-						All: make([]allNestedFilterModel, len(anyElem.All)),
+						All: make([]allNestedFilterModel, len(anyElem.MatchAll.All)),
 					}
-					for j, allElem := range anyElem.All {
-						m.Filter.Any[i].All[j] = allNestedFilterModel{
-							Match: m.fromClientModelMatchModel(allElem.Match),
+					for j, allElem := range anyElem.MatchAll.All {
+						if allElem.Match != nil {
+							m.Filter.Any[i].All[j] = allNestedFilterModel{
+								Match: m.fromClientModelMatchModel(allElem.Match),
+							}
+						}
+						if allElem.MatchNot != nil && allElem.MatchNot.Not != nil && allElem.MatchNot.Not.Match != nil {
+							m.Filter.Any[i].All[j] = allNestedFilterModel{
+								Not: &notNestedFilterModel{
+									Match: m.fromClientModelMatchModel(allElem.MatchNot.Not.Match),
+								},
+							}
 						}
 					}
 				}
@@ -254,8 +263,12 @@ func (m *logMetricsResourceModel) ToClientModel(
 					}
 				}
 				if allElem.Not != nil && allElem.Not.Match != nil {
-					model.Filter.MatchAll.All[i].Not = &clientmodels.LogFilter{
-						Match: m.toClientModelFilterMatch(allElem.Not.Match),
+					model.Filter.MatchAll.All[i] = &clientmodels.LogFilter{
+						MatchNot: &clientmodels.MatchNot{
+							Not: &clientmodels.LogFilter{
+								Match: m.toClientModelFilterMatch(allElem.Not.Match),
+							},
+						},
 					}
 				}
 			}
@@ -289,8 +302,19 @@ func (m *logMetricsResourceModel) ToClientModel(
 						},
 					}
 					for j, allElem := range filter.All {
-						model.Filter.MatchAny.Any[i].MatchAll.All[j] = &clientmodels.LogFilter{
-							Match: m.toClientModelFilterMatch(allElem.Match),
+						if allElem.Match != nil {
+							model.Filter.MatchAny.Any[i].MatchAll.All[j] = &clientmodels.LogFilter{
+								Match: m.toClientModelFilterMatch(allElem.Match),
+							}
+						}
+						if allElem.Not != nil && allElem.Not.Match != nil {
+							model.Filter.MatchAny.Any[i].MatchAll.All[j] = &clientmodels.LogFilter{
+								MatchNot: &clientmodels.MatchNot{
+									Not: &clientmodels.LogFilter{
+										Match: m.toClientModelFilterMatch(allElem.Not.Match),
+									},
+								},
+							}
 						}
 					}
 				}

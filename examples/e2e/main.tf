@@ -199,7 +199,17 @@ resource "oodle_logmetrics" "coverage" {
             field    = "namespace"
             operator = "exists"
           }
-      }],
+        },
+        {
+          not = {
+            match = {
+              field    = "message"
+              operator = "contains"
+              value    = "test"
+            }
+          }
+        }
+      ],
       },
       {
         not = {
