@@ -75,6 +75,22 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					validatorutils.NewChoiceValidator(clientmodels.NotifierNames),
 				},
 			},
+			"email_config": schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "Email notifier configuration.",
+				Attributes: map[string]schema.Attribute{
+					"to": schema.StringAttribute{
+						Required:    true,
+						Description: "Email address to notify.",
+					},
+					"send_resolved": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "Send notifications when incident is resolved.",
+					},
+				},
+			},
 			"pagerduty_config": schema.SingleNestedAttribute{
 				Optional:    true,
 				Description: "PagerDuty notifier configuration.",
