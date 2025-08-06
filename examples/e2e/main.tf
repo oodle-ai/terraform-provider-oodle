@@ -48,6 +48,15 @@ resource "oodle_notifier" "general_googlechat" {
   }
 }
 
+resource "oodle_notifier" "critical_email" {
+  name = "tf_critical_alerts_email"
+  type = "email"
+  email_config = {
+    to            = "test@example.com"
+    send_resolved = true
+  }
+}
+
 # Notification policies for different scenarios
 resource "oodle_notification_policy" "platform_team" {
   name = "tf_platform_team_policy"

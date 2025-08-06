@@ -13,6 +13,16 @@ description: |-
 ## Example Usage
 
 ```terraform
+# Email notifier for critical alerts
+resource "oodle_notifier" "critical_email" {
+  name = "critical_alerts_email"
+  type = "email"
+  email_config = {
+    to            = "alerts@company.com"
+    send_resolved = true
+  }
+}
+
 # Opsgenie notifier for critical alerts from platform team
 resource "oodle_notifier" "platform_opsgenie" {
   name = "platform_team_opsgenie"
@@ -56,6 +66,7 @@ resource "oodle_notifier" "general_slack" {
 
 ### Optional
 
+- `email_config` (Attributes) Email notifier configuration. (see [below for nested schema](#nestedatt--email_config))
 - `googlechat_config` (Attributes) Google chat notifier configuration. (see [below for nested schema](#nestedatt--googlechat_config))
 - `opsgenie_config` (Attributes) OpsGenie notifier configuration. (see [below for nested schema](#nestedatt--opsgenie_config))
 - `pagerduty_config` (Attributes) PagerDuty notifier configuration. (see [below for nested schema](#nestedatt--pagerduty_config))
@@ -65,6 +76,18 @@ resource "oodle_notifier" "general_slack" {
 ### Read-Only
 
 - `id` (String) ID of the notifier.
+
+<a id="nestedatt--email_config"></a>
+### Nested Schema for `email_config`
+
+Required:
+
+- `to` (String) Email address to notify.
+
+Optional:
+
+- `send_resolved` (Boolean) Send notifications when incident is resolved.
+
 
 <a id="nestedatt--googlechat_config"></a>
 ### Nested Schema for `googlechat_config`

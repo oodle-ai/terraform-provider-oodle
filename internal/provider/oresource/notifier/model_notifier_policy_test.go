@@ -52,6 +52,17 @@ func TestNotificationPolicyModel(t *testing.T) {
 		{
 			ID:   clientmodels.ID{UUID: uuid.New()},
 			Name: "test",
+			Type: clientmodels.NotifierConfigEmail,
+			EmailConfig: &oprom.EmailConfig{
+				To: "test@example.com",
+				NotifierConfig: config.NotifierConfig{
+					VSendResolved: true,
+				},
+			},
+		},
+		{
+			ID:   clientmodels.ID{UUID: uuid.New()},
+			Name: "test",
 			Type: clientmodels.NotifierConfigWebhook,
 			WebhookConfig: &oprom.WebhookConfig{
 				URL: "test4",

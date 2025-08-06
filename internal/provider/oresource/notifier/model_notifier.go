@@ -18,6 +18,7 @@ type notifierResourceModel struct {
 	ID               types.String           `tfsdk:"id"`
 	Name             types.String           `tfsdk:"name"`
 	Type             types.String           `tfsdk:"type"`
+	EmailConfig      *emailConfigModel      `tfsdk:"email_config"`
 	PagerdutyConfig  *pagerdutyConfigModel  `tfsdk:"pagerduty_config"`
 	SlackConfig      *slackConfigModel      `tfsdk:"slack_config"`
 	OpsGenieConfig   *opsgenieConfigModel   `tfsdk:"opsgenie_config"`
@@ -48,6 +49,15 @@ func (n *notifierResourceModel) FromClientModel(
 	}
 
 	switch model.Type {
+	case clientmodels.NotifierConfigEmail:
+		if model.EmailConfig == nil {
+			diagnosticsOut.AddError("Missing email config", "Email config is required for email notifier")
+			return
+		}
+
+		n.EmailConfig = &emailConfigModel{}
+		n.EmailConfig.SendResolved = types.BoolValue(model.EmailConfig.SendResolved())
+		n.EmailConfig.To = types.StringValue(model.EmailConfig.To)
 	case clientmodels.NotifierConfigPagerduty:
 		if model.PagerdutyConfig == nil {
 			diagnosticsOut.AddError("Missing PagerDuty config", "PagerDuty config is required for PagerDuty notifier")
@@ -123,6 +133,17 @@ func (n *notifierResourceModel) ToClientModel(
 	}
 
 	switch model.Type {
+	case clientmodels.NotifierConfigEmail:
+		if n.EmailConfig == nil {
+			return fmt.Errorf("missing email config")
+		}
+
+		model.EmailConfig = &oprom.EmailConfig{
+			To: n.EmailConfig.To.ValueString(),
+			NotifierConfig: config.NotifierConfig{
+				VSendResolved: n.EmailConfig.SendResolved.ValueBool(),
+			},
+		}
 	case clientmodels.NotifierConfigPagerduty:
 		if n.PagerdutyConfig == nil {
 			return fmt.Errorf("missing PagerDuty config")
