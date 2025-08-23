@@ -17,9 +17,10 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &monitorResource{}
-	_ resource.ResourceWithConfigure   = &monitorResource{}
-	_ resource.ResourceWithImportState = &monitorResource{}
+	_ resource.Resource                     = &monitorResource{}
+	_ resource.ResourceWithConfigure        = &monitorResource{}
+	_ resource.ResourceWithImportState      = &monitorResource{}
+	_ resource.ResourceWithConfigValidators = &monitorResource{}
 )
 
 const monitorsResource = "monitors"
@@ -248,6 +249,73 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 					},
 				},
 			},
+			"notifications": schema.ListNestedAttribute{
+				Optional:    true,
+				Description: "List of label matcher notifications. These notifications are evaluated in order, and the first matching notification is used. This is the preferred way to configure notifications instead of label_matcher_notification_policies or notification_policy_id.",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"matchers": schema.ListNestedAttribute{
+							Required:    true,
+							Description: "List of label matchers that determine when this notification applies.",
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"type": schema.StringAttribute{
+										Required:    true,
+										Description: "The type of match to perform. Valid values are: '=' (equals), '!=' (not equals), '=~' (regex match), '!~' (regex not match).",
+										Validators: []validator.String{
+											validatorutils.NewChoiceValidator(validMatchTypes),
+										},
+									},
+									"name": schema.StringAttribute{
+										Required:    true,
+										Description: "The name of the label to match against.",
+									},
+									"value": schema.StringAttribute{
+										Required:    true,
+										Description: "The value to match against. For regex matches, this must be a valid regular expression.",
+									},
+								},
+							},
+						},
+						"notification_policy_id": schema.StringAttribute{
+							Optional:    true,
+							Description: "ID of the notification policy to use when labels match. Either this or notifiers must be specified.",
+							Validators: []validator.String{
+								validatorutils.NewUUIDValidator(),
+							},
+						},
+						"notifiers": schema.SingleNestedAttribute{
+							Optional:    true,
+							Description: "Notifiers by severity. Either this or notification_policy_id must be specified.",
+							Validators: []validator.Object{
+								validatorutils.NewNotifiersValidator(),
+							},
+							Attributes: map[string]schema.Attribute{
+								"any": schema.ListAttribute{
+									Optional:    true,
+									Description: "Notifier IDs for any severity. If set, other severity-specific notifiers must be empty.",
+									ElementType: types.StringType,
+								},
+								"warn": schema.ListAttribute{
+									Optional:    true,
+									Description: "Notifier IDs for warning severity.",
+									ElementType: types.StringType,
+								},
+								"critical": schema.ListAttribute{
+									Optional:    true,
+									Description: "Notifier IDs for critical severity.",
+									ElementType: types.StringType,
+								},
+								"no_data": schema.ListAttribute{
+									Optional:    true,
+									Description: "Notifier IDs for no data scenarios.",
+									ElementType: types.StringType,
+								},
+							},
+						},
+					},
+				},
+			},
 			"group_wait": schema.StringAttribute{
 				Optional: true,
 				Validators: []validator.String{
@@ -270,5 +338,12 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "Interval at which to send alerts for the same alert after firing. RepeatInterval should be a multiple of GroupInterval.",
 			},
 		},
+	}
+}
+
+// ConfigValidators returns the resource-level validators.
+func (r *monitorResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		validatorutils.NewMonitorConfigValidator(),
 	}
 }

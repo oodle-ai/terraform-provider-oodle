@@ -3,9 +3,9 @@ package clientmodels
 // NotificationPolicy represents a policy for sending notifications based on severity.
 // A notification policy is associated with a monitor.
 type NotificationPolicy struct {
-	ID        ID                  `json:"id,omitempty" yaml:"id,omitempty"`
-	Name      string              `json:"name,omitempty" yaml:"name,omitempty"`
-	Notifiers NotifiersBySeverity `json:"notifiers,omitempty" yaml:"notifiers,omitempty"`
+	ID        ID                   `json:"id,omitempty" yaml:"id,omitempty"`
+	Name      string               `json:"name,omitempty" yaml:"name,omitempty"`
+	Notifiers NotifiersByCondition `json:"notifiers,omitempty" yaml:"notifiers,omitempty"`
 	// Global policy is applied to all monitors in addition to any monitor specific policies.
 	Global     bool `json:"global,omitempty" yaml:"global,omitempty"`
 	MuteGlobal bool `json:"mute_global,omitempty" yaml:"mute_global,omitempty"`
@@ -18,8 +18,10 @@ func (np *NotificationPolicy) GetID() string {
 	return np.ID.UUID.String()
 }
 
-// NotifiersBySeverity represents notifiers for each severity level.
-type NotifiersBySeverity struct {
+// NotifiersByCondition represents notifiers for each severity level.
+type NotifiersByCondition struct {
+	Any      []ID `json:"any,omitempty" yaml:"any,omitempty"`
 	Warn     []ID `json:"warn,omitempty" yaml:"warn,omitempty"`
 	Critical []ID `json:"critical,omitempty" yaml:"critical,omitempty"`
+	NoData   []ID `json:"no_data,omitempty" yaml:"no_data,omitempty"`
 }
