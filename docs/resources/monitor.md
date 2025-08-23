@@ -172,12 +172,9 @@ Required:
 <a id="nestedatt--notifications"></a>
 ### Nested Schema for `notifications`
 
-Required:
-
-- `matchers` (Attributes List) List of label matchers that determine when this notification applies. (see [below for nested schema](#nestedatt--notifications--matchers))
-
 Optional:
 
+- `matchers` (Attributes List) List of label matchers that determine when this notification applies. (see [below for nested schema](#nestedatt--notifications--matchers))
 - `notification_policy_id` (String) ID of the notification policy to use when labels match. Either this or notifiers must be specified.
 - `notifiers` (Attributes) Notifiers by severity. Either this or notification_policy_id must be specified. (see [below for nested schema](#nestedatt--notifications--notifiers))
 
