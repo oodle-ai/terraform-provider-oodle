@@ -94,6 +94,7 @@ resource "oodle_monitor" "service_monitor" {
 - `label_matcher_notification_policies` (Attributes List) List of label matcher notification policies. These policies are evaluated in order, and the first matching policy is used. Within a label matcher, all matchers must match for policy to be effective. If no policy matches, the default notification_policy_id is used if set. (see [below for nested schema](#nestedatt--label_matcher_notification_policies))
 - `labels` (Map of String) Additional labels to attach to the fired alerts.
 - `notification_policy_id` (String) ID of the notification policy to use for the monitor.
+- `notifications` (Attributes List) List of label matcher notifications. These notifications are evaluated in order, and the first matching notification is used. This is the preferred way to configure notifications instead of label_matcher_notification_policies or notification_policy_id. (see [below for nested schema](#nestedatt--notifications))
 - `repeat_interval` (String) Interval at which to send alerts for the same alert after firing. RepeatInterval should be a multiple of GroupInterval.
 
 ### Read-Only
@@ -165,6 +166,40 @@ Required:
 - `name` (String) The name of the label to match against.
 - `type` (String) The type of match to perform. Valid values are: '=' (equals), '!=' (not equals), '=~' (regex match), '!~' (regex not match).
 - `value` (String) The value to match against. For regex matches, this must be a valid regular expression.
+
+
+
+<a id="nestedatt--notifications"></a>
+### Nested Schema for `notifications`
+
+Required:
+
+- `matchers` (Attributes List) List of label matchers that determine when this notification applies. (see [below for nested schema](#nestedatt--notifications--matchers))
+
+Optional:
+
+- `notification_policy_id` (String) ID of the notification policy to use when labels match. Either this or notifiers must be specified.
+- `notifiers` (Attributes) Notifiers by severity. Either this or notification_policy_id must be specified. (see [below for nested schema](#nestedatt--notifications--notifiers))
+
+<a id="nestedatt--notifications--matchers"></a>
+### Nested Schema for `notifications.matchers`
+
+Required:
+
+- `name` (String) The name of the label to match against.
+- `type` (String) The type of match to perform. Valid values are: '=' (equals), '!=' (not equals), '=~' (regex match), '!~' (regex not match).
+- `value` (String) The value to match against. For regex matches, this must be a valid regular expression.
+
+
+<a id="nestedatt--notifications--notifiers"></a>
+### Nested Schema for `notifications.notifiers`
+
+Optional:
+
+- `any` (List of String) Notifier IDs for any severity. If set, other severity-specific notifiers must be empty.
+- `critical` (List of String) Notifier IDs for critical severity.
+- `no_data` (List of String) Notifier IDs for no data scenarios.
+- `warn` (List of String) Notifier IDs for warning severity.
 
 ## Import
 

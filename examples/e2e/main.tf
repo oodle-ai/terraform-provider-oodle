@@ -143,7 +143,7 @@ resource "oodle_monitor" "service_monitor" {
       ]
       notifiers = {
         any = [oodle_notifier.platform_opsgenie.id, oodle_notifier.critical_slack.id]
-        
+
       }
     },
     {
@@ -156,7 +156,7 @@ resource "oodle_monitor" "service_monitor" {
         }
       ]
       notifiers = {
-        warn = [oodle_notifier.general_slack.id]
+        warn     = [oodle_notifier.general_slack.id]
         critical = [oodle_notifier.general_slack.id]
       }
     }
