@@ -28,6 +28,7 @@ type monitorResourceModel struct {
 	Grouping                         *grouping        `tfsdk:"grouping"`
 	NotificationPolicyID             types.String     `tfsdk:"notification_policy_id"`
 	LabelMatcherNotificationPolicies types.List       `tfsdk:"label_matcher_notification_policies"`
+	Notifications                    types.List       `tfsdk:"notifications"`
 	GroupWait                        types.String     `tfsdk:"group_wait"`
 	GroupInterval                    types.String     `tfsdk:"group_interval"`
 	RepeatInterval                   types.String     `tfsdk:"repeat_interval"`
@@ -36,6 +37,19 @@ type monitorResourceModel struct {
 type labelMatcherNotificationPolicyModel struct {
 	Matchers             types.List   `tfsdk:"matchers"`
 	NotificationPolicyID types.String `tfsdk:"notification_policy_id"`
+}
+
+type labelMatcherNotificationsModel struct {
+	Matchers             types.List            `tfsdk:"matchers"`
+	NotificationPolicyID types.String          `tfsdk:"notification_policy_id"`
+	Notifiers            *notifiersByCondition `tfsdk:"notifiers"`
+}
+
+type notifiersByCondition struct {
+	Any      types.List `tfsdk:"any"`
+	Warn     types.List `tfsdk:"warn"`
+	Critical types.List `tfsdk:"critical"`
+	NoData   types.List `tfsdk:"no_data"`
 }
 
 type labelMatcherModel struct {
@@ -207,6 +221,186 @@ func (m *monitorResourceModel) FromClientModel(
 		})
 	}
 
+	if len(model.Notifications) > 0 {
+		notifications := make([]attr.Value, 0, len(model.Notifications))
+		for _, notification := range model.Notifications {
+			matchers := make([]attr.Value, 0, len(notification.Matchers))
+			for _, matcher := range notification.Matchers {
+				matcherObj, diags := types.ObjectValue(
+					map[string]attr.Type{
+						"type":  types.StringType,
+						"name":  types.StringType,
+						"value": types.StringType,
+					},
+					map[string]attr.Value{
+						"type":  types.StringValue(matcher.Type.String()),
+						"name":  types.StringValue(matcher.Name),
+						"value": types.StringValue(matcher.Value),
+					},
+				)
+				if diags.HasError() {
+					diagnosticsOut.Append(diags...)
+					continue
+				}
+				matchers = append(matchers, matcherObj)
+			}
+
+			matchersList, diags := types.ListValue(
+				types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"type":  types.StringType,
+						"name":  types.StringType,
+						"value": types.StringType,
+					},
+				},
+				matchers,
+			)
+			if diags.HasError() {
+				diagnosticsOut.Append(diags...)
+				continue
+			}
+
+			// Convert NotifiersByCondition to terraform structure
+			var notifiersValue attr.Value
+			if len(notification.Notifiers.Any) > 0 || len(notification.Notifiers.Warn) > 0 ||
+				len(notification.Notifiers.Critical) > 0 || len(notification.Notifiers.NoData) > 0 {
+				anyList := types.ListNull(types.StringType)
+				if len(notification.Notifiers.Any) > 0 {
+					anyList = validatorutils.IDsToAttrList(notification.Notifiers.Any, diagnosticsOut)
+				}
+
+				warnList := types.ListNull(types.StringType)
+				if len(notification.Notifiers.Warn) > 0 {
+					warnList = validatorutils.IDsToAttrList(notification.Notifiers.Warn, diagnosticsOut)
+				}
+
+				criticalList := types.ListNull(types.StringType)
+				if len(notification.Notifiers.Critical) > 0 {
+					criticalList = validatorutils.IDsToAttrList(notification.Notifiers.Critical, diagnosticsOut)
+				}
+
+				noDataList := types.ListNull(types.StringType)
+				if len(notification.Notifiers.NoData) > 0 {
+					noDataList = validatorutils.IDsToAttrList(notification.Notifiers.NoData, diagnosticsOut)
+				}
+
+				notifiersObj, diags := types.ObjectValue(
+					map[string]attr.Type{
+						"any":      types.ListType{ElemType: types.StringType},
+						"warn":     types.ListType{ElemType: types.StringType},
+						"critical": types.ListType{ElemType: types.StringType},
+						"no_data":  types.ListType{ElemType: types.StringType},
+					},
+					map[string]attr.Value{
+						"any":      anyList,
+						"warn":     warnList,
+						"critical": criticalList,
+						"no_data":  noDataList,
+					},
+				)
+				if diags.HasError() {
+					diagnosticsOut.Append(diags...)
+					continue
+				}
+				notifiersValue = notifiersObj
+			} else {
+				notifiersValue = types.ObjectNull(map[string]attr.Type{
+					"any":      types.ListType{ElemType: types.StringType},
+					"warn":     types.ListType{ElemType: types.StringType},
+					"critical": types.ListType{ElemType: types.StringType},
+					"no_data":  types.ListType{ElemType: types.StringType},
+				})
+			}
+
+			var notificationPolicyIDValue attr.Value
+			if notification.NotificationPolicyID.UUID != uuid.Nil {
+				notificationPolicyIDValue = types.StringValue(notification.NotificationPolicyID.UUID.String())
+			} else {
+				notificationPolicyIDValue = types.StringNull()
+			}
+
+			notificationObj, diags := types.ObjectValue(
+				map[string]attr.Type{
+					"matchers": types.ListType{
+						ElemType: types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"type":  types.StringType,
+								"name":  types.StringType,
+								"value": types.StringType,
+							},
+						},
+					},
+					"notification_policy_id": types.StringType,
+					"notifiers": types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"any":      types.ListType{ElemType: types.StringType},
+							"warn":     types.ListType{ElemType: types.StringType},
+							"critical": types.ListType{ElemType: types.StringType},
+							"no_data":  types.ListType{ElemType: types.StringType},
+						},
+					},
+				},
+				map[string]attr.Value{
+					"matchers":               matchersList,
+					"notification_policy_id": notificationPolicyIDValue,
+					"notifiers":              notifiersValue,
+				},
+			)
+			if diags.HasError() {
+				diagnosticsOut.Append(diags...)
+				continue
+			}
+			notifications = append(notifications, notificationObj)
+		}
+
+		listType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"matchers": types.ListType{
+					ElemType: types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"type":  types.StringType,
+							"name":  types.StringType,
+							"value": types.StringType,
+						},
+					},
+				},
+				"notification_policy_id": types.StringType,
+				"notifiers": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"any":      types.ListType{ElemType: types.StringType},
+						"warn":     types.ListType{ElemType: types.StringType},
+						"critical": types.ListType{ElemType: types.StringType},
+						"no_data":  types.ListType{ElemType: types.StringType},
+					},
+				},
+			},
+		}
+		m.Notifications = types.ListValueMust(listType, notifications)
+	} else {
+		m.Notifications = types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"matchers": types.ListType{
+					ElemType: types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"type":  types.StringType,
+							"name":  types.StringType,
+							"value": types.StringType,
+						},
+					},
+				},
+				"notification_policy_id": types.StringType,
+				"notifiers": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"any":      types.ListType{ElemType: types.StringType},
+						"warn":     types.ListType{ElemType: types.StringType},
+						"critical": types.ListType{ElemType: types.StringType},
+						"no_data":  types.ListType{ElemType: types.StringType},
+					},
+				},
+			},
+		})
+	}
+
 	if model.GroupWait != nil {
 		m.GroupWait = types.StringValue(validatorutils.ShortDur(*model.GroupWait))
 	}
@@ -371,6 +565,107 @@ func (m *monitorResourceModel) ToClientModel(
 			})
 		}
 		model.LabelMatcherNotificationPolicies = policies
+	}
+
+	if !m.Notifications.IsNull() && !m.Notifications.IsUnknown() {
+		notifications := make([]clientmodels.LabelMatcherNotifications, 0, len(m.Notifications.Elements()))
+		for _, notificationElem := range m.Notifications.Elements() {
+			notificationObj, ok := notificationElem.(types.Object)
+			if !ok {
+				return fmt.Errorf("failed to parse notification: %v, type is %T", notificationElem, notificationElem)
+			}
+
+			var notification labelMatcherNotificationsModel
+			diags := notificationObj.As(ctx, &notification, basetypes.ObjectAsOptions{})
+			if diags.HasError() {
+				return fmt.Errorf("failed to parse notification: %v", diags)
+			}
+
+			matchers := make([]clientmodels.LabelMatcher, 0, len(notification.Matchers.Elements()))
+			for _, matcherElem := range notification.Matchers.Elements() {
+				matcherObj, ok := matcherElem.(types.Object)
+				if !ok {
+					return fmt.Errorf("failed to parse notification matcher: %v, type is %T", matcherElem, matcherElem)
+				}
+
+				var matcher labelMatcherModel
+				diags = matcherObj.As(ctx, &matcher, basetypes.ObjectAsOptions{})
+				if diags.HasError() {
+					return fmt.Errorf("failed to parse notification matcher fields: %v", diags)
+				}
+
+				var matchType labels.MatchType
+				switch matcher.Type.ValueString() {
+				case "=":
+					matchType = labels.MatchEqual
+				case "!=":
+					matchType = labels.MatchNotEqual
+				case "=~":
+					matchType = labels.MatchRegexp
+				case "!~":
+					matchType = labels.MatchNotRegexp
+				default:
+					return fmt.Errorf("invalid match type: %s", matcher.Type.ValueString())
+				}
+
+				matchers = append(matchers, clientmodels.LabelMatcher{
+					Type:  matchType,
+					Name:  matcher.Name.ValueString(),
+					Value: matcher.Value.ValueString(),
+				})
+			}
+
+			var notificationPolicyID clientmodels.ID
+			if !notification.NotificationPolicyID.IsNull() && !notification.NotificationPolicyID.IsUnknown() {
+				uid, err := uuid.Parse(notification.NotificationPolicyID.ValueString())
+				if err != nil {
+					return fmt.Errorf("failed to parse notification policy UUID: %v", err)
+				}
+				notificationPolicyID = clientmodels.ID{UUID: uid}
+			}
+
+			var notifiers clientmodels.NotifiersByCondition
+			if notification.Notifiers != nil {
+				if !notification.Notifiers.Any.IsNull() && len(notification.Notifiers.Any.Elements()) > 0 {
+					anyIDs, err := validatorutils.AttrListToIDs(notification.Notifiers.Any)
+					if err != nil {
+						return fmt.Errorf("failed to parse any notifier IDs: %v", err)
+					}
+					notifiers.Any = anyIDs
+				}
+
+				if !notification.Notifiers.Warn.IsNull() && len(notification.Notifiers.Warn.Elements()) > 0 {
+					warnIDs, err := validatorutils.AttrListToIDs(notification.Notifiers.Warn)
+					if err != nil {
+						return fmt.Errorf("failed to parse warn notifier IDs: %v", err)
+					}
+					notifiers.Warn = warnIDs
+				}
+
+				if !notification.Notifiers.Critical.IsNull() && len(notification.Notifiers.Critical.Elements()) > 0 {
+					criticalIDs, err := validatorutils.AttrListToIDs(notification.Notifiers.Critical)
+					if err != nil {
+						return fmt.Errorf("failed to parse critical notifier IDs: %v", err)
+					}
+					notifiers.Critical = criticalIDs
+				}
+
+				if !notification.Notifiers.NoData.IsNull() && len(notification.Notifiers.NoData.Elements()) > 0 {
+					noDataIDs, err := validatorutils.AttrListToIDs(notification.Notifiers.NoData)
+					if err != nil {
+						return fmt.Errorf("failed to parse no_data notifier IDs: %v", err)
+					}
+					notifiers.NoData = noDataIDs
+				}
+			}
+
+			notifications = append(notifications, clientmodels.LabelMatcherNotifications{
+				Matchers:             matchers,
+				NotificationPolicyID: notificationPolicyID,
+				Notifiers:            notifiers,
+			})
+		}
+		model.Notifications = notifications
 	}
 
 	if len(m.GroupWait.ValueString()) > 0 {

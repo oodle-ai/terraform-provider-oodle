@@ -119,11 +119,8 @@ resource "oodle_monitor" "service_monitor" {
     disabled = true
   }
 
-  # Default policy for alerts that don't match any matchers
-  notification_policy_id = oodle_notification_policy.default.id
-
-  # Route alerts to different policies based on labels
-  label_matcher_notification_policies = [
+  # Route alerts to different policies based on labels using the new notifications field
+  notifications = [
     {
       # Critical services get highest priority routing
       matchers = [
@@ -136,7 +133,7 @@ resource "oodle_monitor" "service_monitor" {
       notification_policy_id = oodle_notification_policy.critical_services.id
     },
     {
-      # Platform team gets their own routing
+      # Platform team gets their own routing with custom notifiers
       matchers = [
         {
           type  = "="
@@ -144,7 +141,24 @@ resource "oodle_monitor" "service_monitor" {
           value = "platform"
         }
       ]
-      notification_policy_id = oodle_notification_policy.platform_team.id
+      notifiers = {
+        any = [oodle_notifier.platform_opsgenie.id, oodle_notifier.critical_slack.id]
+
+      }
+    },
+    {
+      # Development services get simple notifications to any severity
+      matchers = [
+        {
+          type  = "="
+          name  = "environment"
+          value = "development"
+        }
+      ]
+      notifiers = {
+        warn     = [oodle_notifier.general_slack.id]
+        critical = [oodle_notifier.general_slack.id]
+      }
     }
   ]
 }

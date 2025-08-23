@@ -18,7 +18,7 @@ func TestNotificationPolicyModel(t *testing.T) {
 			UUID: uuid.New(),
 		},
 		Name: "test",
-		Notifiers: clientmodels.NotifiersBySeverity{
+		Notifiers: clientmodels.NotifiersByCondition{
 			Warn:     []clientmodels.ID{{UUID: uuid.New()}, {UUID: uuid.New()}},
 			Critical: []clientmodels.ID{{UUID: uuid.New()}, {UUID: uuid.New()}, {UUID: uuid.New()}},
 		},
