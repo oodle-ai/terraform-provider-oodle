@@ -224,40 +224,53 @@ func (m *monitorResourceModel) FromClientModel(
 	if len(model.Notifications) > 0 {
 		notifications := make([]attr.Value, 0, len(model.Notifications))
 		for _, notification := range model.Notifications {
-			matchers := make([]attr.Value, 0, len(notification.Matchers))
-			for _, matcher := range notification.Matchers {
-				matcherObj, diags := types.ObjectValue(
-					map[string]attr.Type{
-						"type":  types.StringType,
-						"name":  types.StringType,
-						"value": types.StringType,
+			var matchersList attr.Value
+			if len(notification.Matchers) > 0 {
+				matchers := make([]attr.Value, 0, len(notification.Matchers))
+				for _, matcher := range notification.Matchers {
+					matcherObj, diags := types.ObjectValue(
+						map[string]attr.Type{
+							"type":  types.StringType,
+							"name":  types.StringType,
+							"value": types.StringType,
+						},
+						map[string]attr.Value{
+							"type":  types.StringValue(matcher.Type.String()),
+							"name":  types.StringValue(matcher.Name),
+							"value": types.StringValue(matcher.Value),
+						},
+					)
+					if diags.HasError() {
+						diagnosticsOut.Append(diags...)
+						continue
+					}
+					matchers = append(matchers, matcherObj)
+				}
+
+				matchersListValue, diags := types.ListValue(
+					types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"type":  types.StringType,
+							"name":  types.StringType,
+							"value": types.StringType,
+						},
 					},
-					map[string]attr.Value{
-						"type":  types.StringValue(matcher.Type.String()),
-						"name":  types.StringValue(matcher.Name),
-						"value": types.StringValue(matcher.Value),
-					},
+					matchers,
 				)
 				if diags.HasError() {
 					diagnosticsOut.Append(diags...)
 					continue
 				}
-				matchers = append(matchers, matcherObj)
-			}
-
-			matchersList, diags := types.ListValue(
-				types.ObjectType{
+				matchersList = matchersListValue
+			} else {
+				// When no matchers, use null instead of empty list
+				matchersList = types.ListNull(types.ObjectType{
 					AttrTypes: map[string]attr.Type{
 						"type":  types.StringType,
 						"name":  types.StringType,
 						"value": types.StringType,
 					},
-				},
-				matchers,
-			)
-			if diags.HasError() {
-				diagnosticsOut.Append(diags...)
-				continue
+				})
 			}
 
 			// Convert NotifiersByCondition to terraform structure
@@ -581,38 +594,41 @@ func (m *monitorResourceModel) ToClientModel(
 				return fmt.Errorf("failed to parse notification: %v", diags)
 			}
 
-			matchers := make([]clientmodels.LabelMatcher, 0, len(notification.Matchers.Elements()))
-			for _, matcherElem := range notification.Matchers.Elements() {
-				matcherObj, ok := matcherElem.(types.Object)
-				if !ok {
-					return fmt.Errorf("failed to parse notification matcher: %v, type is %T", matcherElem, matcherElem)
-				}
+			matchers := make([]clientmodels.LabelMatcher, 0)
+			if !notification.Matchers.IsNull() && !notification.Matchers.IsUnknown() {
+				matchers = make([]clientmodels.LabelMatcher, 0, len(notification.Matchers.Elements()))
+				for _, matcherElem := range notification.Matchers.Elements() {
+					matcherObj, ok := matcherElem.(types.Object)
+					if !ok {
+						return fmt.Errorf("failed to parse notification matcher: %v, type is %T", matcherElem, matcherElem)
+					}
 
-				var matcher labelMatcherModel
-				diags = matcherObj.As(ctx, &matcher, basetypes.ObjectAsOptions{})
-				if diags.HasError() {
-					return fmt.Errorf("failed to parse notification matcher fields: %v", diags)
-				}
+					var matcher labelMatcherModel
+					diags = matcherObj.As(ctx, &matcher, basetypes.ObjectAsOptions{})
+					if diags.HasError() {
+						return fmt.Errorf("failed to parse notification matcher fields: %v", diags)
+					}
 
-				var matchType labels.MatchType
-				switch matcher.Type.ValueString() {
-				case "=":
-					matchType = labels.MatchEqual
-				case "!=":
-					matchType = labels.MatchNotEqual
-				case "=~":
-					matchType = labels.MatchRegexp
-				case "!~":
-					matchType = labels.MatchNotRegexp
-				default:
-					return fmt.Errorf("invalid match type: %s", matcher.Type.ValueString())
-				}
+					var matchType labels.MatchType
+					switch matcher.Type.ValueString() {
+					case "=":
+						matchType = labels.MatchEqual
+					case "!=":
+						matchType = labels.MatchNotEqual
+					case "=~":
+						matchType = labels.MatchRegexp
+					case "!~":
+						matchType = labels.MatchNotRegexp
+					default:
+						return fmt.Errorf("invalid match type: %s", matcher.Type.ValueString())
+					}
 
-				matchers = append(matchers, clientmodels.LabelMatcher{
-					Type:  matchType,
-					Name:  matcher.Name.ValueString(),
-					Value: matcher.Value.ValueString(),
-				})
+					matchers = append(matchers, clientmodels.LabelMatcher{
+						Type:  matchType,
+						Name:  matcher.Name.ValueString(),
+						Value: matcher.Value.ValueString(),
+					})
+				}
 			}
 
 			var notificationPolicyID clientmodels.ID

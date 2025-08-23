@@ -255,7 +255,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"matchers": schema.ListNestedAttribute{
-							Required:    true,
+							Optional:    true,
 							Description: "List of label matchers that determine when this notification applies.",
 							NestedObject: schema.NestedAttributeObject{
 								Attributes: map[string]schema.Attribute{
