@@ -98,6 +98,14 @@ func (m *monitorResourceModel) FromClientModel(
 		m.Conditions.Critical = newConditionFromModel(model.Conditions.Critical)
 	}
 
+	if model.Conditions.NoData != nil {
+		if m.Conditions == nil {
+			m.Conditions = &conditionsModel{}
+		}
+
+		m.Conditions.NoData = newNoDataConditionFromModel(model.Conditions.NoData)
+	}
+
 	if len(model.Labels) > 0 {
 		m.Labels = validatorutils.ToAttrMap(model.Labels, diagnosticsOut)
 	} else {
@@ -460,6 +468,13 @@ func (m *monitorResourceModel) ToClientModel(
 			model.Conditions.Critical, err = m.Conditions.Critical.toModel()
 			if err != nil {
 				return fmt.Errorf("failed to parse critical condition: %v", err)
+			}
+		}
+
+		if m.Conditions.NoData != nil {
+			model.Conditions.NoData, err = m.Conditions.NoData.toModel()
+			if err != nil {
+				return fmt.Errorf("failed to parse no_data condition: %v", err)
 			}
 		}
 	}

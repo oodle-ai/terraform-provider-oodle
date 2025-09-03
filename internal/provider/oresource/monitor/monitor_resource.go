@@ -17,10 +17,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                     = &monitorResource{}
-	_ resource.ResourceWithConfigure        = &monitorResource{}
-	_ resource.ResourceWithImportState      = &monitorResource{}
-	_ resource.ResourceWithConfigValidators = &monitorResource{}
+	_ resource.Resource                = &monitorResource{}
+	_ resource.ResourceWithConfigure   = &monitorResource{}
+	_ resource.ResourceWithImportState = &monitorResource{}
 )
 
 const monitorsResource = "monitors"
@@ -116,7 +115,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Value to compare against.",
 							},
 							"for": schema.StringAttribute{
-								Required: true,
+								Optional: true,
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
@@ -130,10 +129,11 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
 							},
 							"alert_on_no_data": schema.BoolAttribute{
-								Optional:    true,
-								Computed:    true,
-								Description: "If true, the monitor is considered firing when there is no data for the query.",
-								Default:     booldefault.StaticBool(false),
+								Optional:           true,
+								Computed:           true,
+								DeprecationMessage: "Use conditions.no_data instead",
+								Description:        "Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.",
+								Default:            booldefault.StaticBool(false),
 							},
 						},
 					},
@@ -152,7 +152,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Value to compare against.",
 							},
 							"for": schema.StringAttribute{
-								Required: true,
+								Optional: true,
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
@@ -166,15 +166,35 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
 							},
 							"alert_on_no_data": schema.BoolAttribute{
-								Optional:    true,
-								Computed:    true,
-								Description: "If true, the monitor is considered firing when there is no data for the query.",
-								Default:     booldefault.StaticBool(false),
+								Optional:           true,
+								Computed:           true,
+								DeprecationMessage: "Use conditions.no_data instead",
+								Description:        "Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.",
+								Default:            booldefault.StaticBool(false),
+							},
+						},
+					},
+					"no_data": schema.SingleNestedAttribute{
+						Optional: true,
+						Attributes: map[string]schema.Attribute{
+							"for": schema.StringAttribute{
+								Optional: true,
+								Validators: []validator.String{
+									validatorutils.NewDurationValidator(),
+								},
+								Description: "Duration for which the condition should be true before the alert is triggered.",
+							},
+							"keep_firing_for": schema.StringAttribute{
+								Optional: true,
+								Validators: []validator.String{
+									validatorutils.NewDurationValidator(),
+								},
+								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
 							},
 						},
 					},
 				},
-				Description: "Warning and Critical thresholds for the monitor.",
+				Description: "Warning, Critical, and NoData thresholds for the monitor.",
 			},
 			"labels": schema.MapAttribute{
 				Optional:    true,
@@ -338,12 +358,5 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "Interval at which to send alerts for the same alert after firing. RepeatInterval should be a multiple of GroupInterval.",
 			},
 		},
-	}
-}
-
-// ConfigValidators returns the resource-level validators.
-func (r *monitorResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		validatorutils.NewMonitorConfigValidator(),
 	}
 }

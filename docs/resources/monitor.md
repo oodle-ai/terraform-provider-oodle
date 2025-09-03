@@ -80,7 +80,7 @@ resource "oodle_monitor" "service_monitor" {
 
 ### Required
 
-- `conditions` (Attributes) Warning and Critical thresholds for the monitor. (see [below for nested schema](#nestedatt--conditions))
+- `conditions` (Attributes) Warning, Critical, and NoData thresholds for the monitor. (see [below for nested schema](#nestedatt--conditions))
 - `name` (String) Name of the monitor.
 - `promql_query` (String) Prometheus query for the monitor.
 
@@ -107,6 +107,7 @@ resource "oodle_monitor" "service_monitor" {
 Optional:
 
 - `critical` (Attributes) (see [below for nested schema](#nestedatt--conditions--critical))
+- `no_data` (Attributes) (see [below for nested schema](#nestedatt--conditions--no_data))
 - `warning` (Attributes) (see [below for nested schema](#nestedatt--conditions--warning))
 
 <a id="nestedatt--conditions--critical"></a>
@@ -114,13 +115,22 @@ Optional:
 
 Required:
 
-- `for` (String) Duration for which the condition should be true before the alert is triggered.
 - `operation` (String) The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.
 - `value` (Number) Value to compare against.
 
 Optional:
 
-- `alert_on_no_data` (Boolean) If true, the monitor is considered firing when there is no data for the query.
+- `alert_on_no_data` (Boolean, Deprecated) Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.
+- `for` (String) Duration for which the condition should be true before the alert is triggered.
+- `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
+
+
+<a id="nestedatt--conditions--no_data"></a>
+### Nested Schema for `conditions.no_data`
+
+Optional:
+
+- `for` (String) Duration for which the condition should be true before the alert is triggered.
 - `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
 
 
@@ -129,13 +139,13 @@ Optional:
 
 Required:
 
-- `for` (String) Duration for which the condition should be true before the alert is triggered.
 - `operation` (String) The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.
 - `value` (Number) Value to compare against.
 
 Optional:
 
-- `alert_on_no_data` (Boolean) If true, the monitor is considered firing when there is no data for the query.
+- `alert_on_no_data` (Boolean, Deprecated) Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.
+- `for` (String) Duration for which the condition should be true before the alert is triggered.
 - `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
 
 

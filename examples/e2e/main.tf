@@ -95,10 +95,11 @@ resource "oodle_monitor" "service_monitor" {
       for       = "5m"
     }
     critical = {
-      value            = 0.05 # 5% error rate
-      operation        = ">"
-      for              = "3m"
-      alert_on_no_data = true # Alert if no data is received
+      value     = 0.05 # 5% error rate
+      operation = ">"
+    }
+    no_data = {
+      # "for" field is optional - omitting it means alert immediately when no data
     }
   }
 
