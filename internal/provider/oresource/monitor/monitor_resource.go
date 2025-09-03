@@ -17,9 +17,10 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &monitorResource{}
-	_ resource.ResourceWithConfigure   = &monitorResource{}
-	_ resource.ResourceWithImportState = &monitorResource{}
+	_ resource.Resource                     = &monitorResource{}
+	_ resource.ResourceWithConfigure        = &monitorResource{}
+	_ resource.ResourceWithImportState      = &monitorResource{}
+	_ resource.ResourceWithConfigValidators = &monitorResource{}
 )
 
 const monitorsResource = "monitors"
@@ -358,5 +359,12 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "Interval at which to send alerts for the same alert after firing. RepeatInterval should be a multiple of GroupInterval.",
 			},
 		},
+	}
+}
+
+// ConfigValidators returns the resource-level validators.
+func (r *monitorResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		validatorutils.NewMonitorConfigValidator(),
 	}
 }
