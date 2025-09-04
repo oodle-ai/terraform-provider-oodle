@@ -69,6 +69,7 @@ type Condition struct {
 	// KeepFiringFor is the duration for which the alert should keep firing
 	// after the condition is no longer true.
 	KeepFiringFor time.Duration `json:"keep_firing_for,omitempty" yaml:"keep_firing_for,omitempty"`
+	// Deprecated: use ConditionBySeverity#NoData instead
 	// AlertOnNoData indicates whether the alert should be triggered
 	// when there is no data for the metric.
 	AlertOnNoData bool `json:"alert_on_no_data,omitempty" yaml:"alert_on_no_data,omitempty"`
@@ -83,6 +84,7 @@ func (c Condition) ToCompString() string {
 type ConditionBySeverity struct {
 	Warn     *Condition `json:"warn,omitempty" yaml:"warn,omitempty"`
 	Critical *Condition `json:"critical,omitempty" yaml:"critical,omitempty"`
+	NoData   *Condition `json:"no_data,omitempty" yaml:"no_data,omitempty"`
 }
 
 // MarshalJSON customizes the JSON marshaling for Condition.

@@ -11,8 +11,9 @@ import (
 )
 
 type conditionsModel struct {
-	Warning  *conditionModel `tfsdk:"warning"`
-	Critical *conditionModel `tfsdk:"critical"`
+	Warning  *conditionModel       `tfsdk:"warning"`
+	Critical *conditionModel       `tfsdk:"critical"`
+	NoData   *noDataConditionModel `tfsdk:"no_data"`
 }
 
 type conditionModel struct {
@@ -21,15 +22,34 @@ type conditionModel struct {
 	Value         types.Float64 `tfsdk:"value"`
 	For           types.String  `tfsdk:"for"`
 	KeepFiringFor types.String  `tfsdk:"keep_firing_for"`
-	AlertOnNoData types.Bool    `tfsdk:"alert_on_no_data"`
+	// Deprecated: Use conditions.no_data instead
+	AlertOnNoData types.Bool `tfsdk:"alert_on_no_data"`
+}
+
+type noDataConditionModel struct {
+	// NoData conditions don't need Operation, Value, or AlertOnNoData - they default to Equal, 1, and true respectively
+	For           types.String `tfsdk:"for"`
+	KeepFiringFor types.String `tfsdk:"keep_firing_for"`
 }
 
 func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 	c := conditionModel{}
 	c.Operation = types.StringValue(model.Op.String())
 	c.Value = types.Float64Value(model.Value)
-	c.For = types.StringValue(validatorutils.ShortDur(model.For))
 	c.AlertOnNoData = types.BoolValue(model.AlertOnNoData)
+
+	c.For = types.StringValue(validatorutils.ShortDur(model.For))
+
+	if model.KeepFiringFor > 0 {
+		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
+	}
+	return &c
+}
+
+func newNoDataConditionFromModel(model *clientmodels.Condition) *noDataConditionModel {
+	c := noDataConditionModel{}
+
+	c.For = types.StringValue(validatorutils.ShortDur(model.For))
 
 	if model.KeepFiringFor > 0 {
 		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
@@ -70,5 +90,32 @@ func (c *conditionModel) toModel() (*clientmodels.Condition, error) {
 		For:           forVal,
 		KeepFiringFor: keepFiringForVal,
 		AlertOnNoData: alertOnNoData,
+	}, nil
+}
+
+func (c *noDataConditionModel) toModel() (*clientmodels.Condition, error) {
+	var forVal time.Duration
+	var err error
+	if !c.For.IsNull() && !c.For.IsUnknown() && len(c.For.ValueString()) > 0 {
+		forVal, err = time.ParseDuration(c.For.ValueString())
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse no_data forVal: %v", err)
+		}
+	}
+
+	var keepFiringForVal time.Duration
+	if !c.KeepFiringFor.IsNull() && !c.KeepFiringFor.IsUnknown() && len(c.KeepFiringFor.ValueString()) > 0 {
+		keepFiringForVal, err = time.ParseDuration(c.KeepFiringFor.ValueString())
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse no_data keepFiringFor: %v", err)
+		}
+	}
+
+	// Default NoData condition to Equal, 1
+	return &clientmodels.Condition{
+		Op:            clientmodels.ConditionOpEqual,
+		Value:         1,
+		For:           forVal,
+		KeepFiringFor: keepFiringForVal,
 	}, nil
 }

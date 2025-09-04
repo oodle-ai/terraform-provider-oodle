@@ -130,10 +130,11 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
 							},
 							"alert_on_no_data": schema.BoolAttribute{
-								Optional:    true,
-								Computed:    true,
-								Description: "If true, the monitor is considered firing when there is no data for the query.",
-								Default:     booldefault.StaticBool(false),
+								Optional:           true,
+								Computed:           true,
+								DeprecationMessage: "Use conditions.no_data instead",
+								Description:        "Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.",
+								Default:            booldefault.StaticBool(false),
 							},
 						},
 					},
@@ -166,15 +167,35 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
 							},
 							"alert_on_no_data": schema.BoolAttribute{
-								Optional:    true,
-								Computed:    true,
-								Description: "If true, the monitor is considered firing when there is no data for the query.",
-								Default:     booldefault.StaticBool(false),
+								Optional:           true,
+								Computed:           true,
+								DeprecationMessage: "Use conditions.no_data instead",
+								Description:        "Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.",
+								Default:            booldefault.StaticBool(false),
+							},
+						},
+					},
+					"no_data": schema.SingleNestedAttribute{
+						Optional: true,
+						Attributes: map[string]schema.Attribute{
+							"for": schema.StringAttribute{
+								Required: true,
+								Validators: []validator.String{
+									validatorutils.NewDurationValidator(),
+								},
+								Description: "Duration for which the condition should be true before the alert is triggered.",
+							},
+							"keep_firing_for": schema.StringAttribute{
+								Optional: true,
+								Validators: []validator.String{
+									validatorutils.NewDurationValidator(),
+								},
+								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
 							},
 						},
 					},
 				},
-				Description: "Warning and Critical thresholds for the monitor.",
+				Description: "Warning, Critical, and NoData thresholds for the monitor.",
 			},
 			"labels": schema.MapAttribute{
 				Optional:    true,
