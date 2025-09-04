@@ -116,7 +116,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Value to compare against.",
 							},
 							"for": schema.StringAttribute{
-								Optional: true,
+								Required: true,
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
@@ -153,7 +153,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Value to compare against.",
 							},
 							"for": schema.StringAttribute{
-								Optional: true,
+								Required: true,
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
@@ -179,7 +179,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						Optional: true,
 						Attributes: map[string]schema.Attribute{
 							"for": schema.StringAttribute{
-								Optional: true,
+								Required: true,
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},

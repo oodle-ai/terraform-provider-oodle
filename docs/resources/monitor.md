@@ -115,22 +115,25 @@ Optional:
 
 Required:
 
+- `for` (String) Duration for which the condition should be true before the alert is triggered.
 - `operation` (String) The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.
 - `value` (Number) Value to compare against.
 
 Optional:
 
 - `alert_on_no_data` (Boolean, Deprecated) Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.
-- `for` (String) Duration for which the condition should be true before the alert is triggered.
 - `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
 
 
 <a id="nestedatt--conditions--no_data"></a>
 ### Nested Schema for `conditions.no_data`
 
-Optional:
+Required:
 
 - `for` (String) Duration for which the condition should be true before the alert is triggered.
+
+Optional:
+
 - `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
 
 
@@ -139,13 +142,13 @@ Optional:
 
 Required:
 
+- `for` (String) Duration for which the condition should be true before the alert is triggered.
 - `operation` (String) The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.
 - `value` (Number) Value to compare against.
 
 Optional:
 
 - `alert_on_no_data` (Boolean, Deprecated) Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.
-- `for` (String) Duration for which the condition should be true before the alert is triggered.
 - `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
 
 

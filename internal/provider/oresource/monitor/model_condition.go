@@ -38,9 +38,7 @@ func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 	c.Value = types.Float64Value(model.Value)
 	c.AlertOnNoData = types.BoolValue(model.AlertOnNoData)
 
-	if model.For > 0 {
-		c.For = types.StringValue(validatorutils.ShortDur(model.For))
-	}
+	c.For = types.StringValue(validatorutils.ShortDur(model.For))
 
 	if model.KeepFiringFor > 0 {
 		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
@@ -51,9 +49,7 @@ func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 func newNoDataConditionFromModel(model *clientmodels.Condition) *noDataConditionModel {
 	c := noDataConditionModel{}
 
-	if model.For > 0 {
-		c.For = types.StringValue(validatorutils.ShortDur(model.For))
-	}
+	c.For = types.StringValue(validatorutils.ShortDur(model.For))
 
 	if model.KeepFiringFor > 0 {
 		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
