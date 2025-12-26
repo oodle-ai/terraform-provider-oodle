@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"terraform-provider-oodle/internal/oodlehttp"
+	"terraform-provider-oodle/internal/provider/oresource/grafanadashboard"
+	"terraform-provider-oodle/internal/provider/oresource/grafanafolder"
 	"terraform-provider-oodle/internal/provider/oresource/logmetrics"
 	"terraform-provider-oodle/internal/provider/oresource/monitor"
 	notificationPolicy "terraform-provider-oodle/internal/provider/oresource/notificationpolicy"
@@ -216,5 +218,7 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		notifier.NewNotifierResource,
 		notificationPolicy.NewNotificationPolicyResource,
 		logmetrics.NewLogMetricsResource,
+		grafanafolder.NewGrafanaFolderResource,
+		grafanadashboard.NewGrafanaDashboardResource,
 	}
 }

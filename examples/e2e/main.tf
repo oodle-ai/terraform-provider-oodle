@@ -276,3 +276,42 @@ resource "oodle_logmetrics" "coverage" {
     }
   ]
 }
+
+resource "oodle_grafana_folder" "my_folder" {
+  title = "Terraform - Test Folder"
+}
+
+# Example of a dashboard with a commit message for version history
+resource "oodle_grafana_dashboard" "service_dashboard" {
+  folder    = oodle_grafana_folder.my_folder.uid
+  message   = "Initial dashboard creation"
+  overwrite = true
+  config_json = jsonencode({
+    "title" : "Terraform - Service Health",
+    "uid" : "service-health-dashboard",
+    "schemaVersion" : 39,
+    "time" : {
+      "from" : "now-6h",
+      "to" : "now"
+    },
+    "panels" : [
+      {
+        "id" : 1,
+        "type" : "gauge",
+        "title" : "Uptime",
+        "gridPos" : {
+          "h" : 8,
+          "w" : 8,
+          "x" : 0,
+          "y" : 0
+        },
+        "targets" : [
+          {
+            "expr" : "avg(up{})",
+            "refId" : "A"
+          }
+        ]
+      }
+    ]
+  })
+}
