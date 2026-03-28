@@ -84,7 +84,7 @@ func (m *metricDropRuleResourceModel) ToClientModel(
 		if err != nil {
 			return fmt.Errorf("failed to parse metric_name match type: %v", err)
 		}
-		model.MetricName = &clientmodels.DropRuleMatcher{
+		model.MetricName = &clientmodels.LabelMatcher{
 			Name:  m.MetricName.Name.ValueString(),
 			Type:  matchType,
 			Value: m.MetricName.Value.ValueString(),
@@ -92,13 +92,13 @@ func (m *metricDropRuleResourceModel) ToClientModel(
 	}
 
 	if len(m.Filters) > 0 {
-		model.Filters = make([]*clientmodels.DropRuleMatcher, len(m.Filters))
+		model.Filters = make([]*clientmodels.LabelMatcher, len(m.Filters))
 		for i, filter := range m.Filters {
 			matchType, err := parseMatchType(filter.Type.ValueString())
 			if err != nil {
 				return fmt.Errorf("failed to parse filter match type: %v", err)
 			}
-			model.Filters[i] = &clientmodels.DropRuleMatcher{
+			model.Filters[i] = &clientmodels.LabelMatcher{
 				Name:  filter.Name.ValueString(),
 				Type:  matchType,
 				Value: filter.Value.ValueString(),

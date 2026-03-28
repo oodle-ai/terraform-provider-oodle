@@ -17,12 +17,12 @@ func TestMetricDropRuleModel(t *testing.T) {
 		ID:       "test-id-123",
 		RuleName: "Drop unused go_gc metrics",
 		Type:     "drop",
-		MetricName: &clientmodels.DropRuleMatcher{
+		MetricName: &clientmodels.LabelMatcher{
 			Name:  "__name__",
 			Type:  amlabels.MatchRegexp,
 			Value: "go_gc_.*",
 		},
-		Filters: []*clientmodels.DropRuleMatcher{
+		Filters: []*clientmodels.LabelMatcher{
 			{
 				Name:  "job",
 				Type:  amlabels.MatchEqual,
@@ -53,7 +53,7 @@ func TestMetricDropRuleModelNoFilters(t *testing.T) {
 		ID:       "test-id-456",
 		RuleName: "Drop all kube_state metrics",
 		Type:     "drop",
-		MetricName: &clientmodels.DropRuleMatcher{
+		MetricName: &clientmodels.LabelMatcher{
 			Name:  "__name__",
 			Type:  amlabels.MatchEqual,
 			Value: "kube_state_metrics_total",
@@ -77,12 +77,12 @@ func TestMetricDropRuleModelAllMatchTypes(t *testing.T) {
 		ID:       "test-id-789",
 		RuleName: "Test all match types",
 		Type:     "drop",
-		MetricName: &clientmodels.DropRuleMatcher{
+		MetricName: &clientmodels.LabelMatcher{
 			Name:  "__name__",
 			Type:  amlabels.MatchNotRegexp,
 			Value: "important_.*",
 		},
-		Filters: []*clientmodels.DropRuleMatcher{
+		Filters: []*clientmodels.LabelMatcher{
 			{
 				Name:  "env",
 				Type:  amlabels.MatchEqual,
