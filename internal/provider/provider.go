@@ -16,6 +16,7 @@ import (
 	"terraform-provider-oodle/internal/provider/oresource/grafanadashboard"
 	"terraform-provider-oodle/internal/provider/oresource/grafanafolder"
 	"terraform-provider-oodle/internal/provider/oresource/logmetrics"
+	"terraform-provider-oodle/internal/provider/oresource/metricdroprule"
 	"terraform-provider-oodle/internal/provider/oresource/monitor"
 	notificationPolicy "terraform-provider-oodle/internal/provider/oresource/notificationpolicy"
 	"terraform-provider-oodle/internal/provider/oresource/notifier"
@@ -218,6 +219,7 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		notifier.NewNotifierResource,
 		notificationPolicy.NewNotificationPolicyResource,
 		logmetrics.NewLogMetricsResource,
+		metricdroprule.NewMetricDropRuleResource,
 		grafanafolder.NewGrafanaFolderResource,
 		grafanadashboard.NewGrafanaDashboardResource,
 	}
