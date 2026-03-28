@@ -15,7 +15,7 @@ type MetricDropRule struct {
 	MetricName *LabelMatcher `json:"metric_name,omitempty" yaml:"metric_name,omitempty"`
 
 	// Filters are optional additional label matchers that further restrict which series are dropped.
-	Filters []*LabelMatcher `json:"filters" yaml:"filters"`
+	Filters []LabelMatcher `json:"filters" yaml:"filters"`
 }
 
 // GetID returns the ID of the metric drop rule.

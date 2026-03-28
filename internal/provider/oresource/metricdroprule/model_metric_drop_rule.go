@@ -92,13 +92,13 @@ func (m *metricDropRuleResourceModel) ToClientModel(
 	}
 
 	if len(m.Filters) > 0 {
-		model.Filters = make([]*clientmodels.LabelMatcher, len(m.Filters))
+		model.Filters = make([]clientmodels.LabelMatcher, len(m.Filters))
 		for i, filter := range m.Filters {
 			matchType, err := parseMatchType(filter.Type.ValueString())
 			if err != nil {
 				return fmt.Errorf("failed to parse filter match type: %v", err)
 			}
-			model.Filters[i] = &clientmodels.LabelMatcher{
+			model.Filters[i] = clientmodels.LabelMatcher{
 				Name:  filter.Name.ValueString(),
 				Type:  matchType,
 				Value: filter.Value.ValueString(),

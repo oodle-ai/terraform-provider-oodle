@@ -22,7 +22,7 @@ func TestMetricDropRuleModel(t *testing.T) {
 			Type:  amlabels.MatchRegexp,
 			Value: "go_gc_.*",
 		},
-		Filters: []*clientmodels.LabelMatcher{
+		Filters: []clientmodels.LabelMatcher{
 			{
 				Name:  "job",
 				Type:  amlabels.MatchEqual,
@@ -82,7 +82,7 @@ func TestMetricDropRuleModelAllMatchTypes(t *testing.T) {
 			Type:  amlabels.MatchNotRegexp,
 			Value: "important_.*",
 		},
-		Filters: []*clientmodels.LabelMatcher{
+		Filters: []clientmodels.LabelMatcher{
 			{
 				Name:  "env",
 				Type:  amlabels.MatchEqual,
