@@ -95,7 +95,7 @@ func (r *metricDropRuleResource) Schema(_ context.Context, _ resource.SchemaRequ
 			},
 			"type": schema.StringAttribute{
 				Required:    true,
-				Description: "Type of the drop rule.",
+				Description: "Type of the drop rule. Use 'series' for dropping metric time-series.",
 			},
 			"metric_name": schema.SingleNestedAttribute{
 				Required:    true,
