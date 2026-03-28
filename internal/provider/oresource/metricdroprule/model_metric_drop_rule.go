@@ -13,10 +13,10 @@ import (
 )
 
 type metricDropRuleResourceModel struct {
-	ID         types.String         `tfsdk:"id"`
-	RuleName   types.String         `tfsdk:"rule_name"`
-	Type       types.String         `tfsdk:"type"`
-	MetricName *dropRuleMatcherModel `tfsdk:"metric_name"`
+	ID         types.String           `tfsdk:"id"`
+	RuleName   types.String           `tfsdk:"rule_name"`
+	Type       types.String           `tfsdk:"type"`
+	MetricName *dropRuleMatcherModel  `tfsdk:"metric_name"`
 	Filters    []dropRuleMatcherModel `tfsdk:"filters"`
 }
 

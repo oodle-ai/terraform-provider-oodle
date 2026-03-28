@@ -8,7 +8,7 @@ description: |-
 
 # oodle_metric_drop_rule (Resource)
 
-Manages a metric drop rule. Drop rules prevent specific metric time-series from being ingested into Oodle. Every sample that matches a drop rule is silently discarded at ingest time, reducing your active series count and storage cost without any change to your exporters or collection pipeline.
+Manages a metric drop rule. Drop rules prevent specific metric time-series from being ingested into Oodle.
 
 ## Example Usage
 
@@ -69,8 +69,9 @@ resource "oodle_metric_drop_rule" "drop_specific_metric" {
 Required:
 
 - `name` (String) Label name to match against.
-- `type` (String) Match type. Possible values are: `=` (exact), `!=` (not equal), `=~` (regex), `!~` (negative regex).
+- `type` (String) Match type. Possible values are: '=' (exact), '!=' (not equal), '=~' (regex), '!~' (negative regex).
 - `value` (String) Value or pattern to match against.
+
 
 <a id="nestedatt--filters"></a>
 ### Nested Schema for `filters`
@@ -78,13 +79,5 @@ Required:
 Required:
 
 - `name` (String) Label name to match against.
-- `type` (String) Match type. Possible values are: `=` (exact), `!=` (not equal), `=~` (regex), `!~` (negative regex).
+- `type` (String) Match type. Possible values are: '=' (exact), '!=' (not equal), '=~' (regex), '!~' (negative regex).
 - `value` (String) Value or pattern to match against.
-
-## Import
-
-Import is supported using the following syntax:
-
-```shell
-terraform import oodle_metric_drop_rule.example <id>
-```
