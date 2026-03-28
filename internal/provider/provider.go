@@ -19,6 +19,7 @@ import (
 	"terraform-provider-oodle/internal/provider/oresource/monitor"
 	notificationPolicy "terraform-provider-oodle/internal/provider/oresource/notificationpolicy"
 	"terraform-provider-oodle/internal/provider/oresource/notifier"
+	"terraform-provider-oodle/internal/provider/oresource/syntheticmonitor"
 )
 
 const (
@@ -220,5 +221,6 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		logmetrics.NewLogMetricsResource,
 		grafanafolder.NewGrafanaFolderResource,
 		grafanadashboard.NewGrafanaDashboardResource,
+		syntheticmonitor.NewSyntheticMonitorResource,
 	}
 }

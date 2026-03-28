@@ -129,8 +129,8 @@ func (c *ModelClient[T]) Create(ctx context.Context, model T) (T, error) {
 		return c.nilVal, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return c.nilVal, fmt.Errorf("failed to update model %T: %v, body: %v", c.nilVal, resp.Status, string(bodyBytes))
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return c.nilVal, fmt.Errorf("failed to create model %T: %v, body: %v", c.nilVal, resp.Status, string(bodyBytes))
 	}
 
 	if err = jsoniter.Unmarshal(bodyBytes, resModel); err != nil {
