@@ -13,6 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"terraform-provider-oodle/internal/oodlehttp"
+	dsGrafanaDashboards "terraform-provider-oodle/internal/provider/odatasource/grafanadashboards"
+	dsGrafanaFolders "terraform-provider-oodle/internal/provider/odatasource/grafanafolders"
+	dsLogmetrics "terraform-provider-oodle/internal/provider/odatasource/logmetrics"
+	dsMonitors "terraform-provider-oodle/internal/provider/odatasource/monitors"
+	dsNotificationPolicies "terraform-provider-oodle/internal/provider/odatasource/notificationpolicies"
+	dsNotifiers "terraform-provider-oodle/internal/provider/odatasource/notifiers"
 	"terraform-provider-oodle/internal/provider/oresource/grafanadashboard"
 	"terraform-provider-oodle/internal/provider/oresource/grafanafolder"
 	"terraform-provider-oodle/internal/provider/oresource/logmetrics"
@@ -210,7 +216,14 @@ func (p *oodleProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 // DataSources defines the data sources implemented in the provider.
 func (p *oodleProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return nil
+	return []func() datasource.DataSource{
+		dsMonitors.NewMonitorsDataSource,
+		dsNotifiers.NewNotifiersDataSource,
+		dsNotificationPolicies.NewNotificationPoliciesDataSource,
+		dsLogmetrics.NewLogmetricsDataSource,
+		dsGrafanaDashboards.NewGrafanaDashboardsDataSource,
+		dsGrafanaFolders.NewGrafanaFoldersDataSource,
+	}
 }
 
 // Resources defines the resources implemented in the provider.

@@ -140,6 +140,40 @@ func (c *ModelClient[T]) Create(ctx context.Context, model T) (T, error) {
 	return resModel, nil
 }
 
+func (c *ModelClient[T]) List(ctx context.Context) ([]T, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf(apiBasePath+c.resourcePath, c.DeploymentUrl, c.Instance),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = c.Headers
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to list models %T: %v, body: %v", c.nilVal, resp.Status, string(bodyBytes))
+	}
+
+	var models []T
+	if err = jsoniter.Unmarshal(bodyBytes, &models); err != nil {
+		return nil, err
+	}
+
+	return models, nil
+}
+
 func (c *ModelClient[T]) Update(ctx context.Context, model T) (T, error) {
 	reqBody, err := jsoniter.Marshal(model)
 	if err != nil {

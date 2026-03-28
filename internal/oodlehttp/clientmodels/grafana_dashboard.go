@@ -60,6 +60,24 @@ func (r *GrafanaDashboardGetResponse) GetConfigJSON() (string, error) {
 	return string(bytes), nil
 }
 
+// GrafanaDashboardListItem represents a dashboard item from the list endpoint.
+type GrafanaDashboardListItem struct {
+	ID          int    `json:"id"`
+	UID         string `json:"uid"`
+	Title       string `json:"title"`
+	URL         string `json:"url"`
+	Type        string `json:"type"`
+	FolderID    int    `json:"folderId,omitempty"`
+	FolderUID   string `json:"folderUid,omitempty"`
+	FolderTitle string `json:"folderTitle,omitempty"`
+	FolderURL   string `json:"folderUrl,omitempty"`
+}
+
+// GetID returns the UID as the identifier for the dashboard list item.
+func (d *GrafanaDashboardListItem) GetID() string {
+	return d.UID
+}
+
 // DashboardMeta represents metadata for a dashboard.
 type DashboardMeta struct {
 	FolderID    int    `json:"folderId"`
