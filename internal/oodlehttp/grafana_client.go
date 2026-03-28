@@ -122,6 +122,48 @@ func (c *GrafanaFolderClient) Get(
 	return &result, nil
 }
 
+// List lists all folders.
+func (c *GrafanaFolderClient) List(
+	ctx context.Context,
+) ([]clientmodels.GrafanaFolder, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf(grafanaBasePath+"/folders", c.DeploymentUrl, c.Instance),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = c.Headers
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"failed to list folders: %v, body: %v",
+			resp.Status,
+			string(bodyBytes),
+		)
+	}
+
+	var result []clientmodels.GrafanaFolder
+	if err = jsoniter.Unmarshal(bodyBytes, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // Update updates a folder.
 func (c *GrafanaFolderClient) Update(
 	ctx context.Context,
@@ -328,6 +370,48 @@ func (c *GrafanaDashboardClient) Get(
 	}
 
 	return &result, nil
+}
+
+// List lists all dashboards.
+func (c *GrafanaDashboardClient) List(
+	ctx context.Context,
+) ([]clientmodels.GrafanaDashboardListItem, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf(grafanaBasePath+"/dashboards", c.DeploymentUrl, c.Instance),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = c.Headers
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"failed to list dashboards: %v, body: %v",
+			resp.Status,
+			string(bodyBytes),
+		)
+	}
+
+	var result []clientmodels.GrafanaDashboardListItem
+	if err = jsoniter.Unmarshal(bodyBytes, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // Update updates a dashboard.
