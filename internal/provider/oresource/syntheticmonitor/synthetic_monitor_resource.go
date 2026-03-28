@@ -127,11 +127,13 @@ func (r *syntheticMonitorResource) Schema(_ context.Context, _ resource.SchemaRe
 							},
 							"follow_redirects": schema.BoolAttribute{
 								Optional:    true,
-								Description: "Whether to follow HTTP redirects.",
+								Computed:    true,
+								Description: "Whether to follow HTTP redirects. Defaults to false.",
 							},
 							"insecure_skip_verify": schema.BoolAttribute{
 								Optional:    true,
-								Description: "Whether to skip TLS certificate verification.",
+								Computed:    true,
+								Description: "Whether to skip TLS certificate verification. Defaults to false.",
 							},
 						},
 					},

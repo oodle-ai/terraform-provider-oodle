@@ -92,6 +92,6 @@ Required:
 Optional:
 
 - `body` (String) Request body to send.
-- `follow_redirects` (Boolean) Whether to follow HTTP redirects.
+- `follow_redirects` (Boolean) Whether to follow HTTP redirects. Defaults to false.
 - `headers` (Map of String) HTTP headers to send with the request.
-- `insecure_skip_verify` (Boolean) Whether to skip TLS certificate verification.
+- `insecure_skip_verify` (Boolean) Whether to skip TLS certificate verification. Defaults to false.
