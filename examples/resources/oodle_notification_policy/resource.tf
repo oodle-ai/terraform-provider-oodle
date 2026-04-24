@@ -3,7 +3,7 @@ resource "oodle_notification_policy" "platform_team" {
   name = "platform_team_policy"
   notifiers = {
     critical = [oodle_notifier.platform_opsgenie.id]
-    warning  = [oodle_notifier.general_slack.id]
+    warn     = [oodle_notifier.general_slack.id]
   }
 }
 
@@ -12,7 +12,7 @@ resource "oodle_notification_policy" "critical_services" {
   name = "critical_services_policy"
   notifiers = {
     critical = [oodle_notifier.platform_opsgenie.id, oodle_notifier.critical_slack.id]
-    warning  = [oodle_notifier.critical_slack.id]
+    warn     = [oodle_notifier.critical_slack.id]
   }
 }
 
@@ -21,6 +21,6 @@ resource "oodle_notification_policy" "default" {
   name = "default_policy"
   notifiers = {
     critical = [oodle_notifier.general_slack.id]
-    warning  = [oodle_notifier.general_slack.id]
+    warn     = [oodle_notifier.general_slack.id]
   }
 }
