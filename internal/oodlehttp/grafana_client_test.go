@@ -8,29 +8,7 @@ import (
 )
 
 func TestGrafanaFolderClientDelete(t *testing.T) {
-	tests := []struct {
-		name       string
-		statusCode int
-		wantErr    bool
-	}{
-		{
-			name:       "200 OK returns nil error",
-			statusCode: http.StatusOK,
-			wantErr:    false,
-		},
-		{
-			name:       "204 No Content returns nil error",
-			statusCode: http.StatusNoContent,
-			wantErr:    false,
-		},
-		{
-			name:       "500 Internal Server Error returns error",
-			statusCode: http.StatusInternalServerError,
-			wantErr:    true,
-		},
-	}
-
-	for _, tt := range tests {
+	for _, tt := range deleteStatusCodeTests() {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.statusCode)
@@ -38,14 +16,7 @@ func TestGrafanaFolderClientDelete(t *testing.T) {
 			}))
 			defer server.Close()
 
-			apiClient := &OodleApiClient{
-				HttpClient:    server.Client(),
-				DeploymentUrl: server.URL,
-				Instance:      "test-instance",
-				Headers:       http.Header{},
-			}
-
-			client := NewGrafanaFolderClient(apiClient)
+			client := NewGrafanaFolderClient(newTestOodleAPIClient(server))
 
 			err := client.Delete(context.Background(), "test-uid")
 			if tt.wantErr && err == nil {
@@ -59,29 +30,7 @@ func TestGrafanaFolderClientDelete(t *testing.T) {
 }
 
 func TestGrafanaDashboardClientDelete(t *testing.T) {
-	tests := []struct {
-		name       string
-		statusCode int
-		wantErr    bool
-	}{
-		{
-			name:       "200 OK returns nil error",
-			statusCode: http.StatusOK,
-			wantErr:    false,
-		},
-		{
-			name:       "204 No Content returns nil error",
-			statusCode: http.StatusNoContent,
-			wantErr:    false,
-		},
-		{
-			name:       "500 Internal Server Error returns error",
-			statusCode: http.StatusInternalServerError,
-			wantErr:    true,
-		},
-	}
-
-	for _, tt := range tests {
+	for _, tt := range deleteStatusCodeTests() {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.statusCode)
@@ -89,14 +38,7 @@ func TestGrafanaDashboardClientDelete(t *testing.T) {
 			}))
 			defer server.Close()
 
-			apiClient := &OodleApiClient{
-				HttpClient:    server.Client(),
-				DeploymentUrl: server.URL,
-				Instance:      "test-instance",
-				Headers:       http.Header{},
-			}
-
-			client := NewGrafanaDashboardClient(apiClient)
+			client := NewGrafanaDashboardClient(newTestOodleAPIClient(server))
 
 			err := client.Delete(context.Background(), "test-uid")
 			if tt.wantErr && err == nil {

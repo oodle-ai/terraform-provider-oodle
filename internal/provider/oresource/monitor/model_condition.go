@@ -32,6 +32,41 @@ type noDataConditionModel struct {
 	KeepFiringFor validatorutils.DurationValue `tfsdk:"keep_firing_for"`
 }
 
+// durationValueFromModel converts a time.Duration to a DurationValue.
+// For zero durations, this returns null since zero is semantically equivalent to
+// "not set" for optional duration fields like keep_firing_for and interval.
+// A zero duration configured as "0s" by the user will be round-tripped through the
+// API as zero and converted back to null, which matches the user's intent (zero
+// duration is functionally equivalent to omitting the field).
+func durationValueFromModel(d time.Duration) validatorutils.DurationValue {
+	if d > 0 {
+		return validatorutils.NewDurationValue(validatorutils.ShortDur(d))
+	}
+	return validatorutils.NewDurationNull()
+}
+
+// durationValueFromDurationPtr converts a *time.Duration to a DurationValue.
+// nil pointers map to null; non-nil values (including zero) are preserved.
+func durationValueFromDurationPtr(d *time.Duration) validatorutils.DurationValue {
+	if d != nil {
+		return validatorutils.NewDurationValue(validatorutils.ShortDur(*d))
+	}
+	return validatorutils.NewDurationNull()
+}
+
+// parseDurationValue parses a DurationValue into a time.Duration.
+// Returns zero duration if the value is null or unknown.
+func parseDurationValue(v validatorutils.DurationValue, fieldName string) (time.Duration, error) {
+	if v.IsNull() || v.IsUnknown() {
+		return 0, nil
+	}
+	d, err := time.ParseDuration(v.ValueString())
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse %s: %v", fieldName, err)
+	}
+	return d, nil
+}
+
 func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 	c := conditionModel{}
 	c.Operation = types.StringValue(model.Op.String())
@@ -39,12 +74,7 @@ func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 	c.AlertOnNoData = types.BoolValue(model.AlertOnNoData)
 
 	c.For = validatorutils.NewDurationValue(validatorutils.ShortDur(model.For))
-
-	if model.KeepFiringFor > 0 {
-		c.KeepFiringFor = validatorutils.NewDurationValue(validatorutils.ShortDur(model.KeepFiringFor))
-	} else {
-		c.KeepFiringFor = validatorutils.NewDurationNull()
-	}
+	c.KeepFiringFor = durationValueFromModel(model.KeepFiringFor)
 	return &c
 }
 
@@ -52,12 +82,7 @@ func newNoDataConditionFromModel(model *clientmodels.Condition) *noDataCondition
 	c := noDataConditionModel{}
 
 	c.For = validatorutils.NewDurationValue(validatorutils.ShortDur(model.For))
-
-	if model.KeepFiringFor > 0 {
-		c.KeepFiringFor = validatorutils.NewDurationValue(validatorutils.ShortDur(model.KeepFiringFor))
-	} else {
-		c.KeepFiringFor = validatorutils.NewDurationNull()
-	}
+	c.KeepFiringFor = durationValueFromModel(model.KeepFiringFor)
 	return &c
 }
 
@@ -67,20 +92,14 @@ func (c *conditionModel) toModel() (*clientmodels.Condition, error) {
 		return nil, fmt.Errorf("failed to parse ConditionOp: %v", err)
 	}
 
-	var forVal time.Duration
-	if !c.For.IsNull() && !c.For.IsUnknown() && len(c.For.ValueString()) > 0 {
-		forVal, err = time.ParseDuration(c.For.ValueString())
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse warning forVal: %v", err)
-		}
+	forVal, err := parseDurationValue(c.For, "warning forVal")
+	if err != nil {
+		return nil, err
 	}
 
-	var keepFiringForVal time.Duration
-	if !c.KeepFiringFor.IsNull() && !c.KeepFiringFor.IsUnknown() && len(c.KeepFiringFor.ValueString()) > 0 {
-		keepFiringForVal, err = time.ParseDuration(c.KeepFiringFor.ValueString())
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse warning keepFiringFor: %v", err)
-		}
+	keepFiringForVal, err := parseDurationValue(c.KeepFiringFor, "warning keepFiringFor")
+	if err != nil {
+		return nil, err
 	}
 
 	var alertOnNoData bool
@@ -98,21 +117,14 @@ func (c *conditionModel) toModel() (*clientmodels.Condition, error) {
 }
 
 func (c *noDataConditionModel) toModel() (*clientmodels.Condition, error) {
-	var forVal time.Duration
-	var err error
-	if !c.For.IsNull() && !c.For.IsUnknown() && len(c.For.ValueString()) > 0 {
-		forVal, err = time.ParseDuration(c.For.ValueString())
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse no_data forVal: %v", err)
-		}
+	forVal, err := parseDurationValue(c.For, "no_data forVal")
+	if err != nil {
+		return nil, err
 	}
 
-	var keepFiringForVal time.Duration
-	if !c.KeepFiringFor.IsNull() && !c.KeepFiringFor.IsUnknown() && len(c.KeepFiringFor.ValueString()) > 0 {
-		keepFiringForVal, err = time.ParseDuration(c.KeepFiringFor.ValueString())
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse no_data keepFiringFor: %v", err)
-		}
+	keepFiringForVal, err := parseDurationValue(c.KeepFiringFor, "no_data keepFiringFor")
+	if err != nil {
+		return nil, err
 	}
 
 	// Default NoData condition to Equal, 1

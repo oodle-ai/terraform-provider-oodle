@@ -59,6 +59,36 @@ func TestStringSemanticEquals(t *testing.T) {
 			valueB:   "1m",
 			expected: false,
 		},
+		{
+			name:     "invalid prior value returns false",
+			valueA:   "abc",
+			valueB:   "5m",
+			expected: false,
+		},
+		{
+			name:     "invalid new value returns false",
+			valueA:   "5m",
+			valueB:   "abc",
+			expected: false,
+		},
+		{
+			name:     "both values invalid returns false",
+			valueA:   "abc",
+			valueB:   "xyz",
+			expected: false,
+		},
+		{
+			name:     "empty prior value returns false",
+			valueA:   "",
+			valueB:   "5m",
+			expected: false,
+		},
+		{
+			name:     "empty new value returns false",
+			valueA:   "5m",
+			valueB:   "",
+			expected: false,
+		},
 	}
 
 	for _, tt := range tests {

@@ -87,6 +87,8 @@ func NewDurationNull() DurationValue {
 }
 
 // NewDurationUnknown returns a new unknown DurationValue.
+// Provided for completeness alongside NewDurationValue and NewDurationNull as part of the
+// DurationValue type API. Currently unused but available for future use.
 func NewDurationUnknown() DurationValue {
 	return DurationValue{StringValue: basetypes.NewStringUnknown()}
 }
@@ -112,6 +114,12 @@ func (v DurationValue) ToStringValue(ctx context.Context) (basetypes.StringValue
 
 // StringSemanticEquals compares two duration strings semantically by parsing them
 // as time.Duration values. For example, "0.75m" and "45s" are semantically equal.
+//
+// When either value fails to parse as a duration, this method returns (false, nil)
+// intentionally — unparseable strings cannot be semantically equal, and parse errors
+// are expected to be caught by the DurationValidator during validation. Returning
+// false without diagnostics ensures Terraform treats the values as different without
+// producing confusing error messages during the semantic equality check phase.
 func (v DurationValue) StringSemanticEquals(ctx context.Context, newValuable basetypes.StringValuable) (bool, diag.Diagnostics) {
 	newStringValue, diags := newValuable.ToStringValue(ctx)
 	if diags.HasError() {
@@ -120,11 +128,13 @@ func (v DurationValue) StringSemanticEquals(ctx context.Context, newValuable bas
 
 	priorDuration, err := time.ParseDuration(v.ValueString())
 	if err != nil {
+		// Prior value is unparseable — cannot be semantically equal.
 		return false, nil
 	}
 
 	newDuration, err := time.ParseDuration(newStringValue.ValueString())
 	if err != nil {
+		// New value is unparseable — cannot be semantically equal.
 		return false, nil
 	}
 

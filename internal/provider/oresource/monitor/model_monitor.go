@@ -79,9 +79,7 @@ func (m *monitorResourceModel) FromClientModel(
 	m.ID = types.StringValue(model.ID.UUID.String())
 	m.Name = types.StringValue(model.Name)
 	m.PromQLQuery = types.StringValue(model.PromQLQuery)
-	if model.Interval > 0 {
-		m.Interval = validatorutils.NewDurationValue(validatorutils.ShortDur(model.Interval))
-	}
+	m.Interval = durationValueFromModel(model.Interval)
 	if model.Conditions.Warn != nil {
 		if m.Conditions == nil {
 			m.Conditions = &conditionsModel{}
@@ -422,23 +420,9 @@ func (m *monitorResourceModel) FromClientModel(
 		})
 	}
 
-	if model.GroupWait != nil {
-		m.GroupWait = validatorutils.NewDurationValue(validatorutils.ShortDur(*model.GroupWait))
-	} else {
-		m.GroupWait = validatorutils.NewDurationNull()
-	}
-
-	if model.GroupInterval != nil {
-		m.GroupInterval = validatorutils.NewDurationValue(validatorutils.ShortDur(*model.GroupInterval))
-	} else {
-		m.GroupInterval = validatorutils.NewDurationNull()
-	}
-
-	if model.RepeatInterval != nil {
-		m.RepeatInterval = validatorutils.NewDurationValue(validatorutils.ShortDur(*model.RepeatInterval))
-	} else {
-		m.RepeatInterval = validatorutils.NewDurationNull()
-	}
+	m.GroupWait = durationValueFromDurationPtr(model.GroupWait)
+	m.GroupInterval = durationValueFromDurationPtr(model.GroupInterval)
+	m.RepeatInterval = durationValueFromDurationPtr(model.RepeatInterval)
 }
 
 func (m *monitorResourceModel) ToClientModel(
