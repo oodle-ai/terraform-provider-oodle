@@ -18,20 +18,20 @@ import (
 )
 
 type monitorResourceModel struct {
-	ID                               types.String     `tfsdk:"id"`
-	Name                             types.String     `tfsdk:"name"`
-	Interval                         types.String     `tfsdk:"interval"`
-	PromQLQuery                      types.String     `tfsdk:"promql_query"`
-	Conditions                       *conditionsModel `tfsdk:"conditions"`
-	Labels                           types.Map        `tfsdk:"labels"`
-	Annotations                      types.Map        `tfsdk:"annotations"`
-	Grouping                         *grouping        `tfsdk:"grouping"`
-	NotificationPolicyID             types.String     `tfsdk:"notification_policy_id"`
-	LabelMatcherNotificationPolicies types.List       `tfsdk:"label_matcher_notification_policies"`
-	Notifications                    types.List       `tfsdk:"notifications"`
-	GroupWait                        types.String     `tfsdk:"group_wait"`
-	GroupInterval                    types.String     `tfsdk:"group_interval"`
-	RepeatInterval                   types.String     `tfsdk:"repeat_interval"`
+	ID                               types.String                 `tfsdk:"id"`
+	Name                             types.String                 `tfsdk:"name"`
+	Interval                         validatorutils.DurationValue `tfsdk:"interval"`
+	PromQLQuery                      types.String                 `tfsdk:"promql_query"`
+	Conditions                       *conditionsModel             `tfsdk:"conditions"`
+	Labels                           types.Map                    `tfsdk:"labels"`
+	Annotations                      types.Map                    `tfsdk:"annotations"`
+	Grouping                         *grouping                    `tfsdk:"grouping"`
+	NotificationPolicyID             types.String                 `tfsdk:"notification_policy_id"`
+	LabelMatcherNotificationPolicies types.List                   `tfsdk:"label_matcher_notification_policies"`
+	Notifications                    types.List                   `tfsdk:"notifications"`
+	GroupWait                        validatorutils.DurationValue `tfsdk:"group_wait"`
+	GroupInterval                    validatorutils.DurationValue `tfsdk:"group_interval"`
+	RepeatInterval                   validatorutils.DurationValue `tfsdk:"repeat_interval"`
 }
 
 type labelMatcherNotificationPolicyModel struct {
@@ -80,7 +80,7 @@ func (m *monitorResourceModel) FromClientModel(
 	m.Name = types.StringValue(model.Name)
 	m.PromQLQuery = types.StringValue(model.PromQLQuery)
 	if model.Interval > 0 {
-		m.Interval = types.StringValue(validatorutils.ShortDur(model.Interval))
+		m.Interval = validatorutils.NewDurationValue(validatorutils.ShortDur(model.Interval))
 	}
 	if model.Conditions.Warn != nil {
 		if m.Conditions == nil {
@@ -423,15 +423,21 @@ func (m *monitorResourceModel) FromClientModel(
 	}
 
 	if model.GroupWait != nil {
-		m.GroupWait = types.StringValue(validatorutils.ShortDur(*model.GroupWait))
+		m.GroupWait = validatorutils.NewDurationValue(validatorutils.ShortDur(*model.GroupWait))
+	} else {
+		m.GroupWait = validatorutils.NewDurationNull()
 	}
 
 	if model.GroupInterval != nil {
-		m.GroupInterval = types.StringValue(validatorutils.ShortDur(*model.GroupInterval))
+		m.GroupInterval = validatorutils.NewDurationValue(validatorutils.ShortDur(*model.GroupInterval))
+	} else {
+		m.GroupInterval = validatorutils.NewDurationNull()
 	}
 
 	if model.RepeatInterval != nil {
-		m.RepeatInterval = types.StringValue(validatorutils.ShortDur(*model.RepeatInterval))
+		m.RepeatInterval = validatorutils.NewDurationValue(validatorutils.ShortDur(*model.RepeatInterval))
+	} else {
+		m.RepeatInterval = validatorutils.NewDurationNull()
 	}
 }
 

@@ -88,7 +88,8 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "Name of the monitor.",
 			},
 			"interval": schema.StringAttribute{
-				Optional: true,
+				Optional:   true,
+				CustomType: validatorutils.NewDurationType(),
 				Validators: []validator.String{
 					validatorutils.NewDurationValidator(),
 				},
@@ -116,14 +117,16 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Value to compare against.",
 							},
 							"for": schema.StringAttribute{
-								Required: true,
+								Required:   true,
+								CustomType: validatorutils.NewDurationType(),
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
 								Description: "Duration for which the condition should be true before the alert is triggered.",
 							},
 							"keep_firing_for": schema.StringAttribute{
-								Optional: true,
+								Optional:   true,
+								CustomType: validatorutils.NewDurationType(),
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
@@ -153,14 +156,16 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								Description: "Value to compare against.",
 							},
 							"for": schema.StringAttribute{
-								Required: true,
+								Required:   true,
+								CustomType: validatorutils.NewDurationType(),
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
 								Description: "Duration for which the condition should be true before the alert is triggered.",
 							},
 							"keep_firing_for": schema.StringAttribute{
-								Optional: true,
+								Optional:   true,
+								CustomType: validatorutils.NewDurationType(),
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
@@ -179,14 +184,16 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						Optional: true,
 						Attributes: map[string]schema.Attribute{
 							"for": schema.StringAttribute{
-								Required: true,
+								Required:   true,
+								CustomType: validatorutils.NewDurationType(),
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
 								Description: "Duration for which the condition should be true before the alert is triggered.",
 							},
 							"keep_firing_for": schema.StringAttribute{
-								Optional: true,
+								Optional:   true,
+								CustomType: validatorutils.NewDurationType(),
 								Validators: []validator.String{
 									validatorutils.NewDurationValidator(),
 								},
@@ -338,21 +345,24 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				},
 			},
 			"group_wait": schema.StringAttribute{
-				Optional: true,
+				Optional:   true,
+				CustomType: validatorutils.NewDurationType(),
 				Validators: []validator.String{
 					validatorutils.NewDurationValidator(),
 				},
 				Description: "Time to wait before sending the first alert for a group of alerts.",
 			},
 			"group_interval": schema.StringAttribute{
-				Optional: true,
+				Optional:   true,
+				CustomType: validatorutils.NewDurationType(),
 				Validators: []validator.String{
 					validatorutils.NewDurationValidator(),
 				},
 				Description: "Interval at which to send alerts for the same group of alerts after the first alert.",
 			},
 			"repeat_interval": schema.StringAttribute{
-				Optional: true,
+				Optional:   true,
+				CustomType: validatorutils.NewDurationType(),
 				Validators: []validator.String{
 					validatorutils.NewDurationValidator(),
 				},

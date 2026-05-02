@@ -18,18 +18,18 @@ type conditionsModel struct {
 
 type conditionModel struct {
 	// Operation - The operation to perform for the condition. Possible values are: ">", "<", ">=", "<=", "==", "!=".
-	Operation     types.String  `tfsdk:"operation"`
-	Value         types.Float64 `tfsdk:"value"`
-	For           types.String  `tfsdk:"for"`
-	KeepFiringFor types.String  `tfsdk:"keep_firing_for"`
+	Operation     types.String                `tfsdk:"operation"`
+	Value         types.Float64               `tfsdk:"value"`
+	For           validatorutils.DurationValue `tfsdk:"for"`
+	KeepFiringFor validatorutils.DurationValue `tfsdk:"keep_firing_for"`
 	// Deprecated: Use conditions.no_data instead
 	AlertOnNoData types.Bool `tfsdk:"alert_on_no_data"`
 }
 
 type noDataConditionModel struct {
 	// NoData conditions don't need Operation, Value, or AlertOnNoData - they default to Equal, 1, and true respectively
-	For           types.String `tfsdk:"for"`
-	KeepFiringFor types.String `tfsdk:"keep_firing_for"`
+	For           validatorutils.DurationValue `tfsdk:"for"`
+	KeepFiringFor validatorutils.DurationValue `tfsdk:"keep_firing_for"`
 }
 
 func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
@@ -38,10 +38,12 @@ func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 	c.Value = types.Float64Value(model.Value)
 	c.AlertOnNoData = types.BoolValue(model.AlertOnNoData)
 
-	c.For = types.StringValue(validatorutils.ShortDur(model.For))
+	c.For = validatorutils.NewDurationValue(validatorutils.ShortDur(model.For))
 
 	if model.KeepFiringFor > 0 {
-		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
+		c.KeepFiringFor = validatorutils.NewDurationValue(validatorutils.ShortDur(model.KeepFiringFor))
+	} else {
+		c.KeepFiringFor = validatorutils.NewDurationNull()
 	}
 	return &c
 }
@@ -49,10 +51,12 @@ func newConditionFromModel(model *clientmodels.Condition) *conditionModel {
 func newNoDataConditionFromModel(model *clientmodels.Condition) *noDataConditionModel {
 	c := noDataConditionModel{}
 
-	c.For = types.StringValue(validatorutils.ShortDur(model.For))
+	c.For = validatorutils.NewDurationValue(validatorutils.ShortDur(model.For))
 
 	if model.KeepFiringFor > 0 {
-		c.KeepFiringFor = types.StringValue(validatorutils.ShortDur(model.KeepFiringFor))
+		c.KeepFiringFor = validatorutils.NewDurationValue(validatorutils.ShortDur(model.KeepFiringFor))
+	} else {
+		c.KeepFiringFor = validatorutils.NewDurationNull()
 	}
 	return &c
 }
