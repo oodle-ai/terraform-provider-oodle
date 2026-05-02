@@ -18,8 +18,8 @@ type conditionsModel struct {
 
 type conditionModel struct {
 	// Operation - The operation to perform for the condition. Possible values are: ">", "<", ">=", "<=", "==", "!=".
-	Operation     types.String                `tfsdk:"operation"`
-	Value         types.Float64               `tfsdk:"value"`
+	Operation     types.String                 `tfsdk:"operation"`
+	Value         types.Float64                `tfsdk:"value"`
 	For           validatorutils.DurationValue `tfsdk:"for"`
 	KeepFiringFor validatorutils.DurationValue `tfsdk:"keep_firing_for"`
 	// Deprecated: Use conditions.no_data instead
