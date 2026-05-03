@@ -141,6 +141,7 @@ func (r *syntheticMonitorResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"interval": schema.StringAttribute{
 				Required:    true,
+				CustomType:  validatorutils.NewDurationType(),
 				Description: "Interval between checks (e.g., '30s', '1m').",
 				Validators: []validator.String{
 					validatorutils.NewDurationValidator(),
@@ -148,6 +149,7 @@ func (r *syntheticMonitorResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"timeout": schema.StringAttribute{
 				Required:    true,
+				CustomType:  validatorutils.NewDurationType(),
 				Description: "Timeout for each check (e.g., '5s', '10s').",
 				Validators: []validator.String{
 					validatorutils.NewDurationValidator(),

@@ -8,16 +8,17 @@ import (
 
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/resourceutils"
+	"terraform-provider-oodle/internal/validatorutils"
 )
 
 type syntheticMonitorResourceModel struct {
-	ID         types.String     `tfsdk:"id"`
-	Name       types.String     `tfsdk:"name"`
-	Enabled    types.Bool       `tfsdk:"enabled"`
-	RuleType   types.String     `tfsdk:"rule_type"`
-	RuleConfig *ruleConfigModel `tfsdk:"rule_config"`
-	Interval   types.String     `tfsdk:"interval"`
-	Timeout    types.String     `tfsdk:"timeout"`
+	ID         types.String                 `tfsdk:"id"`
+	Name       types.String                 `tfsdk:"name"`
+	Enabled    types.Bool                   `tfsdk:"enabled"`
+	RuleType   types.String                 `tfsdk:"rule_type"`
+	RuleConfig *ruleConfigModel             `tfsdk:"rule_config"`
+	Interval   validatorutils.DurationValue `tfsdk:"interval"`
+	Timeout    validatorutils.DurationValue `tfsdk:"timeout"`
 }
 
 type ruleConfigModel struct {
@@ -56,8 +57,8 @@ func (m *syntheticMonitorResourceModel) FromClientModel(
 	m.Name = types.StringValue(model.Name)
 	m.Enabled = types.BoolValue(model.Enabled)
 	m.RuleType = types.StringValue(model.RuleType)
-	m.Interval = types.StringValue(model.Interval)
-	m.Timeout = types.StringValue(model.Timeout)
+	m.Interval = validatorutils.NewDurationValue(model.Interval)
+	m.Timeout = validatorutils.NewDurationValue(model.Timeout)
 
 	m.RuleConfig = &ruleConfigModel{}
 	if model.RuleConfig.HTTP != nil {

@@ -252,7 +252,7 @@ func (c *GrafanaFolderClient) Delete(ctx context.Context, uid string) error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf(
 			"failed to delete folder %s: %v, body: %v",
 			uid,
@@ -452,7 +452,7 @@ func (c *GrafanaDashboardClient) Delete(ctx context.Context, uid string) error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf(
 			"failed to delete dashboard %s: %v, body: %v",
 			uid,
