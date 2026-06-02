@@ -93,7 +93,7 @@ func (c *ModelClient[T]) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("failed to delete model %T: %v, body: %v", c.nilVal, resp.Status, string(bodyBytes))
 	}
 
