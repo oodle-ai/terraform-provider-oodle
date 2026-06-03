@@ -19,6 +19,7 @@ import (
 	dsMonitors "terraform-provider-oodle/internal/provider/odatasource/monitors"
 	dsNotificationPolicies "terraform-provider-oodle/internal/provider/odatasource/notificationpolicies"
 	dsNotifiers "terraform-provider-oodle/internal/provider/odatasource/notifiers"
+	"terraform-provider-oodle/internal/provider/oresource/awsintegration"
 	"terraform-provider-oodle/internal/provider/oresource/grafanadashboard"
 	"terraform-provider-oodle/internal/provider/oresource/grafanafolder"
 	"terraform-provider-oodle/internal/provider/oresource/logmetrics"
@@ -237,5 +238,6 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		grafanafolder.NewGrafanaFolderResource,
 		grafanadashboard.NewGrafanaDashboardResource,
 		syntheticmonitor.NewSyntheticMonitorResource,
+		awsintegration.NewAwsIntegrationResource,
 	}
 }
