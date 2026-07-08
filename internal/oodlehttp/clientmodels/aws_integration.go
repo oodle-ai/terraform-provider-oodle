@@ -10,11 +10,11 @@ const AwsIntegrationType = "CLOUDWATCH_METRIC_PULL"
 // Integration response object returned by the backend; fields the request
 // shape does not carry (CreatedAt, etc.) are simply ignored by the server.
 type AwsIntegration struct {
-	ID               string                 `json:"id,omitempty"`
-	Type             string                 `json:"type,omitempty"`
-	Name             string                 `json:"name,omitempty"`
-	Status           string                 `json:"status,omitempty"`
-	TypeSpecificData awsTypeSpecificData    `json:"typeSpecificData"`
+	ID               string              `json:"id,omitempty"`
+	Type             string              `json:"type,omitempty"`
+	Name             string              `json:"name,omitempty"`
+	Status           string              `json:"status,omitempty"`
+	TypeSpecificData awsTypeSpecificData `json:"typeSpecificData"`
 }
 
 // awsTypeSpecificData mirrors the embedded
