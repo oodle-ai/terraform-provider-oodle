@@ -40,3 +40,61 @@ resource "oodle_synthetic_monitor" "api_check" {
     }
   }
 }
+
+# Example: multi-step synthetic monitor.
+# Logs in, extracts a token and user id from the response, then calls a
+# protected endpoint using those variables.
+resource "oodle_synthetic_monitor" "auth_flow" {
+  name      = "Auth + Protected API"
+  enabled   = true
+  rule_type = "multistep"
+  interval  = "5m"
+  timeout   = "30s"
+
+  rule_config = {
+    multistep = {
+      steps = [
+        {
+          name = "Get Token"
+          request = {
+            url    = "https://api.example.com/auth/token"
+            method = "POST"
+            headers = {
+              "Content-Type" = "application/json"
+            }
+            body                  = jsonencode({ client_id = "abc", client_secret = "xyz" })
+            expected_status_codes = ["2XX"]
+          }
+          extract = [
+            {
+              # Extracted values are referenced as {{VAR_NAME}} in later steps.
+              name   = "ACCESS_TOKEN"
+              source = "body"
+              parser = "jsonpath"
+              query  = "$.access_token"
+              secret = true
+            },
+            {
+              name   = "USER_ID"
+              source = "body"
+              parser = "jsonpath"
+              query  = "$.user.id"
+            },
+          ]
+        },
+        {
+          name = "Get User Profile"
+          request = {
+            url          = "https://api.example.com/users/{{USER_ID}}"
+            method       = "GET"
+            bearer_token = "{{ACCESS_TOKEN}}"
+
+            expected_status_codes = ["200"]
+            expected_body         = "\"active\":true"
+            max_response_time_ms  = 800
+          }
+        },
+      ]
+    }
+  }
+}
