@@ -16,9 +16,10 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &syntheticMonitorResource{}
-	_ resource.ResourceWithConfigure   = &syntheticMonitorResource{}
-	_ resource.ResourceWithImportState = &syntheticMonitorResource{}
+	_ resource.Resource                     = &syntheticMonitorResource{}
+	_ resource.ResourceWithConfigure        = &syntheticMonitorResource{}
+	_ resource.ResourceWithImportState      = &syntheticMonitorResource{}
+	_ resource.ResourceWithConfigValidators = &syntheticMonitorResource{}
 )
 
 const syntheticMonitorsResourcePath = "synthetic-monitors"
@@ -167,6 +168,13 @@ func NewSyntheticMonitorResource() resource.Resource {
 // Metadata returns the resource type name.
 func (r *syntheticMonitorResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_synthetic_monitor"
+}
+
+// ConfigValidators returns the resource-level validators.
+func (r *syntheticMonitorResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		validatorutils.NewSyntheticMonitorConfigValidator(),
+	}
 }
 
 // Schema defines the schema for the resource.
