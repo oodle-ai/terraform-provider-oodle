@@ -11,16 +11,16 @@ import (
 )
 
 type awsIntegrationResourceModel struct {
-	ID                       types.String                   `tfsdk:"id"`
-	Name                     types.String                   `tfsdk:"name"`
-	Status                   types.String                   `tfsdk:"status"`
-	AccountID                types.String                   `tfsdk:"account_id"`
-	RoleArn                  types.String                   `tfsdk:"role_arn"`
-	ExternalID               types.String                   `tfsdk:"external_id"`
-	Regions                  []types.String                 `tfsdk:"regions"`
-	LaunchCFStackRegion      types.String                   `tfsdk:"launch_cf_stack_region"`
-	LaunchCFStackURL         types.String                   `tfsdk:"launch_cf_stack_url"`
-	ResourceTypesSearchTags  []resourceTypeSearchTagsModel  `tfsdk:"resource_types_search_tags"`
+	ID                      types.String                  `tfsdk:"id"`
+	Name                    types.String                  `tfsdk:"name"`
+	Status                  types.String                  `tfsdk:"status"`
+	AccountID               types.String                  `tfsdk:"account_id"`
+	RoleArn                 types.String                  `tfsdk:"role_arn"`
+	ExternalID              types.String                  `tfsdk:"external_id"`
+	Regions                 []types.String                `tfsdk:"regions"`
+	LaunchCFStackRegion     types.String                  `tfsdk:"launch_cf_stack_region"`
+	LaunchCFStackURL        types.String                  `tfsdk:"launch_cf_stack_url"`
+	ResourceTypesSearchTags []resourceTypeSearchTagsModel `tfsdk:"resource_types_search_tags"`
 }
 
 type resourceTypeSearchTagsModel struct {
