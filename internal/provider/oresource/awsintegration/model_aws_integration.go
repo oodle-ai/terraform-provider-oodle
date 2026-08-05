@@ -77,13 +77,17 @@ func (m *awsIntegrationResourceModel) FromClientModel(
 		for j, t := range entry.ResourceTypes {
 			row.ResourceTypes[j] = types.StringValue(t)
 		}
-		if len(entry.SearchTags) > 0 {
-			row.SearchTags = make([]searchTagModel, len(entry.SearchTags))
-			for j, tag := range entry.SearchTags {
-				row.SearchTags[j] = searchTagModel{
-					Key:   types.StringValue(tag.Key),
-					Value: types.StringValue(tag.Value),
-				}
+		// Always allocate (even when empty) so a server response with no tags
+		// round-trips as [] instead of nil. Without this, a config that sets
+		// `search_tags = []` fails Create with "inconsistent result after apply"
+		// because the applied state (null) would differ from the plan ([]).
+		// Mirrors the Regions/ResourceTypes handling above; paired with the
+		// Optional+Computed schema so an omitted block is tolerated too.
+		row.SearchTags = make([]searchTagModel, len(entry.SearchTags))
+		for j, tag := range entry.SearchTags {
+			row.SearchTags[j] = searchTagModel{
+				Key:   types.StringValue(tag.Key),
+				Value: types.StringValue(tag.Value),
 			}
 		}
 		m.ResourceTypesSearchTags[i] = row
