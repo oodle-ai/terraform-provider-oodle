@@ -96,6 +96,38 @@ func TestAwsIntegrationModelFromServer(t *testing.T) {
 	assert.Equal(t, "", echoed.TypeSpecificData.CloudWatchMetricPullIntegration.LaunchCFStackURL)
 }
 
+// TestAwsIntegrationModelEmptySearchTagsNonNil guards the fix for the
+// "Provider produced inconsistent result after apply" error: when the server
+// returns an entry with no search tags, FromClientModel must produce a non-nil
+// empty slice so a config that sets `search_tags = []` round-trips as [] rather
+// than collapsing to null in state.
+func TestAwsIntegrationModelEmptySearchTagsNonNil(t *testing.T) {
+	ctx := context.Background()
+	clientModel := &clientmodels.AwsIntegration{
+		ID:   "int-empty-tags",
+		Type: clientmodels.AwsIntegrationType,
+	}
+	clientModel.TypeSpecificData.CloudWatchMetricPullIntegration = clientmodels.CloudWatchMetricPullIntegration{
+		AccountID:  "123456789012",
+		RoleArn:    "arn:aws:iam::123456789012:role/OodleIntegrationRole",
+		ExternalID: "shared-ext-id",
+		Regions:    []string{"eu-central-1"},
+		ResourceTypesSearchTagsList: []clientmodels.CloudWatchResourceTypeSearchTags{
+			{ResourceTypes: []string{"AWS/DynamoDB", "AWS/Lambda"}},
+		},
+	}
+
+	resourceModel := &awsIntegrationResourceModel{}
+	diags := &diag.Diagnostics{}
+	resourceModel.FromClientModel(ctx, clientModel, diags)
+	assert.False(t, diags.HasError())
+
+	assert.Equal(t, 1, len(resourceModel.ResourceTypesSearchTags))
+	// Non-nil (so it renders as [] not null) but empty.
+	assert.NotNil(t, resourceModel.ResourceTypesSearchTags[0].SearchTags)
+	assert.Equal(t, 0, len(resourceModel.ResourceTypesSearchTags[0].SearchTags))
+}
+
 func TestAwsIntegrationModelMinimal(t *testing.T) {
 	ctx := context.Background()
 	clientModel := &clientmodels.AwsIntegration{

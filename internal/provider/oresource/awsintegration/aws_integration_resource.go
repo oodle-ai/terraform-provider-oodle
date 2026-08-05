@@ -18,6 +18,12 @@ import (
 var (
 	awsAccountIDPattern = regexp.MustCompile(`^\d{12}$`)
 	awsRoleArnPattern   = regexp.MustCompile(`^arn:aws:iam::\d{12}:role/.+$`)
+	// Oodle can only assume roles whose name begins with "OodleIntegration"
+	// (the name used by the Oodle CloudFormation setup). A role with any other
+	// name cannot be assumed, which otherwise only surfaces at apply time as the
+	// opaque "Failed to assume IAM role" backend error; validate the name up
+	// front so it is caught at plan time instead.
+	awsRoleNamePattern = regexp.MustCompile(`^arn:aws:iam::\d{12}:role/OodleIntegration`)
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -96,6 +102,7 @@ func (r *awsIntegrationResource) Schema(_ context.Context, _ resource.SchemaRequ
 					"The role's trust policy must allow Oodle's AWS account (052799302239) to assume it under the configured external_id.",
 				Validators: []validator.String{
 					validatorutils.NewRegexValidator(awsRoleArnPattern, "must be an IAM role ARN (arn:aws:iam::<account-id>:role/<role-name>)"),
+					validatorutils.NewRegexValidator(awsRoleNamePattern, `must name an IAM role beginning with "OodleIntegration"; Oodle can only assume roles with this name prefix`),
 				},
 			},
 			"external_id": schema.StringAttribute{
@@ -130,7 +137,12 @@ func (r *awsIntegrationResource) Schema(_ context.Context, _ resource.SchemaRequ
 							Description: "CloudWatch namespaces (e.g. [\"AWS/EC2\", \"AWS/RDS\"]).",
 						},
 						"search_tags": schema.ListNestedAttribute{
-							Optional:    true,
+							Optional: true,
+							// Computed so the server's null->empty normalization
+							// does not produce an inconsistent-result error when
+							// the block is omitted; an explicit [] round-trips as
+							// [] via FromClientModel.
+							Computed:    true,
 							Description: "Optional tag filters; all listed tags must match for a resource to be included. Values may be regular expressions.",
 							NestedObject: schema.NestedAttributeObject{
 								Attributes: map[string]schema.Attribute{
