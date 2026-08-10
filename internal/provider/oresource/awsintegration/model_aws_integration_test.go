@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/rubrikinc/testwell/assert"
 
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
@@ -123,9 +124,43 @@ func TestAwsIntegrationModelEmptySearchTagsNonNil(t *testing.T) {
 	assert.False(t, diags.HasError())
 
 	assert.Equal(t, 1, len(resourceModel.ResourceTypesSearchTags))
-	// Non-nil (so it renders as [] not null) but empty.
-	assert.NotNil(t, resourceModel.ResourceTypesSearchTags[0].SearchTags)
-	assert.Equal(t, 0, len(resourceModel.ResourceTypesSearchTags[0].SearchTags))
+	// Known and non-null (so it renders as [] not null) but empty.
+	assert.False(t, resourceModel.ResourceTypesSearchTags[0].SearchTags.IsNull())
+	assert.False(t, resourceModel.ResourceTypesSearchTags[0].SearchTags.IsUnknown())
+	assert.Equal(t, 0, len(resourceModel.ResourceTypesSearchTags[0].SearchTags.Elements()))
+}
+
+// TestAwsIntegrationModelUnknownSearchTags guards the fix for the
+// "Received unknown value, however the target type cannot handle unknown
+// values" error. search_tags is Optional+Computed, so when the block is
+// omitted in config the framework plans it as an *unknown* list. That unknown
+// must survive Plan.Get into the model (hence SearchTags is a types.List, not a
+// native slice) and ToClientModel must treat it as "no tags" rather than
+// panicking or emitting garbage.
+func TestAwsIntegrationModelUnknownSearchTags(t *testing.T) {
+	ctx := context.Background()
+	resourceModel := &awsIntegrationResourceModel{
+		AccountID:  types.StringValue("123456789012"),
+		RoleArn:    types.StringValue("arn:aws:iam::123456789012:role/OodleIntegrationRole"),
+		ExternalID: types.StringValue("shared-ext-id"),
+		Regions:    []types.String{types.StringValue("ap-south-1")},
+		ResourceTypesSearchTags: []resourceTypeSearchTagsModel{
+			{
+				ResourceTypes: []types.String{types.StringValue("AWS/EC2")},
+				// Mirrors an omitted Optional+Computed block during Create.
+				SearchTags: types.ListUnknown(searchTagObjectType),
+			},
+		},
+	}
+
+	clientModel := &clientmodels.AwsIntegration{}
+	assert.Nil(t, resourceModel.ToClientModel(ctx, clientModel))
+
+	cw := clientModel.TypeSpecificData.CloudWatchMetricPullIntegration
+	assert.Equal(t, 1, len(cw.ResourceTypesSearchTagsList))
+	assert.DeepEqual(t, []string{"AWS/EC2"}, cw.ResourceTypesSearchTagsList[0].ResourceTypes)
+	// Unknown search_tags is sent as no tags; the server normalizes.
+	assert.Nil(t, cw.ResourceTypesSearchTagsList[0].SearchTags)
 }
 
 func TestAwsIntegrationModelMinimal(t *testing.T) {

@@ -2,7 +2,9 @@ package awsintegration
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -24,14 +26,29 @@ type awsIntegrationResourceModel struct {
 }
 
 type resourceTypeSearchTagsModel struct {
-	ResourceTypes []types.String   `tfsdk:"resource_types"`
-	SearchTags    []searchTagModel `tfsdk:"search_tags"`
+	ResourceTypes []types.String `tfsdk:"resource_types"`
+	// SearchTags is a types.List (not a native []searchTagModel) because the
+	// attribute is Optional+Computed: when the block is omitted the framework
+	// plans it as an *unknown* value, which a native Go slice cannot decode
+	// ("Received unknown value, however the target type cannot handle unknown
+	// values"). A types.List can carry null/unknown/known states, so it round-
+	// trips through Plan.Get without error. Elements are searchTagModel objects.
+	SearchTags types.List `tfsdk:"search_tags"`
 }
 
 type searchTagModel struct {
 	Key   types.String `tfsdk:"key"`
 	Value types.String `tfsdk:"value"`
 }
+
+// searchTagAttrTypes / searchTagObjectType describe the element shape of the
+// search_tags list so it can be (de)serialized as a types.List.
+var searchTagAttrTypes = map[string]attr.Type{
+	"key":   types.StringType,
+	"value": types.StringType,
+}
+
+var searchTagObjectType = types.ObjectType{AttrTypes: searchTagAttrTypes}
 
 var _ resourceutils.ResourceModel[*clientmodels.AwsIntegration] = (*awsIntegrationResourceModel)(nil)
 
@@ -46,7 +63,7 @@ func (m *awsIntegrationResourceModel) SetID(id types.String) {
 func (m *awsIntegrationResourceModel) FromClientModel(
 	_ context.Context,
 	model *clientmodels.AwsIntegration,
-	_ *diag.Diagnostics,
+	diags *diag.Diagnostics,
 ) {
 	*m = awsIntegrationResourceModel{}
 
@@ -77,25 +94,30 @@ func (m *awsIntegrationResourceModel) FromClientModel(
 		for j, t := range entry.ResourceTypes {
 			row.ResourceTypes[j] = types.StringValue(t)
 		}
-		// Always allocate (even when empty) so a server response with no tags
-		// round-trips as [] instead of nil. Without this, a config that sets
-		// `search_tags = []` fails Create with "inconsistent result after apply"
-		// because the applied state (null) would differ from the plan ([]).
-		// Mirrors the Regions/ResourceTypes handling above; paired with the
-		// Optional+Computed schema so an omitted block is tolerated too.
-		row.SearchTags = make([]searchTagModel, len(entry.SearchTags))
+		// Always build a known, non-null list (even when empty) so a server
+		// response with no tags round-trips as [] instead of null. Without this,
+		// a config that sets `search_tags = []` fails Create with "inconsistent
+		// result after apply" because the applied state (null) would differ from
+		// the plan ([]). Mirrors the Regions/ResourceTypes handling above; paired
+		// with the Optional+Computed schema so an omitted block is tolerated too.
+		tagValues := make([]attr.Value, len(entry.SearchTags))
 		for j, tag := range entry.SearchTags {
-			row.SearchTags[j] = searchTagModel{
-				Key:   types.StringValue(tag.Key),
-				Value: types.StringValue(tag.Value),
-			}
+			obj, d := types.ObjectValue(searchTagAttrTypes, map[string]attr.Value{
+				"key":   types.StringValue(tag.Key),
+				"value": types.StringValue(tag.Value),
+			})
+			diags.Append(d...)
+			tagValues[j] = obj
 		}
+		list, d := types.ListValue(searchTagObjectType, tagValues)
+		diags.Append(d...)
+		row.SearchTags = list
 		m.ResourceTypesSearchTags[i] = row
 	}
 }
 
 func (m *awsIntegrationResourceModel) ToClientModel(
-	_ context.Context,
+	ctx context.Context,
 	model *clientmodels.AwsIntegration,
 ) error {
 	if !m.ID.IsNull() && !m.ID.IsUnknown() {
@@ -138,12 +160,21 @@ func (m *awsIntegrationResourceModel) ToClientModel(
 					entry.ResourceTypes[j] = t.ValueString()
 				}
 			}
-			if len(row.SearchTags) > 0 {
-				entry.SearchTags = make([]clientmodels.CloudWatchSearchTag, len(row.SearchTags))
-				for j, tag := range row.SearchTags {
-					entry.SearchTags[j] = clientmodels.CloudWatchSearchTag{
-						Key:   tag.Key.ValueString(),
-						Value: tag.Value.ValueString(),
+			// The list is unknown when an Optional+Computed block is omitted on
+			// Create; treat that (and null) as "no tags" and let the server
+			// normalize. Only decode elements when the value is known.
+			if !row.SearchTags.IsNull() && !row.SearchTags.IsUnknown() {
+				var tags []searchTagModel
+				if d := row.SearchTags.ElementsAs(ctx, &tags, false); d.HasError() {
+					return fmt.Errorf("failed to read search_tags for resource_types_search_tags[%d]: %v", i, d.Errors())
+				}
+				if len(tags) > 0 {
+					entry.SearchTags = make([]clientmodels.CloudWatchSearchTag, len(tags))
+					for j, tag := range tags {
+						entry.SearchTags[j] = clientmodels.CloudWatchSearchTag{
+							Key:   tag.Key.ValueString(),
+							Value: tag.Value.ValueString(),
+						}
 					}
 				}
 			}
