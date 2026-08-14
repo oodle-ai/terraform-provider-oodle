@@ -58,6 +58,12 @@ func (c *ModelClient[T]) Get(ctx context.Context, id string) (T, error) {
 	if err != nil {
 		return c.nilVal, err
 	}
+	if resp.StatusCode == http.StatusNotFound {
+		// Reported distinctly so a resource can treat an object
+		// deleted outside Terraform as gone rather than as a failure.
+		return c.nilVal, ErrNotFound
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return c.nilVal, fmt.Errorf("failed to get model %T: %v, body: %v", c.nilVal, resp.Status, string(bodyBytes))
 	}
@@ -91,6 +97,10 @@ func (c *ModelClient[T]) Delete(ctx context.Context, id string) error {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return ErrNotFound
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {

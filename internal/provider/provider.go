@@ -20,11 +20,18 @@ import (
 	dsNotificationPolicies "terraform-provider-oodle/internal/provider/odatasource/notificationpolicies"
 	dsNotifiers "terraform-provider-oodle/internal/provider/odatasource/notifiers"
 	"terraform-provider-oodle/internal/provider/oresource/awsintegration"
+	"terraform-provider-oodle/internal/provider/oresource/genaidataset"
+	"terraform-provider-oodle/internal/provider/oresource/genaidatasetitem"
+	"terraform-provider-oodle/internal/provider/oresource/genaievaltemplate"
+	"terraform-provider-oodle/internal/provider/oresource/genaievaluator"
+	"terraform-provider-oodle/internal/provider/oresource/genaillmconnection"
+	"terraform-provider-oodle/internal/provider/oresource/genaiprompt"
 	"terraform-provider-oodle/internal/provider/oresource/grafanadashboard"
 	"terraform-provider-oodle/internal/provider/oresource/grafanafolder"
 	"terraform-provider-oodle/internal/provider/oresource/logmetrics"
 	"terraform-provider-oodle/internal/provider/oresource/metricdroprule"
 	"terraform-provider-oodle/internal/provider/oresource/monitor"
+	"terraform-provider-oodle/internal/provider/oresource/mutingrule"
 	notificationPolicy "terraform-provider-oodle/internal/provider/oresource/notificationpolicy"
 	"terraform-provider-oodle/internal/provider/oresource/notifier"
 	"terraform-provider-oodle/internal/provider/oresource/syntheticmonitor"
@@ -239,5 +246,12 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		grafanadashboard.NewGrafanaDashboardResource,
 		syntheticmonitor.NewSyntheticMonitorResource,
 		awsintegration.NewAwsIntegrationResource,
+		genaillmconnection.NewGenAILLMConnectionResource,
+		genaievaltemplate.NewGenAIEvalTemplateResource,
+		genaievaluator.NewGenAIEvaluatorResource,
+		genaidataset.NewGenAIDatasetResource,
+		genaidatasetitem.NewGenAIDatasetItemResource,
+		genaiprompt.NewGenAIPromptResource,
+		mutingrule.NewMutingRuleResource,
 	}
 }

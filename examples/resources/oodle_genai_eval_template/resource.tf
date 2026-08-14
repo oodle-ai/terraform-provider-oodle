@@ -1,0 +1,40 @@
+# An LLM-as-judge template. {{var}} placeholders are filled in by the
+# evaluator's variable_mapping.
+resource "oodle_genai_eval_template" "answer_resolves_question" {
+  name = "answer-resolves-question"
+  type = "llm"
+
+  prompt = <<-EOT
+    You are grading a support reply.
+
+    Question: {{question}}
+    Answer: {{answer}}
+
+    Score 1 if the answer resolves the question, otherwise 0.
+  EOT
+
+  vars = ["question", "answer"]
+
+  output_schema = jsonencode({
+    score     = "0 or 1"
+    reasoning = "one sentence explaining the score"
+  })
+
+  model_params = jsonencode({
+    temperature = 0
+  })
+}
+
+# A code scorer. Requires an enterprise plan and the code evaluator
+# feature enabled for the instance.
+resource "oodle_genai_eval_template" "non_empty_answer" {
+  name                 = "non-empty-answer"
+  type                 = "code"
+  source_code_language = "python"
+  vars                 = ["output"]
+
+  source_code = <<-EOT
+    def evaluate(output: str, **kwargs) -> dict:
+        return {"score": 1.0 if output.strip() else 0.0}
+  EOT
+}

@@ -315,3 +315,126 @@ resource "oodle_grafana_dashboard" "service_dashboard" {
     ]
   })
 }
+
+# --- GenAI ---
+
+resource "oodle_genai_llm_connection" "tf_genai" {
+  name          = "tf_genai_connection"
+  llm_provider  = "openai"
+  api_key       = "sk-placeholder-not-a-real-key"
+  default_model = "gpt-4o-mini"
+  custom_models = ["gpt-4o", "gpt-4o-mini"]
+
+  default_params = jsonencode({
+    temperature = 0
+  })
+}
+
+resource "oodle_genai_eval_template" "tf_genai" {
+  name = "tf_genai_template"
+  type = "llm"
+
+  prompt = <<-EOT
+    You are grading a support reply.
+
+    Question: {{question}}
+    Answer: {{answer}}
+
+    Score 1 if the answer resolves the question, otherwise 0.
+  EOT
+
+  vars = ["question", "answer"]
+
+  output_schema = jsonencode({
+    score     = "0 or 1"
+    reasoning = "one sentence explaining the score"
+  })
+}
+
+resource "oodle_genai_evaluator" "tf_genai" {
+  name              = "tf_genai_evaluator"
+  eval_template_id  = oodle_genai_eval_template.tf_genai.id
+  llm_connection_id = oodle_genai_llm_connection.tf_genai.id
+
+  enabled                  = false
+  target_type              = "trace"
+  sampling_rate            = 0.1
+  max_invocations_per_hour = 100
+
+  variable_mapping = jsonencode([
+    {
+      templateVariable = "question"
+      langfuseObject   = "trace"
+      selectedColumnId = "input"
+    },
+    {
+      templateVariable = "answer"
+      langfuseObject   = "trace"
+      selectedColumnId = "output"
+    },
+  ])
+}
+
+resource "oodle_genai_dataset" "tf_genai" {
+  name        = "tf_genai_dataset"
+  description = "Created by the Terraform end-to-end example."
+
+  metadata = jsonencode({
+    owner = "terraform"
+  })
+}
+
+resource "oodle_genai_dataset_item" "tf_genai" {
+  dataset_name = oodle_genai_dataset.tf_genai.name
+
+  input           = jsonencode({ question = "How do I reset my password?" })
+  expected_output = jsonencode({ answer = "Use the reset link on the login page." })
+}
+
+resource "oodle_genai_prompt" "tf_genai" {
+  name   = "tf_genai_prompt"
+  type   = "text"
+  prompt = "Answer the customer question concisely: {{question}}"
+
+  labels         = ["production"]
+  tags           = ["terraform"]
+  commit_message = "Created by the Terraform end-to-end example."
+
+  config = jsonencode({
+    model = "gpt-4o-mini"
+  })
+}
+
+# --- Muting rules ---
+
+resource "oodle_muting_rule" "tf_muting_window" {
+  comment = "Terraform end-to-end example: muted for a scheduled migration."
+
+  matchers = [
+    {
+      type  = "="
+      name  = "_oodle_monitor_id"
+      value = oodle_monitor.service_monitor.id
+    },
+  ]
+
+  starts_at = "2027-01-01T22:00:00Z"
+  ends_at   = "2027-01-02T04:00:00Z"
+}
+
+resource "oodle_muting_rule" "tf_muting_staging" {
+  comment = "Terraform end-to-end example: staging alerts are not actionable."
+
+  matchers = [
+    {
+      type  = "="
+      name  = "_oodle_monitor_id"
+      value = oodle_monitor.service_monitor.id
+    },
+    {
+      type  = "="
+      name  = "environment"
+      value = "staging"
+    },
+  ]
+}
