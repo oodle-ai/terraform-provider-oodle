@@ -42,7 +42,7 @@ func (c choiceValidator) ValidateString(
 	request validator.StringRequest,
 	response *validator.StringResponse,
 ) {
-	if request.ConfigValue.IsNull() {
+	if request.ConfigValue.IsNull() || request.ConfigValue.IsUnknown() {
 		return
 	}
 

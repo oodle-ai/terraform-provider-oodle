@@ -21,4 +21,7 @@ func TestChoiceValidator(t *testing.T) {
 	assert.True(t, IsValidForValidator(types.StringValue("baz"), validator))
 
 	assert.True(t, IsValidForValidator(types.StringNull(), validator))
+
+	// Unknown values must be skipped; see TestDurationValidator for why.
+	assert.True(t, IsValidForValidator(types.StringUnknown(), validator))
 }
