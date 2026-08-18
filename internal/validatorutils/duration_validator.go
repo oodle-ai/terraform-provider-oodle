@@ -27,7 +27,7 @@ func (d durationValidator) MarkdownDescription(ctx context.Context) string {
 }
 
 func (d durationValidator) ValidateString(ctx context.Context, request validator.StringRequest, response *validator.StringResponse) {
-	if request.ConfigValue.IsNull() {
+	if request.ConfigValue.IsNull() || request.ConfigValue.IsUnknown() {
 		return
 	}
 
