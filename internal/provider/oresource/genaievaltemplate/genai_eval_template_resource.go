@@ -24,8 +24,9 @@ var (
 )
 
 var validTemplateTypes = map[string]struct{}{
-	"llm":  {},
-	"code": {},
+	"llm":             {},
+	"code":            {},
+	"output_comparer": {},
 }
 
 // genaiEvalTemplateResource is the resource implementation.
@@ -75,9 +76,10 @@ func (r *genaiEvalTemplateResource) Schema(
 ) {
 	resp.Schema = schema.Schema{
 		Description: "A reusable GenAI scoring definition — an " +
-			"LLM-as-judge prompt or a code scorer. This is what the Oodle " +
-			"UI calls a Library template. Attach it to traffic with an " +
-			"oodle_genai_evaluator resource.",
+			"LLM-as-judge prompt, a code scorer, or an output comparer " +
+			"that scores against a dataset item's expected output. This " +
+			"is what the Oodle UI calls a Library template. Attach it " +
+			"to traffic with an oodle_genai_evaluator resource.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -93,8 +95,17 @@ func (r *genaiEvalTemplateResource) Schema(
 			"type": schema.StringAttribute{
 				Required: true,
 				Description: "Kind of scorer: 'llm' for an LLM-as-judge " +
-					"prompt, or 'code' for a Python scorer. Cannot be " +
-					"changed after creation.",
+					"prompt, 'code' for a Python scorer, or " +
+					"'output_comparer' for a judge that scores the " +
+					"output against a dataset item's expected output. " +
+					"Cannot be changed after creation.\n\n" +
+					"An output comparer's prompt uses {{output}} and " +
+					"{{expected_output}}. Ground truth only exists " +
+					"inside an experiment, so a comparer never runs " +
+					"against live traffic: an evaluator built on one " +
+					"produces scores only through an experiment run, " +
+					"and an item with no expected output is skipped " +
+					"rather than scored zero.",
 				Validators: []validator.String{
 					validatorutils.NewChoiceValidator(validTemplateTypes),
 				},

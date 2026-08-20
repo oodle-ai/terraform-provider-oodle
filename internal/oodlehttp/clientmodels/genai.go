@@ -47,13 +47,67 @@ type GenAIDatasetItem struct {
 
 func (d *GenAIDatasetItem) GetID() string { return d.ID }
 
+// GenAIDatasetSchedule runs a dataset's experiment on its own, so a
+// regression is found when it lands rather than when the next person
+// looks.
+//
+// A dataset carries at most one, which is why the endpoint is a
+// singleton under the dataset's name with no id of its own: PUT
+// replaces whatever is there.
+type GenAIDatasetSchedule struct {
+	// DatasetName addresses the schedule. It is not part of the
+	// wire format — the server answers with DatasetID instead — so
+	// the client puts it back on every response, and it is what
+	// GetID returns.
+	DatasetName string `json:"-"`
+
+	ID        string `json:"id,omitempty"`
+	DatasetID string `json:"datasetId,omitempty"`
+	// Enabled carries no omitempty: false is meaningful here, and a
+	// dropped field would silently re-enable a paused schedule.
+	Enabled bool `json:"enabled"`
+	// Mode is "calendar" or "interval". Empty means calendar.
+	Mode string `json:"mode,omitempty"`
+	// IntervalValue and IntervalUnit describe an interval schedule:
+	// 30 + "minutes", 6 + "hours", 1 + "days". At least 5 minutes,
+	// which is what the worker's poll cycle can honour, and at most
+	// 365 days.
+	IntervalValue int64  `json:"intervalValue,omitempty"`
+	IntervalUnit  string `json:"intervalUnit,omitempty"`
+	// Timezone is an IANA name; empty means UTC. Calendar mode only:
+	// the times below are read in it, so a schedule follows daylight
+	// saving rather than drifting by an hour twice a year.
+	Timezone    string   `json:"timezone,omitempty"`
+	Times       []string `json:"times,omitempty"`
+	Weekdays    []string `json:"weekdays,omitempty"`
+	DaysOfMonth []string `json:"daysOfMonth,omitempty"`
+	// ExperimentConfig is the `llm-experiment` job config each firing
+	// launches, the same shape POST jobs takes.
+	ExperimentConfig json.RawMessage `json:"experimentConfig,omitempty"`
+	NextRunAt        string          `json:"nextRunAt,omitempty"`
+	LastRunAt        string          `json:"lastRunAt,omitempty"`
+	// LastError is why the most recent launch did not start. A
+	// scheduled run that cannot be queued has no job row and no
+	// dataset run, so without this the schedule looks healthy and
+	// simply never produces results.
+	LastError string `json:"lastError,omitempty"`
+	CreatedBy string `json:"createdBy,omitempty"`
+	CreatedAt string `json:"createdAt,omitempty"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
+}
+
+// GetID returns the dataset name, which is how the endpoint is
+// addressed. The schedule's own uuid appears in no path.
+func (s *GenAIDatasetSchedule) GetID() string { return s.DatasetName }
+
 // GenAIEvalTemplate is a reusable scoring definition: either an
 // LLM-as-judge prompt or a code scorer. It is what the Oodle UI
 // calls a Library template.
 type GenAIEvalTemplate struct {
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
-	// Type is "llm" or "code" and cannot be changed after create.
+	// Type is "llm", "code" or "output_comparer", and cannot be
+	// changed after create.
 	Type               string          `json:"type,omitempty"`
 	Prompt             string          `json:"prompt,omitempty"`
 	Vars               []string        `json:"vars,omitempty"`

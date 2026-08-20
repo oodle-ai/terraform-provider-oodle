@@ -152,6 +152,101 @@ func (c *GenAIDatasetItemClient) Delete(ctx context.Context, id string) error {
 	)
 }
 
+// GenAIDatasetScheduleClient manages the one schedule a dataset may
+// carry. The endpoint is a singleton under the dataset's name, so
+// there is no create/update split: both are the same PUT, and the id
+// every method takes is the dataset name.
+type GenAIDatasetScheduleClient struct {
+	*GenAIClient
+}
+
+func NewGenAIDatasetScheduleClient(
+	client *OodleApiClient,
+) *GenAIDatasetScheduleClient {
+	return &GenAIDatasetScheduleClient{GenAIClient: NewGenAIClient(client)}
+}
+
+func datasetSchedulePath(datasetName string) string {
+	return "datasets/" + url.PathEscape(datasetName) + "/schedule"
+}
+
+// put is both Create and Update: the endpoint replaces whatever is
+// there, and the API offers no other way to write a schedule.
+func (c *GenAIDatasetScheduleClient) put(
+	ctx context.Context,
+	schedule *clientmodels.GenAIDatasetSchedule,
+) (*clientmodels.GenAIDatasetSchedule, error) {
+	if schedule.DatasetName == "" {
+		return nil, errors.New(
+			"dataset_name is required to write a dataset schedule",
+		)
+	}
+
+	written := &clientmodels.GenAIDatasetSchedule{}
+	if err := c.Do(
+		ctx,
+		http.MethodPut,
+		datasetSchedulePath(schedule.DatasetName),
+		schedule,
+		written,
+	); err != nil {
+		return nil, err
+	}
+	// The response carries the dataset uuid, not the name the path
+	// was built from, so the name is put back for the caller.
+	written.DatasetName = schedule.DatasetName
+
+	return written, nil
+}
+
+func (c *GenAIDatasetScheduleClient) Create(
+	ctx context.Context,
+	schedule *clientmodels.GenAIDatasetSchedule,
+) (*clientmodels.GenAIDatasetSchedule, error) {
+	return c.put(ctx, schedule)
+}
+
+func (c *GenAIDatasetScheduleClient) Update(
+	ctx context.Context,
+	schedule *clientmodels.GenAIDatasetSchedule,
+) (*clientmodels.GenAIDatasetSchedule, error) {
+	return c.put(ctx, schedule)
+}
+
+// Get reads the schedule on the named dataset.
+func (c *GenAIDatasetScheduleClient) Get(
+	ctx context.Context,
+	datasetName string,
+) (*clientmodels.GenAIDatasetSchedule, error) {
+	schedule := &clientmodels.GenAIDatasetSchedule{}
+	if err := c.Do(
+		ctx,
+		http.MethodGet,
+		datasetSchedulePath(datasetName),
+		nil,
+		schedule,
+	); err != nil {
+		return nil, err
+	}
+	schedule.DatasetName = datasetName
+
+	return schedule, nil
+}
+
+// Delete removes the schedule, leaving the dataset itself alone.
+func (c *GenAIDatasetScheduleClient) Delete(
+	ctx context.Context,
+	datasetName string,
+) error {
+	return c.Do(
+		ctx,
+		http.MethodDelete,
+		datasetSchedulePath(datasetName),
+		nil,
+		nil,
+	)
+}
+
 // GenAIEvalTemplateClient manages eval templates. Updates are a
 // PATCH that merges: a field left empty keeps its stored value.
 type GenAIEvalTemplateClient struct {
