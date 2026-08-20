@@ -22,6 +22,7 @@ import (
 	"terraform-provider-oodle/internal/provider/oresource/awsintegration"
 	"terraform-provider-oodle/internal/provider/oresource/genaidataset"
 	"terraform-provider-oodle/internal/provider/oresource/genaidatasetitem"
+	"terraform-provider-oodle/internal/provider/oresource/genaidatasetschedule"
 	"terraform-provider-oodle/internal/provider/oresource/genaievaltemplate"
 	"terraform-provider-oodle/internal/provider/oresource/genaievaluator"
 	"terraform-provider-oodle/internal/provider/oresource/genaillmconnection"
@@ -251,6 +252,7 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		genaievaluator.NewGenAIEvaluatorResource,
 		genaidataset.NewGenAIDatasetResource,
 		genaidatasetitem.NewGenAIDatasetItemResource,
+		genaidatasetschedule.NewGenAIDatasetScheduleResource,
 		genaiprompt.NewGenAIPromptResource,
 		mutingrule.NewMutingRuleResource,
 	}

@@ -38,3 +38,28 @@ resource "oodle_genai_eval_template" "non_empty_answer" {
         return {"score": 1.0 if output.strip() else 0.0}
   EOT
 }
+
+# An output comparer: a judge with ground truth. Its prompt reads the
+# dataset item's expected output, which only exists inside an
+# experiment, so it never runs against live traffic and an item with
+# no expected output is skipped rather than scored zero.
+resource "oodle_genai_eval_template" "matches_expected_answer" {
+  name = "matches-expected-answer"
+  type = "output_comparer"
+
+  prompt = <<-EOT
+    Compare a support reply against the reviewed answer.
+
+    Reply: {{output}}
+    Reviewed answer: {{expected_output}}
+
+    Score 1 if the reply says the same thing, otherwise 0.
+  EOT
+
+  vars = ["output", "expected_output"]
+
+  output_schema = jsonencode({
+    score     = "0 or 1"
+    reasoning = "one sentence explaining the score"
+  })
+}
