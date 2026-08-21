@@ -39,3 +39,25 @@ resource "oodle_notifier" "general_slack" {
     send_resolved = true
   }
 }
+
+# Microsoft Teams notifier
+resource "oodle_notifier" "team_msteams" {
+  name = "platform_team_msteams"
+  type = "msteamsv2"
+  msteamsv2_config = {
+    webhook_url   = "https://company.webhook.office.com/webhookb2/xxx/IncomingWebhook/yyy/zzz"
+    send_resolved = true
+  }
+}
+
+# Rootly notifier for incident coordination and on-call paging.
+# Create an Alertmanager alert source in Rootly and paste its bearer token here;
+# `url` defaults to the Rootly Alertmanager webhook endpoint.
+resource "oodle_notifier" "incident_rootly" {
+  name = "incidents_rootly"
+  type = "rootly"
+  rootly_config = {
+    bearer_token  = "rootly_alert_source_bearer_token"
+    send_resolved = true
+  }
+}

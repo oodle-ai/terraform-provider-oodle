@@ -11,6 +11,7 @@ import (
 
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
+	"terraform-provider-oodle/internal/oodlehttp/clientmodels/oprom"
 	"terraform-provider-oodle/internal/provider/oresource"
 	"terraform-provider-oodle/internal/validatorutils"
 )
@@ -196,6 +197,59 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 						Computed:    true,
 						Default:     booldefault.StaticBool(false),
 						Description: "Enable threading - subsequent messages for the same group of alerts are posted in a thread",
+					},
+					"send_resolved": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "Send notifications when incident is resolved.",
+					},
+				},
+			},
+			"msteamsv2_config": schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "Microsoft Teams notifier configuration.",
+				Attributes: map[string]schema.Attribute{
+					"webhook_url": schema.StringAttribute{
+						Required:    true,
+						Sensitive:   true,
+						Description: "Microsoft Teams workflow webhook URL.",
+					},
+					"title": schema.StringAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     validatorutils.NewDefaultString(types.StringValue("")),
+						Description: "Title of the Microsoft Teams notification.",
+					},
+					"text": schema.StringAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     validatorutils.NewDefaultString(types.StringValue("")),
+						Description: "Text to be included in the Microsoft Teams notification.",
+					},
+					"send_resolved": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "Send notifications when incident is resolved.",
+					},
+				},
+			},
+			"rootly_config": schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "Rootly notifier configuration.",
+				Attributes: map[string]schema.Attribute{
+					"bearer_token": schema.StringAttribute{
+						Required:    true,
+						Sensitive:   true,
+						Description: "Bearer token secret of the Rootly Alertmanager alert source.",
+					},
+					"url": schema.StringAttribute{
+						Optional: true,
+						Computed: true,
+						Default:  validatorutils.NewDefaultString(types.StringValue(oprom.RootlyWebhookURL)),
+						Description: "Rootly Alertmanager webhook URL. Defaults to " +
+							oprom.RootlyWebhookURL + ".",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,

@@ -91,6 +91,33 @@ func TestNotificationPolicyModel(t *testing.T) {
 				Threading: false,
 			},
 		},
+		{
+			ID:   clientmodels.ID{UUID: uuid.New()},
+			Name: "test",
+			Type: clientmodels.NotifierConfigMSTeamsV2,
+			MSTeamsV2Config: &oprom.MSTeamsV2Config{
+				NotifierConfig: config.NotifierConfig{
+					VSendResolved: true,
+				},
+				WebhookURL: "https://example.webhook.office.com/webhookb2/XXXXXX",
+				Title:      "alert title",
+				Text:       "alert text",
+			},
+		},
+		{
+			ID:           clientmodels.ID{UUID: uuid.New()},
+			Name:         "test",
+			Type:         clientmodels.NotifierConfigRootly,
+			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "rootly-bearer-token", true),
+		},
+		{
+			// A Rootly notifier created outside Terraform may carry no bearer
+			// token, in which case http_config stays unset on the way back out.
+			ID:           clientmodels.ID{UUID: uuid.New()},
+			Name:         "test",
+			Type:         clientmodels.NotifierConfigRootly,
+			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "", false),
+		},
 	}
 
 	for _, clientModel := range testCases {

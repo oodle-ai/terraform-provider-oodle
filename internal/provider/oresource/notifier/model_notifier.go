@@ -24,6 +24,8 @@ type notifierResourceModel struct {
 	OpsGenieConfig   *opsgenieConfigModel   `tfsdk:"opsgenie_config"`
 	WebhookConfig    *webhookConfigModel    `tfsdk:"webhook_config"`
 	GoogleChatConfig *googleChatConfigModel `tfsdk:"googlechat_config"`
+	MSTeamsV2Config  *msTeamsV2ConfigModel  `tfsdk:"msteamsv2_config"`
+	RootlyConfig     *rootlyConfigModel     `tfsdk:"rootly_config"`
 }
 
 var _ resourceutils.ResourceModel[*clientmodels.Notifier] = (*notifierResourceModel)(nil)
@@ -108,6 +110,27 @@ func (n *notifierResourceModel) FromClientModel(
 		n.GoogleChatConfig.SendResolved = types.BoolValue(model.GoogleChatConfig.SendResolved())
 		n.GoogleChatConfig.URL = types.StringValue(model.GoogleChatConfig.URL)
 		n.GoogleChatConfig.Threading = types.BoolValue(model.GoogleChatConfig.Threading)
+	case clientmodels.NotifierConfigMSTeamsV2:
+		if model.MSTeamsV2Config == nil {
+			diagnosticsOut.AddError("Missing Microsoft Teams config", "Microsoft Teams config is required for Microsoft Teams notifier")
+			return
+		}
+
+		n.MSTeamsV2Config = &msTeamsV2ConfigModel{}
+		n.MSTeamsV2Config.SendResolved = types.BoolValue(model.MSTeamsV2Config.SendResolved())
+		n.MSTeamsV2Config.WebhookURL = types.StringValue(model.MSTeamsV2Config.WebhookURL)
+		n.MSTeamsV2Config.Title = types.StringValue(model.MSTeamsV2Config.Title)
+		n.MSTeamsV2Config.Text = types.StringValue(model.MSTeamsV2Config.Text)
+	case clientmodels.NotifierConfigRootly:
+		if model.RootlyConfig == nil {
+			diagnosticsOut.AddError("Missing Rootly config", "Rootly config is required for Rootly notifier")
+			return
+		}
+
+		n.RootlyConfig = &rootlyConfigModel{}
+		n.RootlyConfig.SendResolved = types.BoolValue(model.RootlyConfig.SendResolved())
+		n.RootlyConfig.URL = types.StringValue(model.RootlyConfig.URL)
+		n.RootlyConfig.BearerToken = types.StringValue(model.RootlyConfig.BearerToken())
 	default:
 		diagnosticsOut.AddError("Unknown type", fmt.Sprintf("Unknown notifier type %v", model.Type))
 		return
@@ -204,6 +227,29 @@ func (n *notifierResourceModel) ToClientModel(
 				VSendResolved: n.GoogleChatConfig.SendResolved.ValueBool(),
 			},
 		}
+	case clientmodels.NotifierConfigMSTeamsV2:
+		if n.MSTeamsV2Config == nil {
+			return fmt.Errorf("missing Microsoft Teams config")
+		}
+
+		model.MSTeamsV2Config = &oprom.MSTeamsV2Config{
+			WebhookURL: n.MSTeamsV2Config.WebhookURL.ValueString(),
+			Title:      n.MSTeamsV2Config.Title.ValueString(),
+			Text:       n.MSTeamsV2Config.Text.ValueString(),
+			NotifierConfig: config.NotifierConfig{
+				VSendResolved: n.MSTeamsV2Config.SendResolved.ValueBool(),
+			},
+		}
+	case clientmodels.NotifierConfigRootly:
+		if n.RootlyConfig == nil {
+			return fmt.Errorf("missing Rootly config")
+		}
+
+		model.RootlyConfig = oprom.NewRootlyConfig(
+			n.RootlyConfig.URL.ValueString(),
+			n.RootlyConfig.BearerToken.ValueString(),
+			n.RootlyConfig.SendResolved.ValueBool(),
+		)
 	default:
 		return fmt.Errorf("unknown notifier type %v", model.Type)
 	}
