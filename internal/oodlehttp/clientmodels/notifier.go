@@ -15,6 +15,8 @@ type Notifier struct {
 	OpsGenieConfig   *oprom.OpsGenieConfig   `json:"opsgenie_config,omitempty" yaml:"opsgenie_config,omitempty"`
 	WebhookConfig    *oprom.WebhookConfig    `json:"webhook_config,omitempty" yaml:"webhook_config,omitempty"`
 	GoogleChatConfig *oprom.GoogleChatConfig `json:"googlechat_config,omitempty" yaml:"googlechat_config,omitempty"`
+	MSTeamsV2Config  *oprom.MSTeamsV2Config  `json:"msteamsv2_config,omitempty" yaml:"msteamsv2_config,omitempty"`
+	RootlyConfig     *oprom.RootlyConfig     `json:"rootly_config,omitempty" yaml:"rootly_config,omitempty"`
 }
 
 func (n *Notifier) GetID() string {

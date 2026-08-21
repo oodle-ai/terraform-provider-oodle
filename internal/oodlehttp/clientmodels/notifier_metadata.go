@@ -6,13 +6,17 @@ import (
 
 type NotifierType int16
 
+// Values must match the notifier type enum of the Oodle API and are therefore
+// spelled out explicitly rather than derived from iota.
 const (
-	NotifierConfigEmail NotifierType = iota
-	NotifierConfigPagerduty
-	NotifierConfigSlack
-	NotifierConfigOpsGenie
-	NotifierConfigWebhook
-	NotifierConfigGoogleChat
+	NotifierConfigEmail      NotifierType = 0
+	NotifierConfigPagerduty  NotifierType = 1
+	NotifierConfigSlack      NotifierType = 2
+	NotifierConfigOpsGenie   NotifierType = 3
+	NotifierConfigWebhook    NotifierType = 4
+	NotifierConfigGoogleChat NotifierType = 5
+	NotifierConfigMSTeamsV2  NotifierType = 6
+	NotifierConfigRootly     NotifierType = 7
 )
 
 var notifierTypeToName = map[NotifierType]string{
@@ -22,6 +26,8 @@ var notifierTypeToName = map[NotifierType]string{
 	NotifierConfigOpsGenie:   "opsgenie",
 	NotifierConfigWebhook:    "webhook",
 	NotifierConfigGoogleChat: "googlechat",
+	NotifierConfigMSTeamsV2:  "msteamsv2",
+	NotifierConfigRootly:     "rootly",
 }
 
 var notifierNameToType = map[string]NotifierType{}

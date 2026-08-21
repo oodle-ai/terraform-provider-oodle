@@ -67,7 +67,7 @@ func (d *notifiersDataSource) Schema(
 						},
 						"type": schema.StringAttribute{
 							Computed:    true,
-							Description: "The type of the notifier (e.g. email, pagerduty, slack, opsgenie, webhook, googlechat).",
+							Description: "The type of the notifier (e.g. email, pagerduty, slack, opsgenie, webhook, googlechat, msteamsv2, rootly).",
 						},
 					},
 				},

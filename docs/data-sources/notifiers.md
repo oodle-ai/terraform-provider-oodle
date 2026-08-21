@@ -34,4 +34,4 @@ Read-Only:
 
 - `id` (String) The ID of the notifier.
 - `name` (String) The name of the notifier.
-- `type` (String) The type of the notifier (e.g. email, pagerduty, slack, opsgenie, webhook, googlechat).
+- `type` (String) The type of the notifier (e.g. email, pagerduty, slack, opsgenie, webhook, googlechat, msteamsv2, rootly).
