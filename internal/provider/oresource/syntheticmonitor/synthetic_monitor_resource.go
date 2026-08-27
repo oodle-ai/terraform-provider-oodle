@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -25,8 +26,25 @@ var (
 const syntheticMonitorsResourcePath = "synthetic-monitors"
 
 var validRuleTypes = map[string]struct{}{
-	"http":      {},
-	"multistep": {},
+	"http":       {},
+	"ping":       {},
+	"dns":        {},
+	"tcp":        {},
+	"traceroute": {},
+	"ssl":        {},
+	"multistep":  {},
+}
+
+// validDNSRecordTypes are the record types the server knows how to look up.
+// Anything else fails at check time rather than at apply time, so it is worth
+// rejecting during plan.
+var validDNSRecordTypes = map[string]struct{}{
+	"A":     {},
+	"AAAA":  {},
+	"CNAME": {},
+	"MX":    {},
+	"TXT":   {},
+	"NS":    {},
 }
 
 var validHTTPMethods = map[string]struct{}{
@@ -196,19 +214,143 @@ func (r *syntheticMonitorResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"rule_type": schema.StringAttribute{
 				Required:    true,
-				Description: "Type of the synthetic monitor rule. Possible values: 'http', 'multistep'.",
+				Description: "Type of the synthetic monitor rule. Possible values: 'http', 'ping', 'dns', 'tcp', 'traceroute', 'ssl', 'multistep'.",
 				Validators: []validator.String{
 					validatorutils.NewChoiceValidator(validRuleTypes),
 				},
 			},
 			"rule_config": schema.SingleNestedAttribute{
 				Required:    true,
-				Description: "Configuration for the synthetic monitor rule. Set 'http' for a single-step monitor (rule_type 'http') or 'multistep' for a multi-step monitor (rule_type 'multistep').",
+				Description: "Configuration for the synthetic monitor rule. Set exactly one block, matching rule_type: 'http', 'ping', 'dns', 'tcp', 'traceroute', 'ssl', or 'multistep'.",
 				Attributes: map[string]schema.Attribute{
 					"http": schema.SingleNestedAttribute{
 						Optional:    true,
 						Description: "HTTP rule configuration. Used when rule_type is 'http'.",
 						Attributes:  httpConfigAttributes(true),
+					},
+					"ping": schema.SingleNestedAttribute{
+						Optional:    true,
+						Description: "ICMP ping rule configuration. Used when rule_type is 'ping'.",
+						Attributes: map[string]schema.Attribute{
+							"host": schema.StringAttribute{
+								Required:    true,
+								Description: "Host to ping.",
+							},
+							"count": schema.Int64Attribute{
+								Optional:    true,
+								Description: "Number of echo requests to send. The server sends 3 when unset.",
+							},
+							"interval_ms": schema.Int64Attribute{
+								Optional:    true,
+								Description: "Delay between echo requests in milliseconds. The server uses 1000 when unset.",
+							},
+						},
+					},
+					"dns": schema.SingleNestedAttribute{
+						Optional:    true,
+						Description: "DNS resolution rule configuration. Used when rule_type is 'dns'.",
+						Attributes: map[string]schema.Attribute{
+							"domain": schema.StringAttribute{
+								Required:    true,
+								Description: "Domain name to resolve.",
+							},
+							"record_type": schema.StringAttribute{
+								Optional:    true,
+								Description: "DNS record type to query. Possible values: 'A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS'. The server queries 'A' when unset.",
+								Validators: []validator.String{
+									validatorutils.NewChoiceValidator(validDNSRecordTypes),
+								},
+							},
+							"expected_values": schema.ListAttribute{
+								Optional:    true,
+								ElementType: types.StringType,
+								Description: "Records the lookup is expected to return. The check fails if none of these are present.",
+							},
+							"nameserver": schema.StringAttribute{
+								Optional:    true,
+								Description: "Nameserver to query instead of the system resolver (e.g., '8.8.8.8:53').",
+							},
+							// Defaults to true, matching the Oodle UI. The server's own
+							// zero value is false, which makes the check pass whenever
+							// the lookup fails -- a monitor that can never alert. Only
+							// opt into that by asking for it explicitly.
+							"expect_resolution": schema.BoolAttribute{
+								Optional:    true,
+								Computed:    true,
+								Default:     booldefault.StaticBool(true),
+								Description: "Whether resolution is expected to succeed. Defaults to true. Set to false to assert that a domain does NOT resolve; note that with false the check only fails via 'expected_values', since a failed lookup is treated as the expected outcome.",
+							},
+						},
+					},
+					"tcp": schema.SingleNestedAttribute{
+						Optional:    true,
+						Description: "TCP connection rule configuration. Used when rule_type is 'tcp'.",
+						Attributes: map[string]schema.Attribute{
+							"host": schema.StringAttribute{
+								Required:    true,
+								Description: "Host to connect to.",
+							},
+							"port": schema.Int64Attribute{
+								Required:    true,
+								Description: "TCP port to connect to (1-65535).",
+							},
+						},
+					},
+					"traceroute": schema.SingleNestedAttribute{
+						Optional:    true,
+						Description: "Traceroute rule configuration. Used when rule_type is 'traceroute'. Traces the network path to a host.",
+						Attributes: map[string]schema.Attribute{
+							"host": schema.StringAttribute{
+								Required:    true,
+								Description: "Host to trace the network path to.",
+							},
+							"max_hops": schema.Int64Attribute{
+								Optional:    true,
+								Description: "Maximum number of hops to probe. The server uses 30 when unset.",
+							},
+							"timeout_per_hop_ms": schema.Int64Attribute{
+								Optional:    true,
+								Description: "Per-hop timeout in milliseconds. The server uses 1000 when unset.",
+							},
+						},
+					},
+					"ssl": schema.SingleNestedAttribute{
+						Optional:    true,
+						Description: "SSL certificate rule configuration. Used when rule_type is 'ssl'.",
+						Attributes: map[string]schema.Attribute{
+							"host": schema.StringAttribute{
+								Required:    true,
+								Description: "Host whose certificate is checked.",
+							},
+							"port": schema.Int64Attribute{
+								Required:    true,
+								Description: "TLS port to connect to (1-65535), typically 443.",
+							},
+							// Computed as well as Optional: the server always echoes
+							// these back (no omitempty), so an explicit 0 -- a
+							// reasonable way to spell "disabled" -- round-trips as 0
+							// rather than drifting back to null every plan.
+							"warn_days_before_expiry": schema.Int64Attribute{
+								Optional:    true,
+								Computed:    true,
+								Description: "Fail the check with a warning when the certificate expires within this many days. Disabled when unset or 0.",
+							},
+							"critical_days_before_expiry": schema.Int64Attribute{
+								Optional:    true,
+								Computed:    true,
+								Description: "Fail the check critically when the certificate expires within this many days. Disabled when unset or 0.",
+							},
+							"insecure_skip_verify": schema.BoolAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: "Whether to skip TLS certificate verification. Defaults to false.",
+							},
+							"check_certificate_authority": schema.BoolAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: "Whether to validate the certificate authority chain. Defaults to false.",
+							},
+						},
 					},
 					"multistep": schema.SingleNestedAttribute{
 						Optional:    true,

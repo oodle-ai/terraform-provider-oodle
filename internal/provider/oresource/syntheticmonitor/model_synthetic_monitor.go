@@ -22,8 +22,47 @@ type syntheticMonitorResourceModel struct {
 }
 
 type ruleConfigModel struct {
-	HTTP      *httpConfigModel      `tfsdk:"http"`
-	Multistep *multistepConfigModel `tfsdk:"multistep"`
+	HTTP       *httpConfigModel       `tfsdk:"http"`
+	Ping       *pingConfigModel       `tfsdk:"ping"`
+	DNS        *dnsConfigModel        `tfsdk:"dns"`
+	TCP        *tcpConfigModel        `tfsdk:"tcp"`
+	Traceroute *tracerouteConfigModel `tfsdk:"traceroute"`
+	SSL        *sslConfigModel        `tfsdk:"ssl"`
+	Multistep  *multistepConfigModel  `tfsdk:"multistep"`
+}
+
+type pingConfigModel struct {
+	Host       types.String `tfsdk:"host"`
+	Count      types.Int64  `tfsdk:"count"`
+	IntervalMs types.Int64  `tfsdk:"interval_ms"`
+}
+
+type dnsConfigModel struct {
+	Domain           types.String   `tfsdk:"domain"`
+	RecordType       types.String   `tfsdk:"record_type"`
+	ExpectedValues   []types.String `tfsdk:"expected_values"`
+	Nameserver       types.String   `tfsdk:"nameserver"`
+	ExpectResolution types.Bool     `tfsdk:"expect_resolution"`
+}
+
+type tcpConfigModel struct {
+	Host types.String `tfsdk:"host"`
+	Port types.Int64  `tfsdk:"port"`
+}
+
+type tracerouteConfigModel struct {
+	Host            types.String `tfsdk:"host"`
+	MaxHops         types.Int64  `tfsdk:"max_hops"`
+	TimeoutPerHopMs types.Int64  `tfsdk:"timeout_per_hop_ms"`
+}
+
+type sslConfigModel struct {
+	Host                      types.String `tfsdk:"host"`
+	Port                      types.Int64  `tfsdk:"port"`
+	WarnDaysBeforeExpiry      types.Int64  `tfsdk:"warn_days_before_expiry"`
+	CriticalDaysBeforeExpiry  types.Int64  `tfsdk:"critical_days_before_expiry"`
+	InsecureSkipVerify        types.Bool   `tfsdk:"insecure_skip_verify"`
+	CheckCertificateAuthority types.Bool   `tfsdk:"check_certificate_authority"`
 }
 
 // httpConfigModel is shared by the single-step "http" rule config and by each
@@ -98,6 +137,50 @@ func (m *syntheticMonitorResourceModel) FromClientModel(
 	if model.RuleConfig.HTTP != nil {
 		m.RuleConfig.HTTP = httpConfigFromClientModel(model.RuleConfig.HTTP)
 	}
+	if c := model.RuleConfig.Ping; c != nil {
+		m.RuleConfig.Ping = &pingConfigModel{
+			Host:       types.StringValue(c.Host),
+			Count:      optionalInt64(c.Count),
+			IntervalMs: optionalInt64(c.IntervalMs),
+		}
+	}
+	if c := model.RuleConfig.DNS; c != nil {
+		cfg := &dnsConfigModel{
+			Domain:           types.StringValue(c.Domain),
+			RecordType:       optionalString(c.RecordType),
+			Nameserver:       optionalString(c.Nameserver),
+			ExpectResolution: types.BoolValue(c.ExpectResolution),
+		}
+		if len(c.ExpectedValues) > 0 {
+			cfg.ExpectedValues = stringsToTFList(c.ExpectedValues)
+		}
+		m.RuleConfig.DNS = cfg
+	}
+	if c := model.RuleConfig.TCP; c != nil {
+		m.RuleConfig.TCP = &tcpConfigModel{
+			Host: types.StringValue(c.Host),
+			Port: types.Int64Value(c.Port),
+		}
+	}
+	if c := model.RuleConfig.Traceroute; c != nil {
+		m.RuleConfig.Traceroute = &tracerouteConfigModel{
+			Host:            types.StringValue(c.Host),
+			MaxHops:         optionalInt64(c.MaxHops),
+			TimeoutPerHopMs: optionalInt64(c.TimeoutPerHopMs),
+		}
+	}
+	if c := model.RuleConfig.SSL; c != nil {
+		m.RuleConfig.SSL = &sslConfigModel{
+			Host: types.StringValue(c.Host),
+			Port: types.Int64Value(c.Port),
+			// Not optionalInt64: these are Optional+Computed because the server
+			// always echoes them, so 0 must stay 0 rather than collapsing to null.
+			WarnDaysBeforeExpiry:      types.Int64Value(c.WarnDaysBeforeExpiry),
+			CriticalDaysBeforeExpiry:  types.Int64Value(c.CriticalDaysBeforeExpiry),
+			InsecureSkipVerify:        types.BoolValue(c.InsecureSkipVerify),
+			CheckCertificateAuthority: types.BoolValue(c.CheckCertificateAuthority),
+		}
+	}
 	if model.RuleConfig.Multistep != nil {
 		steps := make([]stepModel, len(model.RuleConfig.Multistep.Steps))
 		for i, step := range model.RuleConfig.Multistep.Steps {
@@ -146,6 +229,48 @@ func (m *syntheticMonitorResourceModel) ToClientModel(
 	if m.RuleConfig.HTTP != nil {
 		model.RuleConfig.HTTP = httpConfigToClientModel(m.RuleConfig.HTTP)
 	}
+	if c := m.RuleConfig.Ping; c != nil {
+		model.RuleConfig.Ping = &clientmodels.SyntheticMonitorPingConfig{
+			Host:       c.Host.ValueString(),
+			Count:      c.Count.ValueInt64(),
+			IntervalMs: c.IntervalMs.ValueInt64(),
+		}
+	}
+	if c := m.RuleConfig.DNS; c != nil {
+		cfg := &clientmodels.SyntheticMonitorDNSConfig{
+			Domain:           c.Domain.ValueString(),
+			RecordType:       c.RecordType.ValueString(),
+			Nameserver:       c.Nameserver.ValueString(),
+			ExpectResolution: c.ExpectResolution.ValueBool(),
+		}
+		if len(c.ExpectedValues) > 0 {
+			cfg.ExpectedValues = tfListToStrings(c.ExpectedValues)
+		}
+		model.RuleConfig.DNS = cfg
+	}
+	if c := m.RuleConfig.TCP; c != nil {
+		model.RuleConfig.TCP = &clientmodels.SyntheticMonitorTCPConfig{
+			Host: c.Host.ValueString(),
+			Port: c.Port.ValueInt64(),
+		}
+	}
+	if c := m.RuleConfig.Traceroute; c != nil {
+		model.RuleConfig.Traceroute = &clientmodels.SyntheticMonitorTracerouteConfig{
+			Host:            c.Host.ValueString(),
+			MaxHops:         c.MaxHops.ValueInt64(),
+			TimeoutPerHopMs: c.TimeoutPerHopMs.ValueInt64(),
+		}
+	}
+	if c := m.RuleConfig.SSL; c != nil {
+		model.RuleConfig.SSL = &clientmodels.SyntheticMonitorSSLConfig{
+			Host:                      c.Host.ValueString(),
+			Port:                      c.Port.ValueInt64(),
+			WarnDaysBeforeExpiry:      c.WarnDaysBeforeExpiry.ValueInt64(),
+			CriticalDaysBeforeExpiry:  c.CriticalDaysBeforeExpiry.ValueInt64(),
+			InsecureSkipVerify:        c.InsecureSkipVerify.ValueBool(),
+			CheckCertificateAuthority: c.CheckCertificateAuthority.ValueBool(),
+		}
+	}
 	if m.RuleConfig.Multistep != nil {
 		steps := make([]clientmodels.SyntheticMonitorStep, len(m.RuleConfig.Multistep.Steps))
 		for i, step := range m.RuleConfig.Multistep.Steps {
@@ -185,11 +310,12 @@ func httpConfigFromClientModel(c *clientmodels.SyntheticMonitorHTTPConfig) *http
 		Method:             types.StringValue(c.Method),
 		FollowRedirects:    types.BoolValue(c.FollowRedirects),
 		InsecureSkipVerify: types.BoolValue(c.InsecureSkipVerify),
+		Body:               optionalString(c.Body),
+		ExpectedBody:       optionalString(c.ExpectedBody),
+		MaxResponseTimeMs:  optionalInt64(c.MaxResponseTimeMs),
+		BearerToken:        optionalString(c.BearerToken),
 	}
 
-	if c.Body != "" {
-		cfg.Body = types.StringValue(c.Body)
-	}
 	if len(c.Headers) > 0 {
 		cfg.Headers = c.Headers
 	}
@@ -198,12 +324,6 @@ func httpConfigFromClientModel(c *clientmodels.SyntheticMonitorHTTPConfig) *http
 	}
 	if len(c.ExcludedStatusCodes) > 0 {
 		cfg.ExcludedStatusCodes = stringsToTFList(c.ExcludedStatusCodes)
-	}
-	if c.ExpectedBody != "" {
-		cfg.ExpectedBody = types.StringValue(c.ExpectedBody)
-	}
-	if c.MaxResponseTimeMs != 0 {
-		cfg.MaxResponseTimeMs = types.Int64Value(c.MaxResponseTimeMs)
 	}
 	if len(c.ExpectedHeaders) > 0 {
 		cfg.ExpectedHeaders = c.ExpectedHeaders
@@ -214,10 +334,6 @@ func httpConfigFromClientModel(c *clientmodels.SyntheticMonitorHTTPConfig) *http
 			Password: types.StringValue(c.BasicAuth.Password),
 		}
 	}
-	if c.BearerToken != "" {
-		cfg.BearerToken = types.StringValue(c.BearerToken)
-	}
-
 	return cfg
 }
 
@@ -262,6 +378,25 @@ func httpConfigToClientModel(m *httpConfigModel) *clientmodels.SyntheticMonitorH
 	}
 
 	return cfg
+}
+
+// optionalInt64 maps a zero value to null. The server stores these fields as
+// sent and only substitutes its own defaults when the check runs, so a zero
+// read back means "unset" rather than a server-assigned value.
+func optionalInt64(v int64) types.Int64 {
+	if v == 0 {
+		return types.Int64Null()
+	}
+	return types.Int64Value(v)
+}
+
+// optionalString maps an empty value to null, so omitted attributes round-trip
+// as null instead of "".
+func optionalString(v string) types.String {
+	if v == "" {
+		return types.StringNull()
+	}
+	return types.StringValue(v)
 }
 
 func stringsToTFList(in []string) []types.String {

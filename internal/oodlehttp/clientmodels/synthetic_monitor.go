@@ -97,10 +97,104 @@ type SyntheticMonitorMultistepConfig struct {
 	Steps []SyntheticMonitorStep `json:"steps" yaml:"steps"`
 }
 
-// SyntheticMonitorRuleConfig represents the rule configuration for a synthetic monitor.
+// SyntheticMonitorPingConfig is the configuration for ICMP ping checks.
+type SyntheticMonitorPingConfig struct {
+	// Host is the host to ping.
+	Host string `json:"host,omitempty" yaml:"host,omitempty"`
+
+	// Count is the number of echo requests to send. The server uses 3 when unset.
+	Count int64 `json:"count,omitempty" yaml:"count,omitempty"`
+
+	// IntervalMs is the delay between echo requests in milliseconds. The server
+	// uses 1000 when unset.
+	IntervalMs int64 `json:"interval_ms,omitempty" yaml:"interval_ms,omitempty"`
+}
+
+// SyntheticMonitorTCPConfig is the configuration for TCP connection checks.
+type SyntheticMonitorTCPConfig struct {
+	// Host is the host to connect to.
+	Host string `json:"host,omitempty" yaml:"host,omitempty"`
+
+	// Port is the TCP port to connect to.
+	Port int64 `json:"port,omitempty" yaml:"port,omitempty"`
+}
+
+// SyntheticMonitorDNSConfig is the configuration for DNS resolution checks.
+type SyntheticMonitorDNSConfig struct {
+	// Domain is the domain name to resolve.
+	Domain string `json:"domain,omitempty" yaml:"domain,omitempty"`
+
+	// RecordType is the DNS record type to query. The server uses "A" when unset.
+	RecordType string `json:"record_type,omitempty" yaml:"record_type,omitempty"`
+
+	// ExpectedValues are the records the lookup is expected to return.
+	ExpectedValues []string `json:"expected_values,omitempty" yaml:"expected_values,omitempty"`
+
+	// Nameserver is an optional nameserver to query instead of the system resolver.
+	Nameserver string `json:"nameserver,omitempty" yaml:"nameserver,omitempty"`
+
+	// ExpectResolution indicates whether resolution is expected to succeed. Set
+	// it to false to assert that a domain does NOT resolve.
+	ExpectResolution bool `json:"expect_resolution" yaml:"expect_resolution"`
+}
+
+// SyntheticMonitorSSLConfig is the configuration for SSL certificate checks.
+type SyntheticMonitorSSLConfig struct {
+	// Host is the host whose certificate is checked.
+	Host string `json:"host,omitempty" yaml:"host,omitempty"`
+
+	// Port is the TLS port to connect to.
+	Port int64 `json:"port,omitempty" yaml:"port,omitempty"`
+
+	// WarnDaysBeforeExpiry fails the check with a warning when the certificate
+	// expires within this many days. Disabled when zero.
+	WarnDaysBeforeExpiry int64 `json:"warn_days_before_expiry" yaml:"warn_days_before_expiry"`
+
+	// CriticalDaysBeforeExpiry fails the check critically when the certificate
+	// expires within this many days. Disabled when zero.
+	CriticalDaysBeforeExpiry int64 `json:"critical_days_before_expiry" yaml:"critical_days_before_expiry"`
+
+	// InsecureSkipVerify indicates whether to skip certificate verification.
+	InsecureSkipVerify bool `json:"insecure_skip_verify" yaml:"insecure_skip_verify"`
+
+	// CheckCertificateAuthority indicates whether to validate the CA chain.
+	CheckCertificateAuthority bool `json:"check_certificate_authority" yaml:"check_certificate_authority"`
+}
+
+// SyntheticMonitorTracerouteConfig is the configuration for traceroute checks.
+type SyntheticMonitorTracerouteConfig struct {
+	// Host is the host to trace the network path to.
+	Host string `json:"host,omitempty" yaml:"host,omitempty"`
+
+	// MaxHops is the maximum number of hops to probe. The server uses 30 when unset.
+	MaxHops int64 `json:"max_hops,omitempty" yaml:"max_hops,omitempty"`
+
+	// TimeoutPerHopMs is the per-hop timeout in milliseconds. The server uses
+	// 1000 when unset.
+	TimeoutPerHopMs int64 `json:"timeout_per_hop_ms,omitempty" yaml:"timeout_per_hop_ms,omitempty"`
+}
+
+// SyntheticMonitorRuleConfig represents the rule configuration for a synthetic
+// monitor. It is a union: exactly one field is set, selected by the monitor's
+// RuleType.
 type SyntheticMonitorRuleConfig struct {
 	// HTTP is the HTTP rule configuration (rule_type "http").
 	HTTP *SyntheticMonitorHTTPConfig `json:"http,omitempty" yaml:"http,omitempty"`
+
+	// Ping is the ICMP ping rule configuration (rule_type "ping").
+	Ping *SyntheticMonitorPingConfig `json:"ping,omitempty" yaml:"ping,omitempty"`
+
+	// DNS is the DNS resolution rule configuration (rule_type "dns").
+	DNS *SyntheticMonitorDNSConfig `json:"dns,omitempty" yaml:"dns,omitempty"`
+
+	// TCP is the TCP connection rule configuration (rule_type "tcp").
+	TCP *SyntheticMonitorTCPConfig `json:"tcp,omitempty" yaml:"tcp,omitempty"`
+
+	// Traceroute is the network path tracing rule configuration (rule_type "traceroute").
+	Traceroute *SyntheticMonitorTracerouteConfig `json:"traceroute,omitempty" yaml:"traceroute,omitempty"`
+
+	// SSL is the SSL certificate rule configuration (rule_type "ssl").
+	SSL *SyntheticMonitorSSLConfig `json:"ssl,omitempty" yaml:"ssl,omitempty"`
 
 	// Multistep is the multi-step rule configuration (rule_type "multistep").
 	Multistep *SyntheticMonitorMultistepConfig `json:"multistep,omitempty" yaml:"multistep,omitempty"`
@@ -117,7 +211,8 @@ type SyntheticMonitor struct {
 	// Enabled indicates whether the synthetic monitor is active.
 	Enabled bool `json:"enabled" yaml:"enabled"`
 
-	// RuleType is the type of the synthetic monitor rule (e.g., "http", "multistep").
+	// RuleType is the type of the synthetic monitor rule: one of "http", "ping",
+	// "dns", "tcp", "traceroute", "ssl", or "multistep".
 	RuleType string `json:"rule_type,omitempty" yaml:"rule_type,omitempty"`
 
 	// RuleConfig is the configuration for the synthetic monitor rule.

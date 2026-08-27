@@ -41,6 +41,109 @@ resource "oodle_synthetic_monitor" "api_check" {
   }
 }
 
+# ---------------------------------------------------------------------------
+# Network-level checks (ping / tcp / dns / ssl / traceroute)
+#
+# NOTE: these checks run from Oodle's infrastructure and must target publicly
+# reachable hosts. The server rejects internal targets — localhost, private IP
+# ranges, and Kubernetes-internal names such as `*.svc`, `*.local`, `*.internal`
+# or bare hostnames — because probing them requires routing the check through an
+# on-prem agent, which this provider does not yet expose.
+# ---------------------------------------------------------------------------
+
+# Example: ICMP ping monitor.
+resource "oodle_synthetic_monitor" "ping_check" {
+  name      = "Edge Gateway Reachability"
+  enabled   = true
+  rule_type = "ping"
+  interval  = "1m"
+  timeout   = "10s"
+
+  rule_config = {
+    ping = {
+      host = "gateway.example.com"
+      # Omit count/interval_ms to use the server defaults (3 packets, 1000ms apart).
+      count       = 5
+      interval_ms = 500
+    }
+  }
+}
+
+# Example: TCP port connectivity monitor.
+resource "oodle_synthetic_monitor" "tcp_check" {
+  name      = "Postgres Port Open"
+  enabled   = true
+  rule_type = "tcp"
+  interval  = "1m"
+  timeout   = "5s"
+
+  rule_config = {
+    tcp = {
+      host = "db.example.com"
+      port = 5432
+    }
+  }
+}
+
+# Example: DNS resolution monitor.
+resource "oodle_synthetic_monitor" "dns_check" {
+  name      = "MX Records Present"
+  enabled   = true
+  rule_type = "dns"
+  interval  = "5m"
+  timeout   = "10s"
+
+  rule_config = {
+    dns = {
+      domain      = "example.com"
+      record_type = "MX"
+      # The check fails unless the lookup returns one of these records.
+      expected_values = ["mail.example.com (priority: 10)"]
+      # Query a specific resolver instead of the system one.
+      nameserver        = "8.8.8.8:53"
+      expect_resolution = true
+    }
+  }
+}
+
+# Example: SSL certificate expiry monitor.
+resource "oodle_synthetic_monitor" "ssl_check" {
+  name      = "API Certificate Expiry"
+  enabled   = true
+  rule_type = "ssl"
+  interval  = "1h"
+  timeout   = "10s"
+
+  rule_config = {
+    ssl = {
+      host = "api.example.com"
+      port = 443
+      # Fail the check as the certificate approaches expiry.
+      warn_days_before_expiry     = 30
+      critical_days_before_expiry = 7
+      check_certificate_authority = true
+    }
+  }
+}
+
+# Example: traceroute monitor for network path visibility.
+resource "oodle_synthetic_monitor" "traceroute_check" {
+  name      = "Path To Upstream API"
+  enabled   = true
+  rule_type = "traceroute"
+  interval  = "5m"
+  timeout   = "30s"
+
+  rule_config = {
+    traceroute = {
+      host = "api.example.com"
+      # Omit to use the server defaults (30 hops, 1000ms per hop).
+      max_hops           = 20
+      timeout_per_hop_ms = 1500
+    }
+  }
+}
+
 # Example: multi-step synthetic monitor.
 # Logs in, extracts a token and user id from the response, then calls a
 # protected endpoint using those variables.
