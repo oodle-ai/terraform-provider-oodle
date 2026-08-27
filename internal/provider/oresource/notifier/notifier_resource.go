@@ -3,6 +3,7 @@ package notifier
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -175,6 +176,18 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					"url": schema.StringAttribute{
 						Required:  true,
 						Sensitive: true,
+					},
+					"payload": schema.StringAttribute{
+						Optional:   true,
+						CustomType: jsontypes.NormalizedType{},
+						Description: "JSON object replacing the default alert " +
+							"payload posted to the webhook. Every string key " +
+							"and value in this (arbitrarily nested) object is " +
+							"rendered as a Go template against the alert data, " +
+							"e.g. `{{ .CommonLabels.alertname }}`. Use the " +
+							"`toJson` template function to embed structured " +
+							"values, e.g. `{{ .CommonLabels | toJson }}`. " +
+							"Leave unset to send Oodle's default payload.",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,

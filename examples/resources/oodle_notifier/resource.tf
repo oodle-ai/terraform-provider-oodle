@@ -61,3 +61,34 @@ resource "oodle_notifier" "incident_rootly" {
     send_resolved = true
   }
 }
+
+# Webhook notifier posting Oodle's default alert payload.
+resource "oodle_notifier" "generic_webhook" {
+  name = "generic_webhook"
+  type = "webhook"
+  webhook_config = {
+    url           = "https://example.com/hooks/oodle"
+    send_resolved = true
+  }
+}
+
+# Webhook notifier with a fully custom payload. Every string is a Go template
+# rendered against the alert data; `toJson` embeds structured values.
+resource "oodle_notifier" "custom_payload_webhook" {
+  name = "custom_payload_webhook"
+  type = "webhook"
+  webhook_config = {
+    url           = "https://example.com/hooks/oodle"
+    send_resolved = true
+    payload = jsonencode({
+      text   = "{{ .CommonLabels.alertname }} is {{ .Status }}"
+      status = "{{ .Status }}"
+      labels = "{{ .CommonLabels | toJson }}"
+      alerts = [
+        {
+          summary = "{{ .CommonAnnotations.summary }}"
+        }
+      ]
+    })
+  }
+}

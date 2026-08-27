@@ -2,9 +2,12 @@ package notifier
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/prometheus/alertmanager/config"
@@ -100,6 +103,18 @@ func (n *notifierResourceModel) FromClientModel(
 		n.WebhookConfig = &webhookConfigModel{}
 		n.WebhookConfig.SendResolved = types.BoolValue(model.WebhookConfig.SendResolved())
 		n.WebhookConfig.URL = types.StringValue(model.WebhookConfig.URL)
+		n.WebhookConfig.Payload = jsontypes.NewNormalizedNull()
+		if len(model.WebhookConfig.Payload) > 0 {
+			encoded, err := json.Marshal(model.WebhookConfig.Payload)
+			if err != nil {
+				diagnosticsOut.AddError(
+					"Invalid Webhook payload",
+					fmt.Sprintf("Failed to encode the webhook custom payload: %v", err),
+				)
+				return
+			}
+			n.WebhookConfig.Payload = jsontypes.NewNormalizedValue(string(encoded))
+		}
 	case clientmodels.NotifierConfigGoogleChat:
 		if model.GoogleChatConfig == nil {
 			diagnosticsOut.AddError("Missing Google chat config", "Google chat config is required for Google chat notifier")
@@ -214,6 +229,17 @@ func (n *notifierResourceModel) ToClientModel(
 			NotifierConfig: config.NotifierConfig{
 				VSendResolved: n.WebhookConfig.SendResolved.ValueBool(),
 			},
+		}
+
+		if !n.WebhookConfig.Payload.IsNull() && !n.WebhookConfig.Payload.IsUnknown() {
+			raw := n.WebhookConfig.Payload.ValueString()
+			if strings.TrimSpace(raw) != "" {
+				payload := map[string]any{}
+				if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+					return fmt.Errorf("failed to parse webhook payload as a JSON object: %v", err)
+				}
+				model.WebhookConfig.Payload = payload
+			}
 		}
 	case clientmodels.NotifierConfigGoogleChat:
 		if n.GoogleChatConfig == nil {
