@@ -62,6 +62,23 @@ resource "oodle_notifier" "incident_rootly" {
   }
 }
 
+# Rootly is a webhook underneath, so it takes the same custom payload. Only set
+# this if the alert source expects a shape other than the default Alertmanager
+# body.
+resource "oodle_notifier" "custom_payload_rootly" {
+  name = "custom_payload_rootly"
+  type = "rootly"
+  rootly_config = {
+    bearer_token  = "rootly_alert_source_bearer_token"
+    send_resolved = true
+    payload = jsonencode({
+      summary  = "{{ .CommonLabels.alertname }} is {{ .Status }}"
+      severity = "{{ .CommonLabels._oodle_severity }}"
+      alerts   = "{{ .Alerts | toJson }}"
+    })
+  }
+}
+
 # Webhook notifier posting Oodle's default alert payload.
 resource "oodle_notifier" "generic_webhook" {
   name = "generic_webhook"

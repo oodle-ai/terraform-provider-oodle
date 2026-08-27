@@ -103,17 +103,9 @@ func (n *notifierResourceModel) FromClientModel(
 		n.WebhookConfig = &webhookConfigModel{}
 		n.WebhookConfig.SendResolved = types.BoolValue(model.WebhookConfig.SendResolved())
 		n.WebhookConfig.URL = types.StringValue(model.WebhookConfig.URL)
-		n.WebhookConfig.Payload = jsontypes.NewNormalizedNull()
-		if len(model.WebhookConfig.Payload) > 0 {
-			encoded, err := json.Marshal(model.WebhookConfig.Payload)
-			if err != nil {
-				diagnosticsOut.AddError(
-					"Invalid Webhook payload",
-					fmt.Sprintf("Failed to encode the webhook custom payload: %v", err),
-				)
-				return
-			}
-			n.WebhookConfig.Payload = jsontypes.NewNormalizedValue(string(encoded))
+		n.WebhookConfig.Payload = encodePayload(model.WebhookConfig.Payload, "Webhook", diagnosticsOut)
+		if diagnosticsOut.HasError() {
+			return
 		}
 	case clientmodels.NotifierConfigGoogleChat:
 		if model.GoogleChatConfig == nil {
@@ -146,6 +138,10 @@ func (n *notifierResourceModel) FromClientModel(
 		n.RootlyConfig.SendResolved = types.BoolValue(model.RootlyConfig.SendResolved())
 		n.RootlyConfig.URL = types.StringValue(model.RootlyConfig.URL)
 		n.RootlyConfig.BearerToken = types.StringValue(model.RootlyConfig.BearerToken())
+		n.RootlyConfig.Payload = encodePayload(model.RootlyConfig.Payload, "Rootly", diagnosticsOut)
+		if diagnosticsOut.HasError() {
+			return
+		}
 	default:
 		diagnosticsOut.AddError("Unknown type", fmt.Sprintf("Unknown notifier type %v", model.Type))
 		return
@@ -231,16 +227,11 @@ func (n *notifierResourceModel) ToClientModel(
 			},
 		}
 
-		if !n.WebhookConfig.Payload.IsNull() && !n.WebhookConfig.Payload.IsUnknown() {
-			raw := n.WebhookConfig.Payload.ValueString()
-			if strings.TrimSpace(raw) != "" {
-				payload := map[string]any{}
-				if err := json.Unmarshal([]byte(raw), &payload); err != nil {
-					return fmt.Errorf("failed to parse webhook payload as a JSON object: %v", err)
-				}
-				model.WebhookConfig.Payload = payload
-			}
+		payload, err := decodePayload(n.WebhookConfig.Payload)
+		if err != nil {
+			return fmt.Errorf("webhook config: %v", err)
 		}
+		model.WebhookConfig.Payload = payload
 	case clientmodels.NotifierConfigGoogleChat:
 		if n.GoogleChatConfig == nil {
 			return fmt.Errorf("missing Google chat config")
@@ -271,14 +262,65 @@ func (n *notifierResourceModel) ToClientModel(
 			return fmt.Errorf("missing Rootly config")
 		}
 
+		rootlyPayload, err := decodePayload(n.RootlyConfig.Payload)
+		if err != nil {
+			return fmt.Errorf("rootly config: %v", err)
+		}
+
 		model.RootlyConfig = oprom.NewRootlyConfig(
 			n.RootlyConfig.URL.ValueString(),
 			n.RootlyConfig.BearerToken.ValueString(),
 			n.RootlyConfig.SendResolved.ValueBool(),
+			rootlyPayload,
 		)
 	default:
 		return fmt.Errorf("unknown notifier type %v", model.Type)
 	}
 
 	return nil
+}
+
+// encodePayload renders a notifier's custom payload for Terraform state. An
+// empty payload is null rather than "{}", so a notifier without one does not
+// show up as a diff against a configuration that omits the attribute.
+func encodePayload(
+	payload map[string]any,
+	notifier string,
+	diagnosticsOut *diag.Diagnostics,
+) jsontypes.Normalized {
+	if len(payload) == 0 {
+		return jsontypes.NewNormalizedNull()
+	}
+
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		diagnosticsOut.AddError(
+			fmt.Sprintf("Invalid %s payload", notifier),
+			fmt.Sprintf("Failed to encode the custom payload: %v", err),
+		)
+		return jsontypes.NewNormalizedNull()
+	}
+
+	return jsontypes.NewNormalizedValue(string(encoded))
+}
+
+// decodePayload parses a custom payload out of Terraform state. Unset, unknown
+// and blank all mean "no custom payload", which leaves the notifier sending
+// the default Alertmanager body.
+func decodePayload(value jsontypes.Normalized) (map[string]any, error) {
+	if value.IsNull() || value.IsUnknown() {
+		return nil, nil
+	}
+
+	raw := value.ValueString()
+	if strings.TrimSpace(raw) == "" {
+		return nil, nil
+	}
+
+	payload := map[string]any{}
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+		return nil, fmt.Errorf("failed to parse payload as a JSON object: %v", err)
+	}
+
+	return payload, nil
 }

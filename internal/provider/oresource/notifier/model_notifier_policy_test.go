@@ -128,7 +128,7 @@ func TestNotificationPolicyModel(t *testing.T) {
 			ID:           clientmodels.ID{UUID: uuid.New()},
 			Name:         "test",
 			Type:         clientmodels.NotifierConfigRootly,
-			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "rootly-bearer-token", true),
+			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "rootly-bearer-token", true, nil),
 		},
 		{
 			// A Rootly notifier created outside Terraform may carry no bearer
@@ -136,7 +136,28 @@ func TestNotificationPolicyModel(t *testing.T) {
 			ID:           clientmodels.ID{UUID: uuid.New()},
 			Name:         "test",
 			Type:         clientmodels.NotifierConfigRootly,
-			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "", false),
+			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "", false, nil),
+		},
+		{
+			// Rootly is a webhook underneath, so it carries a custom payload
+			// the same way.
+			ID:   clientmodels.ID{UUID: uuid.New()},
+			Name: "test",
+			Type: clientmodels.NotifierConfigRootly,
+			RootlyConfig: oprom.NewRootlyConfig(
+				oprom.RootlyWebhookURL,
+				"rootly-bearer-token",
+				true,
+				map[string]any{
+					"text":   "{{ .CommonLabels.alertname }} is {{ .Status }}",
+					"labels": "{{ .CommonLabels | toJson }}",
+					"card": map[string]any{
+						"sections": []any{
+							map[string]any{"header": "{{ .Status }}"},
+						},
+					},
+				},
+			),
 		},
 	}
 

@@ -264,6 +264,17 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 						Description: "Rootly Alertmanager webhook URL. Defaults to " +
 							oprom.RootlyWebhookURL + ".",
 					},
+					"payload": schema.StringAttribute{
+						Optional:   true,
+						CustomType: jsontypes.NormalizedType{},
+						Description: "JSON object replacing the default alert " +
+							"payload posted to Rootly. Rootly is a webhook " +
+							"underneath, so this behaves exactly as it does " +
+							"for `webhook_config`. Leave unset unless the " +
+							"alert source expects a different shape: Rootly " +
+							"parses the default Alertmanager body, including " +
+							"the `_oodle_severity` label used for urgency.",
+					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
 						Computed:    true,
