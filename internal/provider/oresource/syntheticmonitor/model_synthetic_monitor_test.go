@@ -218,3 +218,202 @@ func TestSyntheticMonitorModelDisabled(t *testing.T) {
 
 	assert.DeepEqual(t, clientModel, newClientModel)
 }
+
+// TestSyntheticMonitorModelRuleTypes round-trips each non-HTTP rule type
+// through the Terraform model and back. Each type is covered twice: once with
+// every optional field populated, and once with only the required fields, which
+// exercises the null-vs-zero handling in the conversion helpers.
+func TestSyntheticMonitorModelRuleTypes(t *testing.T) {
+	tests := []struct {
+		name       string
+		ruleType   string
+		ruleConfig clientmodels.SyntheticMonitorRuleConfig
+	}{
+		{
+			name:     "ping full",
+			ruleType: "ping",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				Ping: &clientmodels.SyntheticMonitorPingConfig{
+					Host:       "example.com",
+					Count:      5,
+					IntervalMs: 500,
+				},
+			},
+		},
+		{
+			name:     "ping minimal",
+			ruleType: "ping",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				Ping: &clientmodels.SyntheticMonitorPingConfig{
+					Host: "example.com",
+				},
+			},
+		},
+		{
+			name:     "dns full",
+			ruleType: "dns",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				DNS: &clientmodels.SyntheticMonitorDNSConfig{
+					Domain:           "example.com",
+					RecordType:       "MX",
+					ExpectedValues:   []string{"mail.example.com (priority: 10)"},
+					Nameserver:       "8.8.8.8:53",
+					ExpectResolution: true,
+				},
+			},
+		},
+		{
+			name:     "dns minimal",
+			ruleType: "dns",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				DNS: &clientmodels.SyntheticMonitorDNSConfig{
+					Domain: "example.com",
+				},
+			},
+		},
+		{
+			name:     "tcp",
+			ruleType: "tcp",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				TCP: &clientmodels.SyntheticMonitorTCPConfig{
+					Host: "example.com",
+					Port: 5432,
+				},
+			},
+		},
+		{
+			name:     "traceroute full",
+			ruleType: "traceroute",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				Traceroute: &clientmodels.SyntheticMonitorTracerouteConfig{
+					Host:            "example.com",
+					MaxHops:         15,
+					TimeoutPerHopMs: 2000,
+				},
+			},
+		},
+		{
+			name:     "traceroute minimal",
+			ruleType: "traceroute",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				Traceroute: &clientmodels.SyntheticMonitorTracerouteConfig{
+					Host: "example.com",
+				},
+			},
+		},
+		{
+			name:     "ssl full",
+			ruleType: "ssl",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				SSL: &clientmodels.SyntheticMonitorSSLConfig{
+					Host:                      "example.com",
+					Port:                      443,
+					WarnDaysBeforeExpiry:      30,
+					CriticalDaysBeforeExpiry:  7,
+					InsecureSkipVerify:        false,
+					CheckCertificateAuthority: true,
+				},
+			},
+		},
+		{
+			name:     "ssl minimal",
+			ruleType: "ssl",
+			ruleConfig: clientmodels.SyntheticMonitorRuleConfig{
+				SSL: &clientmodels.SyntheticMonitorSSLConfig{
+					Host: "example.com",
+					Port: 443,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			clientModel := &clientmodels.SyntheticMonitor{
+				ID:         "test-id-" + tt.ruleType,
+				Name:       "Test " + tt.ruleType + " Monitor",
+				Enabled:    true,
+				RuleType:   tt.ruleType,
+				RuleConfig: tt.ruleConfig,
+				Interval:   "1m",
+				Timeout:    "10s",
+			}
+
+			resourceModel := &syntheticMonitorResourceModel{}
+			diags := &diag.Diagnostics{}
+			resourceModel.FromClientModel(ctx, clientModel, diags)
+			assert.False(t, diags.HasError())
+
+			newClientModel := &clientmodels.SyntheticMonitor{}
+			assert.Nil(t, resourceModel.ToClientModel(ctx, newClientModel))
+
+			assert.DeepEqual(t, clientModel, newClientModel)
+		})
+	}
+}
+
+// TestSyntheticMonitorModelOptionalsAreNull guards the reason the optional
+// scalar attributes are not Computed: the server stores them as sent and only
+// substitutes defaults when the check runs. A zero read back therefore means
+// "unset" and must round-trip as null, not as a concrete 0.
+func TestSyntheticMonitorModelOptionalsAreNull(t *testing.T) {
+	ctx := context.Background()
+	clientModel := &clientmodels.SyntheticMonitor{
+		ID:       "test-id-nulls",
+		Name:     "Minimal Ping",
+		Enabled:  true,
+		RuleType: "ping",
+		RuleConfig: clientmodels.SyntheticMonitorRuleConfig{
+			Ping: &clientmodels.SyntheticMonitorPingConfig{Host: "example.com"},
+		},
+		Interval: "1m",
+		Timeout:  "10s",
+	}
+
+	resourceModel := &syntheticMonitorResourceModel{}
+	diags := &diag.Diagnostics{}
+	resourceModel.FromClientModel(ctx, clientModel, diags)
+	assert.False(t, diags.HasError())
+
+	assert.True(t, resourceModel.RuleConfig.Ping.Count.IsNull())
+	assert.True(t, resourceModel.RuleConfig.Ping.IntervalMs.IsNull())
+}
+
+// TestSyntheticMonitorSSLExpiryDaysRoundTripZero guards the Optional+Computed
+// choice on the SSL expiry thresholds. The server echoes these fields whether or
+// not they are set, so an explicit 0 (a reasonable way to spell "disabled") must
+// survive the round trip as 0. Collapsing it to null would make every plan show
+// a diff that apply can never settle.
+func TestSyntheticMonitorSSLExpiryDaysRoundTripZero(t *testing.T) {
+	ctx := context.Background()
+	clientModel := &clientmodels.SyntheticMonitor{
+		ID:       "test-id-ssl-zero",
+		Name:     "SSL No Thresholds",
+		Enabled:  true,
+		RuleType: "ssl",
+		RuleConfig: clientmodels.SyntheticMonitorRuleConfig{
+			SSL: &clientmodels.SyntheticMonitorSSLConfig{
+				Host: "example.com",
+				Port: 443,
+			},
+		},
+		Interval: "1h",
+		Timeout:  "10s",
+	}
+
+	resourceModel := &syntheticMonitorResourceModel{}
+	diags := &diag.Diagnostics{}
+	resourceModel.FromClientModel(ctx, clientModel, diags)
+	assert.False(t, diags.HasError())
+
+	ssl := resourceModel.RuleConfig.SSL
+	assert.False(t, ssl.WarnDaysBeforeExpiry.IsNull())
+	assert.False(t, ssl.CriticalDaysBeforeExpiry.IsNull())
+	assert.Equal(t, int64(0), ssl.WarnDaysBeforeExpiry.ValueInt64())
+	assert.Equal(t, int64(0), ssl.CriticalDaysBeforeExpiry.ValueInt64())
+
+	newClientModel := &clientmodels.SyntheticMonitor{}
+	assert.Nil(t, resourceModel.ToClientModel(ctx, newClientModel))
+	assert.DeepEqual(t, clientModel, newClientModel)
+}

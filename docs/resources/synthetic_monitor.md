@@ -56,6 +56,109 @@ resource "oodle_synthetic_monitor" "api_check" {
   }
 }
 
+# ---------------------------------------------------------------------------
+# Network-level checks (ping / tcp / dns / ssl / traceroute)
+#
+# NOTE: these checks run from Oodle's infrastructure and must target publicly
+# reachable hosts. The server rejects internal targets — localhost, private IP
+# ranges, and Kubernetes-internal names such as `*.svc`, `*.local`, `*.internal`
+# or bare hostnames — because probing them requires routing the check through an
+# on-prem agent, which this provider does not yet expose.
+# ---------------------------------------------------------------------------
+
+# Example: ICMP ping monitor.
+resource "oodle_synthetic_monitor" "ping_check" {
+  name      = "Edge Gateway Reachability"
+  enabled   = true
+  rule_type = "ping"
+  interval  = "1m"
+  timeout   = "10s"
+
+  rule_config = {
+    ping = {
+      host = "gateway.example.com"
+      # Omit count/interval_ms to use the server defaults (3 packets, 1000ms apart).
+      count       = 5
+      interval_ms = 500
+    }
+  }
+}
+
+# Example: TCP port connectivity monitor.
+resource "oodle_synthetic_monitor" "tcp_check" {
+  name      = "Postgres Port Open"
+  enabled   = true
+  rule_type = "tcp"
+  interval  = "1m"
+  timeout   = "5s"
+
+  rule_config = {
+    tcp = {
+      host = "db.example.com"
+      port = 5432
+    }
+  }
+}
+
+# Example: DNS resolution monitor.
+resource "oodle_synthetic_monitor" "dns_check" {
+  name      = "MX Records Present"
+  enabled   = true
+  rule_type = "dns"
+  interval  = "5m"
+  timeout   = "10s"
+
+  rule_config = {
+    dns = {
+      domain      = "example.com"
+      record_type = "MX"
+      # The check fails unless the lookup returns one of these records.
+      expected_values = ["mail.example.com (priority: 10)"]
+      # Query a specific resolver instead of the system one.
+      nameserver        = "8.8.8.8:53"
+      expect_resolution = true
+    }
+  }
+}
+
+# Example: SSL certificate expiry monitor.
+resource "oodle_synthetic_monitor" "ssl_check" {
+  name      = "API Certificate Expiry"
+  enabled   = true
+  rule_type = "ssl"
+  interval  = "1h"
+  timeout   = "10s"
+
+  rule_config = {
+    ssl = {
+      host = "api.example.com"
+      port = 443
+      # Fail the check as the certificate approaches expiry.
+      warn_days_before_expiry     = 30
+      critical_days_before_expiry = 7
+      check_certificate_authority = true
+    }
+  }
+}
+
+# Example: traceroute monitor for network path visibility.
+resource "oodle_synthetic_monitor" "traceroute_check" {
+  name      = "Path To Upstream API"
+  enabled   = true
+  rule_type = "traceroute"
+  interval  = "5m"
+  timeout   = "30s"
+
+  rule_config = {
+    traceroute = {
+      host = "api.example.com"
+      # Omit to use the server defaults (30 hops, 1000ms per hop).
+      max_hops           = 20
+      timeout_per_hop_ms = 1500
+    }
+  }
+}
+
 # Example: multi-step synthetic monitor.
 # Logs in, extracts a token and user id from the response, then calls a
 # protected endpoint using those variables.
@@ -195,8 +298,8 @@ resource "oodle_monitor" "checkout_alert" {
 - `enabled` (Boolean) Whether the synthetic monitor is enabled.
 - `interval` (String) Interval between checks (e.g., '30s', '1m').
 - `name` (String) Human-readable name for the synthetic monitor.
-- `rule_config` (Attributes) Configuration for the synthetic monitor rule. Set 'http' for a single-step monitor (rule_type 'http') or 'multistep' for a multi-step monitor (rule_type 'multistep'). (see [below for nested schema](#nestedatt--rule_config))
-- `rule_type` (String) Type of the synthetic monitor rule. Possible values: 'http', 'multistep'.
+- `rule_config` (Attributes) Configuration for the synthetic monitor rule. Set exactly one block, matching rule_type: 'http', 'ping', 'dns', 'tcp', 'traceroute', 'ssl', or 'multistep'. (see [below for nested schema](#nestedatt--rule_config))
+- `rule_type` (String) Type of the synthetic monitor rule. Possible values: 'http', 'ping', 'dns', 'tcp', 'traceroute', 'ssl', 'multistep'.
 - `timeout` (String) Timeout for each check (e.g., '5s', '10s').
 
 ### Read-Only
@@ -208,8 +311,28 @@ resource "oodle_monitor" "checkout_alert" {
 
 Optional:
 
+- `dns` (Attributes) DNS resolution rule configuration. Used when rule_type is 'dns'. (see [below for nested schema](#nestedatt--rule_config--dns))
 - `http` (Attributes) HTTP rule configuration. Used when rule_type is 'http'. (see [below for nested schema](#nestedatt--rule_config--http))
 - `multistep` (Attributes) Multi-step rule configuration. Used when rule_type is 'multistep'. Executes an ordered chain of HTTP requests, extracting variables from earlier responses for use in later steps. (see [below for nested schema](#nestedatt--rule_config--multistep))
+- `ping` (Attributes) ICMP ping rule configuration. Used when rule_type is 'ping'. (see [below for nested schema](#nestedatt--rule_config--ping))
+- `ssl` (Attributes) SSL certificate rule configuration. Used when rule_type is 'ssl'. (see [below for nested schema](#nestedatt--rule_config--ssl))
+- `tcp` (Attributes) TCP connection rule configuration. Used when rule_type is 'tcp'. (see [below for nested schema](#nestedatt--rule_config--tcp))
+- `traceroute` (Attributes) Traceroute rule configuration. Used when rule_type is 'traceroute'. Traces the network path to a host. (see [below for nested schema](#nestedatt--rule_config--traceroute))
+
+<a id="nestedatt--rule_config--dns"></a>
+### Nested Schema for `rule_config.dns`
+
+Required:
+
+- `domain` (String) Domain name to resolve.
+
+Optional:
+
+- `expect_resolution` (Boolean) Whether resolution is expected to succeed. Defaults to true. Set to false to assert that a domain does NOT resolve; note that with false the check only fails via 'expected_values', since a failed lookup is treated as the expected outcome.
+- `expected_values` (List of String) Records the lookup is expected to return. The check fails if none of these are present.
+- `nameserver` (String) Nameserver to query instead of the system resolver (e.g., '8.8.8.8:53').
+- `record_type` (String) DNS record type to query. Possible values: 'A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS'. The server queries 'A' when unset.
+
 
 <a id="nestedatt--rule_config--http"></a>
 ### Nested Schema for `rule_config.http`
@@ -309,3 +432,56 @@ Required:
 Optional:
 
 - `secret` (Boolean) Whether to redact the extracted value in results and logs. Defaults to false.
+
+
+
+
+<a id="nestedatt--rule_config--ping"></a>
+### Nested Schema for `rule_config.ping`
+
+Required:
+
+- `host` (String) Host to ping.
+
+Optional:
+
+- `count` (Number) Number of echo requests to send. The server sends 3 when unset.
+- `interval_ms` (Number) Delay between echo requests in milliseconds. The server uses 1000 when unset.
+
+
+<a id="nestedatt--rule_config--ssl"></a>
+### Nested Schema for `rule_config.ssl`
+
+Required:
+
+- `host` (String) Host whose certificate is checked.
+- `port` (Number) TLS port to connect to (1-65535), typically 443.
+
+Optional:
+
+- `check_certificate_authority` (Boolean) Whether to validate the certificate authority chain. Defaults to false.
+- `critical_days_before_expiry` (Number) Fail the check critically when the certificate expires within this many days. Disabled when unset or 0.
+- `insecure_skip_verify` (Boolean) Whether to skip TLS certificate verification. Defaults to false.
+- `warn_days_before_expiry` (Number) Fail the check with a warning when the certificate expires within this many days. Disabled when unset or 0.
+
+
+<a id="nestedatt--rule_config--tcp"></a>
+### Nested Schema for `rule_config.tcp`
+
+Required:
+
+- `host` (String) Host to connect to.
+- `port` (Number) TCP port to connect to (1-65535).
+
+
+<a id="nestedatt--rule_config--traceroute"></a>
+### Nested Schema for `rule_config.traceroute`
+
+Required:
+
+- `host` (String) Host to trace the network path to.
+
+Optional:
+
+- `max_hops` (Number) Maximum number of hops to probe. The server uses 30 when unset.
+- `timeout_per_hop_ms` (Number) Per-hop timeout in milliseconds. The server uses 1000 when unset.

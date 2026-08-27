@@ -3,6 +3,7 @@ package validatorutils
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -16,11 +17,18 @@ type syntheticMonitorConfigValidator struct{}
 
 var _ resource.ConfigValidator = (*syntheticMonitorConfigValidator)(nil)
 
-// ruleTypeToConfigAttr maps each rule_type to the rule_config attribute that
-// must be set for it.
-var ruleTypeToConfigAttr = map[string]string{
-	"http":      "http",
-	"multistep": "multistep",
+// syntheticMonitorRuleConfigAttrs are the rule_config attribute names, one per
+// rule_type. Each rule_type maps to the identically named attribute, so this
+// doubles as the set of recognized rule types. Listed in schema order to keep
+// error messages stable.
+var syntheticMonitorRuleConfigAttrs = []string{
+	"http",
+	"ping",
+	"dns",
+	"tcp",
+	"traceroute",
+	"ssl",
+	"multistep",
 }
 
 func NewSyntheticMonitorConfigValidator() resource.ConfigValidator {
@@ -35,42 +43,75 @@ func (v syntheticMonitorConfigValidator) MarkdownDescription(ctx context.Context
 	return v.Description(ctx)
 }
 
+// isRecognizedRuleType reports whether ruleType names a known rule_config
+// block. Unrecognized values are the choice validator's to report, so this
+// validator stays silent on them rather than emitting a confusing second error.
+func isRecognizedRuleType(ruleType string) bool {
+	for _, attr := range syntheticMonitorRuleConfigAttrs {
+		if attr == ruleType {
+			return true
+		}
+	}
+	return false
+}
+
+// quotedRuleConfigAttrs renders the valid block names for error messages, e.g.
+// `rule_config.http, rule_config.ping, ...`.
+func quotedRuleConfigAttrs() string {
+	names := make([]string, len(syntheticMonitorRuleConfigAttrs))
+	for i, attr := range syntheticMonitorRuleConfigAttrs {
+		names[i] = "rule_config." + attr
+	}
+	return strings.Join(names, ", ")
+}
+
 func (v syntheticMonitorConfigValidator) ValidateResource(
 	ctx context.Context,
 	req resource.ValidateConfigRequest,
 	resp *resource.ValidateConfigResponse,
 ) {
 	var ruleType types.String
-	var httpConfig types.Object
-	var multistepConfig types.Object
-
 	resp.Diagnostics.Append(req.Config.GetAttribute(ctx,
 		path.Root("rule_type"), &ruleType)...)
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx,
-		path.Root("rule_config").AtName("http"), &httpConfig)...)
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx,
-		path.Root("rule_config").AtName("multistep"), &multistepConfig)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	httpSet := !httpConfig.IsNull() && !httpConfig.IsUnknown()
-	multistepSet := !multistepConfig.IsNull() && !multistepConfig.IsUnknown()
+	// Collect the names of every rule_config block that is set.
+	var setAttrs []string
+	for _, attr := range syntheticMonitorRuleConfigAttrs {
+		var config types.Object
+		resp.Diagnostics.Append(req.Config.GetAttribute(ctx,
+			path.Root("rule_config").AtName(attr), &config)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if !config.IsNull() && !config.IsUnknown() {
+			setAttrs = append(setAttrs, attr)
+		}
+	}
 
 	// Exactly one rule_config block must be set.
-	switch {
-	case !httpSet && !multistepSet:
+	switch len(setAttrs) {
+	case 1:
+	case 0:
 		resp.Diagnostics.AddAttributeError(
 			path.Root("rule_config"),
 			"Missing rule configuration",
-			"Exactly one of rule_config.http or rule_config.multistep must be set.",
+			fmt.Sprintf(
+				"Exactly one of %s must be set.",
+				quotedRuleConfigAttrs(),
+			),
 		)
 		return
-	case httpSet && multistepSet:
+	default:
 		resp.Diagnostics.AddAttributeError(
 			path.Root("rule_config"),
 			"Conflicting rule configuration",
-			"Only one of rule_config.http or rule_config.multistep may be set.",
+			fmt.Sprintf(
+				"Only one rule_config block may be set, but %d are set: %s.",
+				len(setAttrs), strings.Join(setAttrs, ", "),
+			),
 		)
 		return
 	}
@@ -82,18 +123,16 @@ func (v syntheticMonitorConfigValidator) ValidateResource(
 	if ruleType.IsNull() || ruleType.IsUnknown() {
 		return
 	}
-	expectedAttr, recognized := ruleTypeToConfigAttr[ruleType.ValueString()]
-	if !recognized {
+	if !isRecognizedRuleType(ruleType.ValueString()) {
 		return
 	}
-	if (expectedAttr == "http" && !httpSet) ||
-		(expectedAttr == "multistep" && !multistepSet) {
+	if setAttrs[0] != ruleType.ValueString() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("rule_config"),
 			"Mismatched rule configuration",
 			fmt.Sprintf(
-				"rule_type is %q but rule_config.%s is not set.",
-				ruleType.ValueString(), expectedAttr,
+				"rule_type is %q but rule_config.%s is not set (rule_config.%s is set instead).",
+				ruleType.ValueString(), ruleType.ValueString(), setAttrs[0],
 			),
 		)
 	}
