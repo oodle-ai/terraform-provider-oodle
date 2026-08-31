@@ -3,6 +3,7 @@ package genaidatasetitem
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -85,16 +86,19 @@ func (r *genaiDatasetItemResource) Schema(
 				},
 			},
 			"input": schema.StringAttribute{
-				Required: true,
+				CustomType: jsontypes.NormalizedType{},
+				Required:   true,
 				Description: "JSON value given to the prompt under test. " +
 					"Use jsonencode() to build it.",
 			},
 			"expected_output": schema.StringAttribute{
-				Optional: true,
+				CustomType: jsontypes.NormalizedType{},
+				Optional:   true,
 				Description: "JSON value the output is compared against by " +
 					"evaluators that take a reference answer.",
 			},
 			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Optional:    true,
 				Description: "JSON object of arbitrary metadata.",
 			},

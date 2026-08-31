@@ -3,6 +3,7 @@ package genaievaltemplate
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -125,13 +126,15 @@ func (r *genaiEvalTemplateResource) Schema(
 					"expects. An evaluator maps span fields onto these.",
 			},
 			"output_schema": schema.StringAttribute{
-				Optional: true,
+				CustomType: jsontypes.NormalizedType{},
+				Optional:   true,
 				Description: "JSON object describing the score the " +
 					"template produces, for example " +
 					"{\"score\": \"0 to 1\", \"reasoning\": \"why\"}.",
 			},
 			"model_params": schema.StringAttribute{
-				Optional: true,
+				CustomType: jsontypes.NormalizedType{},
+				Optional:   true,
 				Description: "JSON object of model parameters used when " +
 					"running the judge, for example {\"temperature\": 0}.",
 			},

@@ -3,6 +3,7 @@ package genaidatasetschedule
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -185,7 +186,8 @@ func (r *genaiDatasetScheduleResource) Schema(
 					"only.",
 			},
 			"experiment_config": schema.StringAttribute{
-				Required: true,
+				CustomType: jsontypes.NormalizedType{},
+				Required:   true,
 				Description: "JSON object describing what each firing " +
 					"runs — the same llm-experiment job config the API " +
 					"takes, with datasetId, llmConnectionId, a prompt " +

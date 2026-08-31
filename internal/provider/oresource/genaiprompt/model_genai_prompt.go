@@ -3,6 +3,7 @@ package genaiprompt
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -11,15 +12,15 @@ import (
 )
 
 type genaiPromptResourceModel struct {
-	ID            types.String `tfsdk:"id"`
-	Name          types.String `tfsdk:"name"`
-	Type          types.String `tfsdk:"type"`
-	Prompt        types.String `tfsdk:"prompt"`
-	Labels        types.List   `tfsdk:"labels"`
-	Tags          types.List   `tfsdk:"tags"`
-	Config        types.String `tfsdk:"config"`
-	CommitMessage types.String `tfsdk:"commit_message"`
-	Version       types.Int64  `tfsdk:"version"`
+	ID            types.String         `tfsdk:"id"`
+	Name          types.String         `tfsdk:"name"`
+	Type          types.String         `tfsdk:"type"`
+	Prompt        types.String         `tfsdk:"prompt"`
+	Labels        types.List           `tfsdk:"labels"`
+	Tags          types.List           `tfsdk:"tags"`
+	Config        jsontypes.Normalized `tfsdk:"config"`
+	CommitMessage types.String         `tfsdk:"commit_message"`
+	Version       types.Int64          `tfsdk:"version"`
 }
 
 func (m *genaiPromptResourceModel) FromClientModel(
@@ -38,7 +39,7 @@ func (m *genaiPromptResourceModel) FromClientModel(
 	m.Type = types.StringValue(promptType)
 
 	m.Prompt = rawToPrompt(model.Prompt, promptType, m.Prompt)
-	m.Config = resourceutils.RawToJSONString(model.Config, m.Config)
+	m.Config = resourceutils.RawToNormalized(model.Config)
 
 	m.Labels = resourceutils.SliceToStringList(
 		ctx, withoutLatestLabel(model.Labels), m.Labels, diagnosticsOut,
@@ -73,7 +74,7 @@ func (m *genaiPromptResourceModel) ToClientModel(
 	}
 	model.Prompt = prompt
 
-	config, err := resourceutils.JSONStringToRaw(m.Config, "config")
+	config, err := resourceutils.NormalizedToRaw(m.Config, "config")
 	if err != nil {
 		return err
 	}

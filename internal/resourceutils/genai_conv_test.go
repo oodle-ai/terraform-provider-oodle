@@ -5,47 +5,48 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func TestJSONStringToRaw(t *testing.T) {
+func TestNormalizedToRaw(t *testing.T) {
 	tests := []struct {
 		name    string
-		input   types.String
+		input   jsontypes.Normalized
 		want    string
 		wantErr bool
 	}{
 		{
 			name:  "null becomes nil",
-			input: types.StringNull(),
+			input: jsontypes.NewNormalizedNull(),
 			want:  "",
 		},
 		{
 			name:  "unknown becomes nil",
-			input: types.StringUnknown(),
+			input: jsontypes.NewNormalizedUnknown(),
 			want:  "",
 		},
 		{
 			name:  "empty becomes nil",
-			input: types.StringValue(""),
+			input: jsontypes.NewNormalizedValue(""),
 			want:  "",
 		},
 		{
 			name:  "object passes through",
-			input: types.StringValue(`{"a":1}`),
+			input: jsontypes.NewNormalizedValue(`{"a":1}`),
 			want:  `{"a":1}`,
 		},
 		{
 			name:    "invalid JSON is rejected",
-			input:   types.StringValue(`{not json`),
+			input:   jsontypes.NewNormalizedValue(`{not json`),
 			wantErr: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := JSONStringToRaw(test.input, "attr")
+			got, err := NormalizedToRaw(test.input, "attr")
 			if test.wantErr {
 				if err == nil {
 					t.Fatalf("expected an error, got %q", string(got))
@@ -61,6 +62,36 @@ func TestJSONStringToRaw(t *testing.T) {
 				t.Errorf("got %q, want %q", string(got), test.want)
 			}
 		})
+	}
+}
+
+func TestRawToNormalizedIsNullWhenEmpty(t *testing.T) {
+	if got := RawToNormalized(nil); !got.IsNull() {
+		t.Fatalf("expected null, got %q", got.ValueString())
+	}
+
+	if got := RawToNormalized(json.RawMessage("null")); !got.IsNull() {
+		t.Fatalf("expected null, got %q", got.ValueString())
+	}
+
+	got := RawToNormalized(json.RawMessage(`{"a":1}`))
+	if got.ValueString() != `{"a":1}` {
+		t.Fatalf("unexpected value %q", got.ValueString())
+	}
+}
+
+// The type compares two documents by value, thus a response that only reorders
+// the keys raises no diff, which is what the prior value used to guard.
+func TestNormalizedIgnoresKeyOrder(t *testing.T) {
+	prior := jsontypes.NewNormalizedValue(`{"a": 1, "b": 2}`)
+	fromAPI := RawToNormalized(json.RawMessage(`{"b":2,"a":1}`))
+
+	equal, diags := prior.StringSemanticEquals(context.Background(), fromAPI)
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if !equal {
+		t.Fatal("expected the two payloads to compare equal")
 	}
 }
 

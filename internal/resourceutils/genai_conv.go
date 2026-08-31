@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -13,15 +14,15 @@ import (
 // Conversion helpers for the GenAI resources.
 //
 // Several GenAI fields are free-form JSON — filters, variable
-// mappings, model params, dataset inputs. Terraform has no native
-// JSON type, so they are modelled as strings holding JSON and
+// mappings, model params, dataset inputs. They are modelled as
+// jsontypes.Normalized, which compares two documents by value, and
 // converted here.
 
-// JSONStringToRaw parses a Terraform string holding JSON into a
-// json.RawMessage. A null, unknown or empty string becomes nil, which
-// the client models drop from the request entirely.
-func JSONStringToRaw(
-	value types.String,
+// NormalizedToRaw parses a JSON attribute into a json.RawMessage. A null,
+// unknown or empty value becomes nil, which the client models drop from the
+// request entirely.
+func NormalizedToRaw(
+	value jsontypes.Normalized,
 	attribute string,
 ) (json.RawMessage, error) {
 	if value.IsNull() || value.IsUnknown() {
@@ -40,13 +41,24 @@ func JSONStringToRaw(
 	return json.RawMessage(text), nil
 }
 
-// RawToJSONString converts JSON from the API back into a Terraform
-// string.
+// RawToNormalized converts JSON from the API into a JSON attribute. The type
+// compares two documents by value, thus the key order and the spacing the API
+// returns raise no diff, and the prior value is not needed here.
+func RawToNormalized(raw json.RawMessage) jsontypes.Normalized {
+	if len(raw) == 0 || string(raw) == "null" {
+		return jsontypes.NewNormalizedNull()
+	}
+
+	return jsontypes.NewNormalizedValue(string(raw))
+}
+
+// RawToJSONString converts JSON from the API back into a Terraform string.
 //
-// When the response is semantically equal to what is already in
-// state, the stored text is kept. The API re-serializes JSON, so key
-// order and whitespace are not preserved, and without this every plan
-// would show a diff for a value that never changed.
+// It serves an attribute that holds JSON only some of the time, thus it cannot
+// be a jsontypes.Normalized: the prompt of a text prompt is plain text. When
+// the response is semantically equal to what is already in state, the stored
+// text is kept, because the API re-serializes JSON and preserves neither the
+// key order nor the spacing.
 func RawToJSONString(raw json.RawMessage, prior types.String) types.String {
 	if len(raw) == 0 || string(raw) == "null" {
 		// An attribute the user never set stays null rather than

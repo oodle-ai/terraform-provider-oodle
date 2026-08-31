@@ -3,6 +3,7 @@ package genaievaltemplate
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -11,16 +12,16 @@ import (
 )
 
 type genaiEvalTemplateResourceModel struct {
-	ID                 types.String `tfsdk:"id"`
-	Name               types.String `tfsdk:"name"`
-	Type               types.String `tfsdk:"type"`
-	Prompt             types.String `tfsdk:"prompt"`
-	Vars               types.List   `tfsdk:"vars"`
-	OutputSchema       types.String `tfsdk:"output_schema"`
-	ModelParams        types.String `tfsdk:"model_params"`
-	SourceCode         types.String `tfsdk:"source_code"`
-	SourceCodeLanguage types.String `tfsdk:"source_code_language"`
-	Version            types.Int64  `tfsdk:"version"`
+	ID                 types.String         `tfsdk:"id"`
+	Name               types.String         `tfsdk:"name"`
+	Type               types.String         `tfsdk:"type"`
+	Prompt             types.String         `tfsdk:"prompt"`
+	Vars               types.List           `tfsdk:"vars"`
+	OutputSchema       jsontypes.Normalized `tfsdk:"output_schema"`
+	ModelParams        jsontypes.Normalized `tfsdk:"model_params"`
+	SourceCode         types.String         `tfsdk:"source_code"`
+	SourceCodeLanguage types.String         `tfsdk:"source_code_language"`
+	Version            types.Int64          `tfsdk:"version"`
 }
 
 func (m *genaiEvalTemplateResourceModel) GetID() types.String {
@@ -47,12 +48,8 @@ func (m *genaiEvalTemplateResourceModel) FromClientModel(
 	m.Vars = resourceutils.SliceToStringList(
 		ctx, model.Vars, m.Vars, diagnosticsOut,
 	)
-	m.OutputSchema = resourceutils.RawToJSONString(
-		model.OutputSchema, m.OutputSchema,
-	)
-	m.ModelParams = resourceutils.RawToJSONString(
-		model.ModelParams, m.ModelParams,
-	)
+	m.OutputSchema = resourceutils.RawToNormalized(model.OutputSchema)
+	m.ModelParams = resourceutils.RawToNormalized(model.ModelParams)
 }
 
 func (m *genaiEvalTemplateResourceModel) ToClientModel(
@@ -72,7 +69,7 @@ func (m *genaiEvalTemplateResourceModel) ToClientModel(
 	}
 	model.Vars = vars
 
-	outputSchema, err := resourceutils.JSONStringToRaw(
+	outputSchema, err := resourceutils.NormalizedToRaw(
 		m.OutputSchema, "output_schema",
 	)
 	if err != nil {
@@ -80,7 +77,7 @@ func (m *genaiEvalTemplateResourceModel) ToClientModel(
 	}
 	model.OutputSchema = outputSchema
 
-	modelParams, err := resourceutils.JSONStringToRaw(
+	modelParams, err := resourceutils.NormalizedToRaw(
 		m.ModelParams, "model_params",
 	)
 	if err != nil {

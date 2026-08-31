@@ -3,6 +3,7 @@ package genaidataset
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -95,6 +96,7 @@ func (r *genaiDatasetResource) Schema(
 				},
 			},
 			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Optional:    true,
 				Description: "JSON object of arbitrary metadata.",
 				PlanModifiers: []planmodifier.String{
