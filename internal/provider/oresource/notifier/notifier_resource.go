@@ -187,7 +187,12 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 							"e.g. `{{ .CommonLabels.alertname }}`. Use the " +
 							"`toJson` template function to embed structured " +
 							"values, e.g. `{{ .CommonLabels | toJson }}`. " +
-							"Leave unset to send Oodle's default payload.",
+							"Leave unset to send Oodle's default payload, " +
+							"which holds " + oprom.DefaultPayloadKeys() +
+							" and `groupKey`. A payload replaces all of them, " +
+							"thus keep the keys the endpoint reads. See the " +
+							"Rootly example for the block that reproduces the " +
+							"default body.",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
@@ -269,11 +274,17 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 						CustomType: jsontypes.NormalizedType{},
 						Description: "JSON object replacing the default alert " +
 							"payload posted to Rootly. Rootly is a webhook " +
-							"underneath, so this behaves exactly as it does " +
+							"underneath, thus this behaves exactly as it does " +
 							"for `webhook_config`. Leave unset unless the " +
 							"alert source expects a different shape: Rootly " +
-							"parses the default Alertmanager body, including " +
-							"the `_oodle_severity` label used for urgency.",
+							"parses the default Alertmanager body, and its " +
+							"urgency condition reads " +
+							"`$.alerts[0].labels._oodle_severity` out of it. " +
+							"A payload replaces that body, thus write the " +
+							"default keys (" + oprom.DefaultPayloadKeys() +
+							") next to your own, as the example shows. " +
+							"`groupKey` cannot be reproduced, and `version` " +
+							"is sent as the number 4, not the string \"4\".",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,

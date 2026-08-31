@@ -77,9 +77,13 @@ resource "oodle_notifier" "incident_rootly" {
   }
 }
 
-# Rootly is a webhook underneath, so it takes the same custom payload. Only set
-# this if the alert source expects a shape other than the default Alertmanager
-# body.
+# Rootly is a webhook underneath, so it takes the same custom payload. A payload
+# replaces the whole body, and Rootly parses that body: its urgency condition
+# reads `$.alerts[0].labels._oodle_severity`. So the default keys are written
+# out here next to the two extra ones, rather than left implicit.
+#
+# Two keys of the default body cannot be reproduced: `groupKey` is out of scope
+# for a payload template, and `version` arrives as the number 4, not "4".
 resource "oodle_notifier" "custom_payload_rootly" {
   name = "custom_payload_rootly"
   type = "rootly"
@@ -87,9 +91,20 @@ resource "oodle_notifier" "custom_payload_rootly" {
     bearer_token  = "rootly_alert_source_bearer_token"
     send_resolved = true
     payload = jsonencode({
+      # The default Alertmanager body.
+      receiver          = "{{ .Receiver }}"
+      status            = "{{ .Status }}"
+      alerts            = "{{ .Alerts | toJson }}"
+      groupLabels       = "{{ .GroupLabels | toJson }}"
+      commonLabels      = "{{ .CommonLabels | toJson }}"
+      commonAnnotations = "{{ .CommonAnnotations | toJson }}"
+      externalURL       = "{{ .ExternalURL }}"
+      version           = "4"
+      truncatedAlerts   = 0
+
+      # Extra keys for the alert source.
       summary  = "{{ .CommonLabels.alertname }} is {{ .Status }}"
       severity = "{{ .CommonLabels._oodle_severity }}"
-      alerts   = "{{ .Alerts | toJson }}"
     })
   }
 }
@@ -219,7 +234,7 @@ Required:
 
 Optional:
 
-- `payload` (String) JSON object replacing the default alert payload posted to Rootly. Rootly is a webhook underneath, so this behaves exactly as it does for `webhook_config`. Leave unset unless the alert source expects a different shape: Rootly parses the default Alertmanager body, including the `_oodle_severity` label used for urgency.
+- `payload` (String) JSON object replacing the default alert payload posted to Rootly. Rootly is a webhook underneath, thus this behaves exactly as it does for `webhook_config`. Leave unset unless the alert source expects a different shape: Rootly parses the default Alertmanager body, and its urgency condition reads `$.alerts[0].labels._oodle_severity` out of it. A payload replaces that body, thus write the default keys (`receiver`, `status`, `alerts`, `groupLabels`, `commonLabels`, `commonAnnotations`, `externalURL`, `version`, `truncatedAlerts`) next to your own, as the example shows. `groupKey` cannot be reproduced, and `version` is sent as the number 4, not the string "4".
 - `send_resolved` (Boolean) Send notifications when incident is resolved.
 - `url` (String) Rootly Alertmanager webhook URL. Defaults to https://webhooks.rootly.com/webhooks/incoming/alertmanager_webhooks.
 
@@ -248,7 +263,7 @@ Required:
 
 Optional:
 
-- `payload` (String) JSON object replacing the default alert payload posted to the webhook. Every string key and value in this (arbitrarily nested) object is rendered as a Go template against the alert data, e.g. `{{ .CommonLabels.alertname }}`. Use the `toJson` template function to embed structured values, e.g. `{{ .CommonLabels | toJson }}`. Leave unset to send Oodle's default payload.
+- `payload` (String) JSON object replacing the default alert payload posted to the webhook. Every string key and value in this (arbitrarily nested) object is rendered as a Go template against the alert data, e.g. `{{ .CommonLabels.alertname }}`. Use the `toJson` template function to embed structured values, e.g. `{{ .CommonLabels | toJson }}`. Leave unset to send Oodle's default payload, which holds `receiver`, `status`, `alerts`, `groupLabels`, `commonLabels`, `commonAnnotations`, `externalURL`, `version`, `truncatedAlerts` and `groupKey`. A payload replaces all of them, thus keep the keys the endpoint reads. See the Rootly example for the block that reproduces the default body.
 - `send_resolved` (Boolean) Send notifications when incident is resolved.
 
 ## Import
