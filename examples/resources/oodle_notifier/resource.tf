@@ -62,12 +62,12 @@ resource "oodle_notifier" "incident_rootly" {
   }
 }
 
-# Rootly is a webhook underneath, so it takes the same custom payload, with one
-# difference: Rootly parses the standard Alertmanager body, and its urgency
-# condition reads `$.alerts[0].labels._oodle_severity` out of it. Oodle adds
-# those standard fields by default as it delivers the alert, so write only your
-# own keys here. A key that repeats a default is dropped, and one that gives a
-# default another value is rejected.
+# A Rootly notifier takes extra payload fields alongside the standard
+# Alertmanager body. Rootly parses that body, and its urgency condition reads
+# `$.alerts[0].labels._oodle_severity` out of it, so Oodle adds those standard
+# fields by default as it delivers the alert. Write only your own keys here: a
+# key that repeats a default is dropped, and one that gives a default another
+# value is rejected.
 resource "oodle_notifier" "custom_payload_rootly" {
   name = "custom_payload_rootly"
   type = "rootly"

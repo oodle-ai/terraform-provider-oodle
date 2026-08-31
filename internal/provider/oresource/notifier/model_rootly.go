@@ -9,8 +9,8 @@ type rootlyConfigModel struct {
 	notifierConfigCommonModel
 	BearerToken types.String `tfsdk:"bearer_token"`
 	URL         types.String `tfsdk:"url"`
-	// Payload holds a JSON object, same as the generic webhook notifier --
-	// Rootly is a webhook underneath. See webhookConfigModel for why this is a
-	// normalized JSON string rather than a typed map.
+	// Payload holds a JSON object. jsontypes.Normalized compares it
+	// semantically, so re-encoding it on read does not diff against the
+	// formatting used in the configuration.
 	Payload jsontypes.Normalized `tfsdk:"payload"`
 }

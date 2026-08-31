@@ -139,8 +139,6 @@ func TestNotificationPolicyModel(t *testing.T) {
 			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "", false, nil),
 		},
 		{
-			// Rootly is a webhook underneath, so it carries a custom payload
-			// the same way.
 			ID:   clientmodels.ID{UUID: uuid.New()},
 			Name: "test",
 			Type: clientmodels.NotifierConfigRootly,
