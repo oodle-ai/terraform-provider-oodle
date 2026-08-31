@@ -80,8 +80,9 @@ resource "oodle_notifier" "incident_rootly" {
 # Rootly is a webhook underneath, so it takes the same custom payload, with one
 # difference: Rootly parses the standard Alertmanager body, and its urgency
 # condition reads `$.alerts[0].labels._oodle_severity` out of it. Oodle adds
-# those standard fields as it delivers the alert, so write only your own keys
-# here. A payload that sets one of them itself is rejected.
+# those standard fields by default as it delivers the alert, so write only your
+# own keys here. A key that repeats a default is dropped, and one that gives a
+# default another value is rejected.
 resource "oodle_notifier" "custom_payload_rootly" {
   name = "custom_payload_rootly"
   type = "rootly"
@@ -220,7 +221,7 @@ Required:
 
 Optional:
 
-- `payload` (String) JSON object of extra fields sent to Rootly, on top of the standard Alertmanager body. Every string key and value in this (arbitrarily nested) object is rendered as a Go template against the alert data. Unlike `webhook_config`, this does not replace the body: Rootly parses it, and its urgency condition reads `$.alerts[0].labels._oodle_severity` out of it, thus Oodle adds `receiver`, `status`, `alerts`, `groupLabels`, `commonLabels`, `commonAnnotations`, `externalURL`, `version`, `truncatedAlerts` as it delivers the alert. A payload that sets one of those keys itself is rejected. `groupKey` is not sent, and `version` arrives as the number 4, not the string "4".
+- `payload` (String) JSON object of extra fields sent to Rootly, on top of the standard Alertmanager body. Every string key and value in this (arbitrarily nested) object is rendered as a Go template against the alert data. Unlike `webhook_config`, this does not replace the body: Rootly parses it, and its urgency condition reads `$.alerts[0].labels._oodle_severity` out of it, thus Oodle adds `receiver`, `status`, `alerts`, `groupLabels`, `commonLabels`, `commonAnnotations`, `externalURL`, `version`, `truncatedAlerts` by default as it delivers the alert. Write only your own keys: a key that repeats a default is dropped, and one that gives a default another value is rejected, because the merge would lose it. `groupKey` is not sent, and `version` arrives as the number 4, not the string "4".
 - `send_resolved` (Boolean) Send notifications when incident is resolved.
 - `url` (String) Rootly Alertmanager webhook URL. Defaults to https://webhooks.rootly.com/webhooks/incoming/alertmanager_webhooks.
 

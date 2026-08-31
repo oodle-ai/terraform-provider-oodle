@@ -282,10 +282,12 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 							"condition reads " +
 							"`$.alerts[0].labels._oodle_severity` out of it, " +
 							"thus Oodle adds " + oprom.DefaultPayloadKeys() +
-							" as it delivers the alert. A payload that sets " +
-							"one of those keys itself is rejected. `groupKey` " +
-							"is not sent, and `version` arrives as the number " +
-							"4, not the string \"4\".",
+							" by default as it delivers the alert. Write only " +
+							"your own keys: a key that repeats a default is " +
+							"dropped, and one that gives a default another " +
+							"value is rejected, because the merge would lose " +
+							"it. `groupKey` is not sent, and `version` " +
+							"arrives as the number 4, not the string \"4\".",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
