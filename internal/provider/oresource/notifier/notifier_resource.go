@@ -190,9 +190,9 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 							"Leave unset to send Oodle's default payload, " +
 							"which holds " + oprom.DefaultPayloadKeys() +
 							" and `groupKey`. A payload replaces all of them, " +
-							"thus keep the keys the endpoint reads. See the " +
-							"Rootly example for the block that reproduces the " +
-							"default body.",
+							"thus keep the keys the endpoint reads. A Rootly " +
+							"notifier differs: Oodle adds the default fields " +
+							"there rather than replacing them.",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
@@ -272,19 +272,20 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					"payload": schema.StringAttribute{
 						Optional:   true,
 						CustomType: jsontypes.NormalizedType{},
-						Description: "JSON object replacing the default alert " +
-							"payload posted to Rootly. Rootly is a webhook " +
-							"underneath, thus this behaves exactly as it does " +
-							"for `webhook_config`. Leave unset unless the " +
-							"alert source expects a different shape: Rootly " +
-							"parses the default Alertmanager body, and its " +
-							"urgency condition reads " +
-							"`$.alerts[0].labels._oodle_severity` out of it. " +
-							"A payload replaces that body, thus write the " +
-							"default keys (" + oprom.DefaultPayloadKeys() +
-							") next to your own, as the example shows. " +
-							"`groupKey` cannot be reproduced, and `version` " +
-							"is sent as the number 4, not the string \"4\".",
+						Description: "JSON object of extra fields sent to " +
+							"Rootly, on top of the standard Alertmanager " +
+							"body. Every string key and value in this " +
+							"(arbitrarily nested) object is rendered as a Go " +
+							"template against the alert data. Unlike " +
+							"`webhook_config`, this does not replace the " +
+							"body: Rootly parses it, and its urgency " +
+							"condition reads " +
+							"`$.alerts[0].labels._oodle_severity` out of it, " +
+							"thus Oodle adds " + oprom.DefaultPayloadKeys() +
+							" as it delivers the alert. A payload that sets " +
+							"one of those keys itself is rejected. `groupKey` " +
+							"is not sent, and `version` arrives as the number " +
+							"4, not the string \"4\".",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,

@@ -10,9 +10,9 @@ type DefaultPayloadField struct {
 }
 
 // DefaultPayloadFields lists the default body, in the order Alertmanager
-// documents it. A custom payload replaces the body outright, thus a notifier
-// whose receiver parses the standard shape (Rootly) must carry these keys
-// itself once it sets one.
+// documents it. A custom payload replaces the body outright, except on a
+// Rootly notifier, where api-server merges these fields under the payload,
+// because the alert source parses them.
 //
 // Only the notification data is in scope while the payload renders, thus
 // `version` and `truncatedAlerts` are the constants they always are (Oodle

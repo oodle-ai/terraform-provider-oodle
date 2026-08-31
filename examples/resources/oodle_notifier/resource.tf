@@ -62,13 +62,11 @@ resource "oodle_notifier" "incident_rootly" {
   }
 }
 
-# Rootly is a webhook underneath, so it takes the same custom payload. A payload
-# replaces the whole body, and Rootly parses that body: its urgency condition
-# reads `$.alerts[0].labels._oodle_severity`. So the default keys are written
-# out here next to the two extra ones, rather than left implicit.
-#
-# Two keys of the default body cannot be reproduced: `groupKey` is out of scope
-# for a payload template, and `version` arrives as the number 4, not "4".
+# Rootly is a webhook underneath, so it takes the same custom payload, with one
+# difference: Rootly parses the standard Alertmanager body, and its urgency
+# condition reads `$.alerts[0].labels._oodle_severity` out of it. Oodle adds
+# those standard fields as it delivers the alert, so write only your own keys
+# here. A payload that sets one of them itself is rejected.
 resource "oodle_notifier" "custom_payload_rootly" {
   name = "custom_payload_rootly"
   type = "rootly"
@@ -76,18 +74,6 @@ resource "oodle_notifier" "custom_payload_rootly" {
     bearer_token  = "rootly_alert_source_bearer_token"
     send_resolved = true
     payload = jsonencode({
-      # The default Alertmanager body.
-      receiver          = "{{ .Receiver }}"
-      status            = "{{ .Status }}"
-      alerts            = "{{ .Alerts | toJson }}"
-      groupLabels       = "{{ .GroupLabels | toJson }}"
-      commonLabels      = "{{ .CommonLabels | toJson }}"
-      commonAnnotations = "{{ .CommonAnnotations | toJson }}"
-      externalURL       = "{{ .ExternalURL }}"
-      version           = "4"
-      truncatedAlerts   = 0
-
-      # Extra keys for the alert source.
       summary  = "{{ .CommonLabels.alertname }} is {{ .Status }}"
       severity = "{{ .CommonLabels._oodle_severity }}"
     })
