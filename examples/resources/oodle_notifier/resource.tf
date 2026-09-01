@@ -61,3 +61,53 @@ resource "oodle_notifier" "incident_rootly" {
     send_resolved = true
   }
 }
+
+# A Rootly notifier takes extra payload fields alongside the standard
+# Alertmanager body. Rootly parses that body, and its urgency condition reads
+# `$.alerts[0].labels._oodle_severity` out of it, so Oodle adds those standard
+# fields by default as it delivers the alert. Write only your own keys here: a
+# key that repeats a default is dropped, and one that gives a default another
+# value is rejected.
+resource "oodle_notifier" "custom_payload_rootly" {
+  name = "custom_payload_rootly"
+  type = "rootly"
+  rootly_config = {
+    bearer_token  = "rootly_alert_source_bearer_token"
+    send_resolved = true
+    payload = jsonencode({
+      summary  = "{{ .CommonLabels.alertname }} is {{ .Status }}"
+      severity = "{{ .CommonLabels._oodle_severity }}"
+    })
+  }
+}
+
+# Webhook notifier posting Oodle's default alert payload.
+resource "oodle_notifier" "generic_webhook" {
+  name = "generic_webhook"
+  type = "webhook"
+  webhook_config = {
+    url           = "https://example.com/hooks/oodle"
+    send_resolved = true
+  }
+}
+
+# Webhook notifier with a fully custom payload. Every string is a Go template
+# rendered against the alert data; `toJson` embeds structured values.
+resource "oodle_notifier" "custom_payload_webhook" {
+  name = "custom_payload_webhook"
+  type = "webhook"
+  webhook_config = {
+    url           = "https://example.com/hooks/oodle"
+    send_resolved = true
+    payload = jsonencode({
+      text   = "{{ .CommonLabels.alertname }} is {{ .Status }}"
+      status = "{{ .Status }}"
+      labels = "{{ .CommonLabels | toJson }}"
+      alerts = [
+        {
+          summary = "{{ .CommonAnnotations.summary }}"
+        }
+      ]
+    })
+  }
+}

@@ -25,15 +25,26 @@ type RootlyConfig struct {
 	MaxAlerts uint64 `yaml:"max_alerts" json:"max_alerts"`
 	// HTTPConfig carries the Rootly bearer token.
 	HTTPConfig *HTTPClientConfig `yaml:"http_config,omitempty" json:"http_config,omitempty"`
+
+	// Payload optionally replaces the default Alertmanager body, exactly as it
+	// does for a generic webhook. Rootly's alert source parses the default
+	// body, so this is only for a source configured to expect something else.
+	Payload map[string]any `yaml:"payload,omitempty" json:"payload,omitempty"`
 }
 
 // NewRootlyConfig builds a Rootly config from the fields the provider exposes.
 // An empty bearerToken leaves the Authorization header off entirely, which is
 // how a notifier created outside Terraform without a token reads back.
-func NewRootlyConfig(url string, bearerToken string, sendResolved bool) *RootlyConfig {
+func NewRootlyConfig(
+	url string,
+	bearerToken string,
+	sendResolved bool,
+	payload map[string]any,
+) *RootlyConfig {
 	rootlyConfig := &RootlyConfig{
 		NotifierConfig: config.NotifierConfig{VSendResolved: sendResolved},
 		URL:            url,
+		Payload:        payload,
 	}
 
 	if bearerToken != "" {

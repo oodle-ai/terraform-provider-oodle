@@ -3,6 +3,7 @@ package notifier
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -176,6 +177,23 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 						Required:  true,
 						Sensitive: true,
 					},
+					"payload": schema.StringAttribute{
+						Optional:   true,
+						CustomType: jsontypes.NormalizedType{},
+						Description: "JSON object replacing the default alert " +
+							"payload posted to the webhook. Every string key " +
+							"and value in this (arbitrarily nested) object is " +
+							"rendered as a Go template against the alert data, " +
+							"e.g. `{{ .CommonLabels.alertname }}`. Use the " +
+							"`toJson` template function to embed structured " +
+							"values, e.g. `{{ .CommonLabels | toJson }}`. " +
+							"Leave unset to send Oodle's default payload, " +
+							"which holds " + oprom.DefaultPayloadKeys() +
+							" and `groupKey`. A payload replaces all of them, " +
+							"thus keep the keys the endpoint reads. A Rootly " +
+							"notifier differs: Oodle adds the default fields " +
+							"there rather than replacing them.",
+					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,
 						Computed:    true,
@@ -250,6 +268,26 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 						Default:  validatorutils.NewDefaultString(types.StringValue(oprom.RootlyWebhookURL)),
 						Description: "Rootly Alertmanager webhook URL. Defaults to " +
 							oprom.RootlyWebhookURL + ".",
+					},
+					"payload": schema.StringAttribute{
+						Optional:   true,
+						CustomType: jsontypes.NormalizedType{},
+						Description: "JSON object of extra fields sent to " +
+							"Rootly, on top of the standard Alertmanager " +
+							"body. Every string key and value in this " +
+							"(arbitrarily nested) object is rendered as a Go " +
+							"template against the alert data. Unlike " +
+							"`webhook_config`, this does not replace the " +
+							"body: Rootly parses it, and its urgency " +
+							"condition reads " +
+							"`$.alerts[0].labels._oodle_severity` out of it, " +
+							"thus Oodle adds " + oprom.DefaultPayloadKeys() +
+							" by default as it delivers the alert. Write only " +
+							"your own keys: a key that repeats a default is " +
+							"dropped, and one that gives a default another " +
+							"value is rejected, because the merge would lose " +
+							"it. `groupKey` is not sent, and `version` " +
+							"arrives as the number 4, not the string \"4\".",
 					},
 					"send_resolved": schema.BoolAttribute{
 						Optional:    true,

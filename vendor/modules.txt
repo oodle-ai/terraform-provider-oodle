@@ -175,6 +175,9 @@ github.com/hashicorp/terraform-plugin-framework/schema/validator
 github.com/hashicorp/terraform-plugin-framework/tfsdk
 github.com/hashicorp/terraform-plugin-framework/types
 github.com/hashicorp/terraform-plugin-framework/types/basetypes
+# github.com/hashicorp/terraform-plugin-framework-jsontypes v0.2.0
+## explicit; go 1.22.0
+github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes
 # github.com/hashicorp/terraform-plugin-go v0.26.0
 ## explicit; go 1.22.0
 github.com/hashicorp/terraform-plugin-go/internal/logging

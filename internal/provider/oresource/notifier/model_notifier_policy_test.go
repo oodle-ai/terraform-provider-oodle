@@ -71,6 +71,26 @@ func TestNotificationPolicyModel(t *testing.T) {
 		{
 			ID:   clientmodels.ID{UUID: uuid.New()},
 			Name: "test",
+			Type: clientmodels.NotifierConfigWebhook,
+			WebhookConfig: &oprom.WebhookConfig{
+				NotifierConfig: config.NotifierConfig{
+					VSendResolved: true,
+				},
+				URL: "https://example.com/hooks/oodle",
+				Payload: map[string]any{
+					"text":   "{{ .CommonLabels.alertname }} is {{ .Status }}",
+					"labels": "{{ .CommonLabels | toJson }}",
+					"card": map[string]any{
+						"sections": []any{
+							map[string]any{"header": "{{ .Status }}"},
+						},
+					},
+				},
+			},
+		},
+		{
+			ID:   clientmodels.ID{UUID: uuid.New()},
+			Name: "test",
 			Type: clientmodels.NotifierConfigSlack,
 			SlackConfig: &oprom.SlackConfig{
 				NotifierConfig: config.NotifierConfig{
@@ -108,7 +128,7 @@ func TestNotificationPolicyModel(t *testing.T) {
 			ID:           clientmodels.ID{UUID: uuid.New()},
 			Name:         "test",
 			Type:         clientmodels.NotifierConfigRootly,
-			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "rootly-bearer-token", true),
+			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "rootly-bearer-token", true, nil),
 		},
 		{
 			// A Rootly notifier created outside Terraform may carry no bearer
@@ -116,7 +136,26 @@ func TestNotificationPolicyModel(t *testing.T) {
 			ID:           clientmodels.ID{UUID: uuid.New()},
 			Name:         "test",
 			Type:         clientmodels.NotifierConfigRootly,
-			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "", false),
+			RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "", false, nil),
+		},
+		{
+			ID:   clientmodels.ID{UUID: uuid.New()},
+			Name: "test",
+			Type: clientmodels.NotifierConfigRootly,
+			RootlyConfig: oprom.NewRootlyConfig(
+				oprom.RootlyWebhookURL,
+				"rootly-bearer-token",
+				true,
+				map[string]any{
+					"text":   "{{ .CommonLabels.alertname }} is {{ .Status }}",
+					"labels": "{{ .CommonLabels | toJson }}",
+					"card": map[string]any{
+						"sections": []any{
+							map[string]any{"header": "{{ .Status }}"},
+						},
+					},
+				},
+			),
 		},
 	}
 

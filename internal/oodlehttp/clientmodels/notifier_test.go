@@ -18,7 +18,7 @@ func TestRootlyNotifierWireFormat(t *testing.T) {
 	notifier := &Notifier{
 		Name:         "rootly",
 		Type:         NotifierConfigRootly,
-		RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "bearer-token", true),
+		RootlyConfig: oprom.NewRootlyConfig(oprom.RootlyWebhookURL, "bearer-token", true, nil),
 	}
 
 	encoded, err := json.Marshal(notifier)
