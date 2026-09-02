@@ -76,3 +76,24 @@ func TestJSONEmptyEqualsOnlyEmpty(t *testing.T) {
 		t.Fatal("an empty value must not equal a document")
 	}
 }
+
+// Key order is ignored at every depth, while the order of an array is a
+// difference, because an array is ordered.
+func TestJSONIgnoresKeyOrderWhenNested(t *testing.T) {
+	equal, _ := NewJSONValue(`{"a":{"x":1,"y":[1,2]},"b":2}`).
+		StringSemanticEquals(
+			context.Background(),
+			NewJSONValue(`{"b":2,"a":{"y":[1,2],"x":1}}`),
+		)
+	if !equal {
+		t.Fatal("expected nested keys in another order to compare equal")
+	}
+
+	equal, _ = NewJSONValue(`{"a":[1,2]}`).StringSemanticEquals(
+		context.Background(),
+		NewJSONValue(`{"a":[2,1]}`),
+	)
+	if equal {
+		t.Fatal("expected an array in another order to differ")
+	}
+}

@@ -28,9 +28,14 @@ type JSONType struct {
 }
 
 var (
-	_ basetypes.StringTypable     = JSONType{}
-	_ basetypes.StringValuable    = JSON{}
-	_ xattr.ValidateableAttribute = JSON{}
+	_ basetypes.StringTypable  = JSONType{}
+	_ basetypes.StringValuable = JSON{}
+	// The framework compares two values by value only when the value carries
+	// this interface. Without the check, a change to the signature below would
+	// drop the comparison silently, and the key order of the API would diff
+	// against the configuration on every plan.
+	_ basetypes.StringValuableWithSemanticEquals = JSON{}
+	_ xattr.ValidateableAttribute                = JSON{}
 )
 
 func (t JSONType) String() string {
