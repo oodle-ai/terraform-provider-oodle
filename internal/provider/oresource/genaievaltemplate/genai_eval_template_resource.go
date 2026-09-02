@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"terraform-provider-oodle/internal/resourceutils"
+
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/provider/oresource"
@@ -125,13 +127,15 @@ func (r *genaiEvalTemplateResource) Schema(
 					"expects. An evaluator maps span fields onto these.",
 			},
 			"output_schema": schema.StringAttribute{
-				Optional: true,
+				CustomType: resourceutils.JSONType{},
+				Optional:   true,
 				Description: "JSON object describing the score the " +
 					"template produces, for example " +
 					"{\"score\": \"0 to 1\", \"reasoning\": \"why\"}.",
 			},
 			"model_params": schema.StringAttribute{
-				Optional: true,
+				CustomType: resourceutils.JSONType{},
+				Optional:   true,
 				Description: "JSON object of model parameters used when " +
 					"running the judge, for example {\"temperature\": 0}.",
 			},

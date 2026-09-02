@@ -3,12 +3,13 @@ package notifier
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"terraform-provider-oodle/internal/resourceutils"
 
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
@@ -179,7 +180,7 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 					"payload": schema.StringAttribute{
 						Optional:   true,
-						CustomType: jsontypes.NormalizedType{},
+						CustomType: resourceutils.JSONType{},
 						Description: "JSON object replacing the default alert " +
 							"payload posted to the webhook. Every string key " +
 							"and value in this (arbitrarily nested) object is " +
@@ -271,7 +272,7 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 					"payload": schema.StringAttribute{
 						Optional:   true,
-						CustomType: jsontypes.NormalizedType{},
+						CustomType: resourceutils.JSONType{},
 						Description: "JSON object of extra fields sent to " +
 							"Rootly, on top of the standard Alertmanager " +
 							"body. Every string key and value in this " +

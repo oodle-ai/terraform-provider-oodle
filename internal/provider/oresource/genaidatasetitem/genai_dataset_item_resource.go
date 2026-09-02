@@ -11,6 +11,8 @@ import (
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/provider/oresource"
+
+	"terraform-provider-oodle/internal/resourceutils"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -85,16 +87,19 @@ func (r *genaiDatasetItemResource) Schema(
 				},
 			},
 			"input": schema.StringAttribute{
-				Required: true,
+				CustomType: resourceutils.JSONType{},
+				Required:   true,
 				Description: "JSON value given to the prompt under test. " +
 					"Use jsonencode() to build it.",
 			},
 			"expected_output": schema.StringAttribute{
-				Optional: true,
+				CustomType: resourceutils.JSONType{},
+				Optional:   true,
 				Description: "JSON value the output is compared against by " +
 					"evaluators that take a reference answer.",
 			},
 			"metadata": schema.StringAttribute{
+				CustomType:  resourceutils.JSONType{},
 				Optional:    true,
 				Description: "JSON object of arbitrary metadata.",
 			},

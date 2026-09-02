@@ -11,6 +11,8 @@ import (
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/provider/oresource"
+
+	"terraform-provider-oodle/internal/resourceutils"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -95,6 +97,7 @@ func (r *genaiDatasetResource) Schema(
 				},
 			},
 			"metadata": schema.StringAttribute{
+				CustomType:  resourceutils.JSONType{},
 				Optional:    true,
 				Description: "JSON object of arbitrary metadata.",
 				PlanModifiers: []planmodifier.String{

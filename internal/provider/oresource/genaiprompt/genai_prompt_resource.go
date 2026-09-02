@@ -158,7 +158,8 @@ func (r *genaiPromptResource) Schema(
 				Description: "Tags applied to the prompt.",
 			},
 			"config": schema.StringAttribute{
-				Optional: true,
+				CustomType: resourceutils.JSONType{},
+				Optional:   true,
 				Description: "JSON object of model configuration stored " +
 					"alongside the prompt.",
 			},

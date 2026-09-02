@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"terraform-provider-oodle/internal/resourceutils"
+
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/provider/oresource"
@@ -123,13 +125,15 @@ func (r *genaiLLMConnectionResource) Schema(
 					"is specified.",
 			},
 			"custom_headers": schema.StringAttribute{
-				Optional:  true,
-				Sensitive: true,
+				CustomType: resourceutils.JSONType{},
+				Optional:   true,
+				Sensitive:  true,
 				Description: "JSON object of extra HTTP headers to send to " +
 					"the provider. Stored encrypted and never returned.",
 			},
 			"default_params": schema.StringAttribute{
-				Optional: true,
+				CustomType: resourceutils.JSONType{},
+				Optional:   true,
 				Description: "JSON object of default model parameters, for " +
 					"example {\"temperature\": 0}.",
 			},

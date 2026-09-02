@@ -11,17 +11,17 @@ import (
 )
 
 type genaiLLMConnectionResourceModel struct {
-	ID                  types.String `tfsdk:"id"`
-	Name                types.String `tfsdk:"name"`
-	LLMProvider         types.String `tfsdk:"llm_provider"`
-	APIKey              types.String `tfsdk:"api_key"`
-	BaseURL             types.String `tfsdk:"base_url"`
-	DefaultModel        types.String `tfsdk:"default_model"`
-	CustomModels        types.List   `tfsdk:"custom_models"`
-	EnableDefaultModels types.Bool   `tfsdk:"enable_default_models"`
-	IsDefault           types.Bool   `tfsdk:"is_default"`
-	CustomHeaders       types.String `tfsdk:"custom_headers"`
-	DefaultParams       types.String `tfsdk:"default_params"`
+	ID                  types.String       `tfsdk:"id"`
+	Name                types.String       `tfsdk:"name"`
+	LLMProvider         types.String       `tfsdk:"llm_provider"`
+	APIKey              types.String       `tfsdk:"api_key"`
+	BaseURL             types.String       `tfsdk:"base_url"`
+	DefaultModel        types.String       `tfsdk:"default_model"`
+	CustomModels        types.List         `tfsdk:"custom_models"`
+	EnableDefaultModels types.Bool         `tfsdk:"enable_default_models"`
+	IsDefault           types.Bool         `tfsdk:"is_default"`
+	CustomHeaders       resourceutils.JSON `tfsdk:"custom_headers"`
+	DefaultParams       resourceutils.JSON `tfsdk:"default_params"`
 }
 
 func (m *genaiLLMConnectionResourceModel) GetID() types.String {
@@ -63,9 +63,7 @@ func (m *genaiLLMConnectionResourceModel) FromClientModel(
 		m.IsDefault = types.BoolValue(false)
 	}
 
-	m.DefaultParams = resourceutils.RawToJSONString(
-		model.DefaultParams, m.DefaultParams,
-	)
+	m.DefaultParams = resourceutils.RawToJSON(model.DefaultParams)
 }
 
 func (m *genaiLLMConnectionResourceModel) ToClientModel(
@@ -94,7 +92,7 @@ func (m *genaiLLMConnectionResourceModel) ToClientModel(
 	isDefault := m.IsDefault.ValueBool()
 	model.IsDefault = &isDefault
 
-	customHeaders, err := resourceutils.JSONStringToRaw(
+	customHeaders, err := resourceutils.JSONToRaw(
 		m.CustomHeaders, "custom_headers",
 	)
 	if err != nil {
@@ -102,7 +100,7 @@ func (m *genaiLLMConnectionResourceModel) ToClientModel(
 	}
 	model.CustomHeaders = customHeaders
 
-	defaultParams, err := resourceutils.JSONStringToRaw(
+	defaultParams, err := resourceutils.JSONToRaw(
 		m.DefaultParams, "default_params",
 	)
 	if err != nil {

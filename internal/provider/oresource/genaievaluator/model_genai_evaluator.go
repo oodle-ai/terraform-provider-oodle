@@ -11,19 +11,19 @@ import (
 )
 
 type genaiEvaluatorResourceModel struct {
-	ID                    types.String  `tfsdk:"id"`
-	Name                  types.String  `tfsdk:"name"`
-	EvalTemplateID        types.String  `tfsdk:"eval_template_id"`
-	Enabled               types.Bool    `tfsdk:"enabled"`
-	TargetType            types.String  `tfsdk:"target_type"`
-	SamplingRate          types.Float64 `tfsdk:"sampling_rate"`
-	MaxInvocationsPerHour types.Int64   `tfsdk:"max_invocations_per_hour"`
-	Filters               types.String  `tfsdk:"filters"`
-	VariableMapping       types.String  `tfsdk:"variable_mapping"`
-	LLMConnectionID       types.String  `tfsdk:"llm_connection_id"`
-	ModelParams           types.String  `tfsdk:"model_params"`
-	DependsOnRuleIDs      types.List    `tfsdk:"depends_on_rule_ids"`
-	DatasetID             types.String  `tfsdk:"dataset_id"`
+	ID                    types.String       `tfsdk:"id"`
+	Name                  types.String       `tfsdk:"name"`
+	EvalTemplateID        types.String       `tfsdk:"eval_template_id"`
+	Enabled               types.Bool         `tfsdk:"enabled"`
+	TargetType            types.String       `tfsdk:"target_type"`
+	SamplingRate          types.Float64      `tfsdk:"sampling_rate"`
+	MaxInvocationsPerHour types.Int64        `tfsdk:"max_invocations_per_hour"`
+	Filters               resourceutils.JSON `tfsdk:"filters"`
+	VariableMapping       resourceutils.JSON `tfsdk:"variable_mapping"`
+	LLMConnectionID       types.String       `tfsdk:"llm_connection_id"`
+	ModelParams           resourceutils.JSON `tfsdk:"model_params"`
+	DependsOnRuleIDs      types.List         `tfsdk:"depends_on_rule_ids"`
+	DatasetID             types.String       `tfsdk:"dataset_id"`
 }
 
 func (m *genaiEvaluatorResourceModel) GetID() types.String {
@@ -77,13 +77,9 @@ func (m *genaiEvaluatorResourceModel) FromClientModel(
 		ctx, dependsOn, m.DependsOnRuleIDs, diagnosticsOut,
 	)
 
-	m.Filters = resourceutils.RawToJSONString(model.Filters, m.Filters)
-	m.VariableMapping = resourceutils.RawToJSONString(
-		model.VariableMapping, m.VariableMapping,
-	)
-	m.ModelParams = resourceutils.RawToJSONString(
-		model.ModelParams, m.ModelParams,
-	)
+	m.Filters = resourceutils.RawToJSON(model.Filters)
+	m.VariableMapping = resourceutils.RawToJSON(model.VariableMapping)
+	m.ModelParams = resourceutils.RawToJSON(model.ModelParams)
 }
 
 func (m *genaiEvaluatorResourceModel) ToClientModel(
@@ -123,13 +119,13 @@ func (m *genaiEvaluatorResourceModel) ToClientModel(
 	}
 	model.DependsOnRuleIDs = &dependsOn
 
-	filters, err := resourceutils.JSONStringToRaw(m.Filters, "filters")
+	filters, err := resourceutils.JSONToRaw(m.Filters, "filters")
 	if err != nil {
 		return err
 	}
 	model.Filters = filters
 
-	variableMapping, err := resourceutils.JSONStringToRaw(
+	variableMapping, err := resourceutils.JSONToRaw(
 		m.VariableMapping, "variable_mapping",
 	)
 	if err != nil {
@@ -137,7 +133,7 @@ func (m *genaiEvaluatorResourceModel) ToClientModel(
 	}
 	model.VariableMapping = variableMapping
 
-	modelParams, err := resourceutils.JSONStringToRaw(
+	modelParams, err := resourceutils.JSONToRaw(
 		m.ModelParams, "model_params",
 	)
 	if err != nil {

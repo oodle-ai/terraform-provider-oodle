@@ -9,43 +9,43 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func TestJSONStringToRaw(t *testing.T) {
+func TestJSONToRaw(t *testing.T) {
 	tests := []struct {
 		name    string
-		input   types.String
+		input   JSON
 		want    string
 		wantErr bool
 	}{
 		{
 			name:  "null becomes nil",
-			input: types.StringNull(),
+			input: NewJSONNull(),
 			want:  "",
 		},
 		{
 			name:  "unknown becomes nil",
-			input: types.StringUnknown(),
+			input: NewJSONUnknown(),
 			want:  "",
 		},
 		{
 			name:  "empty becomes nil",
-			input: types.StringValue(""),
+			input: NewJSONValue(""),
 			want:  "",
 		},
 		{
 			name:  "object passes through",
-			input: types.StringValue(`{"a":1}`),
+			input: NewJSONValue(`{"a":1}`),
 			want:  `{"a":1}`,
 		},
 		{
 			name:    "invalid JSON is rejected",
-			input:   types.StringValue(`{not json`),
+			input:   NewJSONValue(`{not json`),
 			wantErr: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := JSONStringToRaw(test.input, "attr")
+			got, err := JSONToRaw(test.input, "attr")
 			if test.wantErr {
 				if err == nil {
 					t.Fatalf("expected an error, got %q", string(got))
@@ -61,6 +61,21 @@ func TestJSONStringToRaw(t *testing.T) {
 				t.Errorf("got %q, want %q", string(got), test.want)
 			}
 		})
+	}
+}
+
+func TestRawToJSONIsNullWhenEmpty(t *testing.T) {
+	if got := RawToJSON(nil); !got.IsNull() {
+		t.Fatalf("expected null, got %q", got.ValueString())
+	}
+
+	if got := RawToJSON(json.RawMessage("null")); !got.IsNull() {
+		t.Fatalf("expected null, got %q", got.ValueString())
+	}
+
+	got := RawToJSON(json.RawMessage(`{"a":1}`))
+	if got.ValueString() != `{"a":1}` {
+		t.Fatalf("unexpected value %q", got.ValueString())
 	}
 }
 

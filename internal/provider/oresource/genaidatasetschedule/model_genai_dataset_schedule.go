@@ -11,22 +11,22 @@ import (
 )
 
 type genaiDatasetScheduleResourceModel struct {
-	ID               types.String `tfsdk:"id"`
-	DatasetName      types.String `tfsdk:"dataset_name"`
-	Enabled          types.Bool   `tfsdk:"enabled"`
-	Mode             types.String `tfsdk:"mode"`
-	IntervalValue    types.Int64  `tfsdk:"interval_value"`
-	IntervalUnit     types.String `tfsdk:"interval_unit"`
-	Timezone         types.String `tfsdk:"timezone"`
-	Times            types.List   `tfsdk:"times"`
-	Weekdays         types.List   `tfsdk:"weekdays"`
-	DaysOfMonth      types.List   `tfsdk:"days_of_month"`
-	ExperimentConfig types.String `tfsdk:"experiment_config"`
-	ScheduleID       types.String `tfsdk:"schedule_id"`
-	DatasetID        types.String `tfsdk:"dataset_id"`
-	NextRunAt        types.String `tfsdk:"next_run_at"`
-	LastRunAt        types.String `tfsdk:"last_run_at"`
-	LastError        types.String `tfsdk:"last_error"`
+	ID               types.String       `tfsdk:"id"`
+	DatasetName      types.String       `tfsdk:"dataset_name"`
+	Enabled          types.Bool         `tfsdk:"enabled"`
+	Mode             types.String       `tfsdk:"mode"`
+	IntervalValue    types.Int64        `tfsdk:"interval_value"`
+	IntervalUnit     types.String       `tfsdk:"interval_unit"`
+	Timezone         types.String       `tfsdk:"timezone"`
+	Times            types.List         `tfsdk:"times"`
+	Weekdays         types.List         `tfsdk:"weekdays"`
+	DaysOfMonth      types.List         `tfsdk:"days_of_month"`
+	ExperimentConfig resourceutils.JSON `tfsdk:"experiment_config"`
+	ScheduleID       types.String       `tfsdk:"schedule_id"`
+	DatasetID        types.String       `tfsdk:"dataset_id"`
+	NextRunAt        types.String       `tfsdk:"next_run_at"`
+	LastRunAt        types.String       `tfsdk:"last_run_at"`
+	LastError        types.String       `tfsdk:"last_error"`
 }
 
 func (m *genaiDatasetScheduleResourceModel) GetID() types.String {
@@ -53,9 +53,7 @@ func (m *genaiDatasetScheduleResourceModel) FromClientModel(
 	m.NextRunAt = optionalString(model.NextRunAt)
 	m.LastRunAt = optionalString(model.LastRunAt)
 	m.LastError = optionalString(model.LastError)
-	m.ExperimentConfig = resourceutils.RawToJSONString(
-		model.ExperimentConfig, m.ExperimentConfig,
-	)
+	m.ExperimentConfig = resourceutils.RawToJSON(model.ExperimentConfig)
 
 	// Empty mode means calendar, the default the server applies.
 	m.Mode = takeUnlessDefault(model.Mode, ModeCalendar, m.Mode)
@@ -122,7 +120,7 @@ func (m *genaiDatasetScheduleResourceModel) ToClientModel(
 	}
 	model.DaysOfMonth = daysOfMonth
 
-	experimentConfig, err := resourceutils.JSONStringToRaw(
+	experimentConfig, err := resourceutils.JSONToRaw(
 		m.ExperimentConfig, "experiment_config",
 	)
 	if err != nil {

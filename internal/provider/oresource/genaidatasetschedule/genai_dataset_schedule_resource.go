@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"terraform-provider-oodle/internal/resourceutils"
+
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/provider/oresource"
@@ -185,7 +187,8 @@ func (r *genaiDatasetScheduleResource) Schema(
 					"only.",
 			},
 			"experiment_config": schema.StringAttribute{
-				Required: true,
+				CustomType: resourceutils.JSONType{},
+				Required:   true,
 				Description: "JSON object describing what each firing " +
 					"runs — the same llm-experiment job config the API " +
 					"takes, with datasetId, llmConnectionId, a prompt " +
