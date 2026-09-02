@@ -3,7 +3,6 @@ package genaidatasetitem
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -12,15 +11,15 @@ import (
 )
 
 type genaiDatasetItemResourceModel struct {
-	ID                  types.String         `tfsdk:"id"`
-	DatasetName         types.String         `tfsdk:"dataset_name"`
-	Input               jsontypes.Normalized `tfsdk:"input"`
-	ExpectedOutput      jsontypes.Normalized `tfsdk:"expected_output"`
-	Metadata            jsontypes.Normalized `tfsdk:"metadata"`
-	Status              types.String         `tfsdk:"status"`
-	SourceTraceID       types.String         `tfsdk:"source_trace_id"`
-	SourceObservationID types.String         `tfsdk:"source_observation_id"`
-	DatasetID           types.String         `tfsdk:"dataset_id"`
+	ID                  types.String       `tfsdk:"id"`
+	DatasetName         types.String       `tfsdk:"dataset_name"`
+	Input               resourceutils.JSON `tfsdk:"input"`
+	ExpectedOutput      resourceutils.JSON `tfsdk:"expected_output"`
+	Metadata            resourceutils.JSON `tfsdk:"metadata"`
+	Status              types.String       `tfsdk:"status"`
+	SourceTraceID       types.String       `tfsdk:"source_trace_id"`
+	SourceObservationID types.String       `tfsdk:"source_observation_id"`
+	DatasetID           types.String       `tfsdk:"dataset_id"`
 }
 
 func (m *genaiDatasetItemResourceModel) GetID() types.String {
@@ -49,9 +48,9 @@ func (m *genaiDatasetItemResourceModel) FromClientModel(
 	m.SourceTraceID = optionalString(model.SourceTraceID)
 	m.SourceObservationID = optionalString(model.SourceObservationID)
 
-	m.Input = resourceutils.RawToNormalized(model.Input)
-	m.ExpectedOutput = resourceutils.RawToNormalized(model.ExpectedOutput)
-	m.Metadata = resourceutils.RawToNormalized(model.Metadata)
+	m.Input = resourceutils.RawToJSON(model.Input)
+	m.ExpectedOutput = resourceutils.RawToJSON(model.ExpectedOutput)
+	m.Metadata = resourceutils.RawToJSON(model.Metadata)
 }
 
 func (m *genaiDatasetItemResourceModel) ToClientModel(
@@ -64,13 +63,13 @@ func (m *genaiDatasetItemResourceModel) ToClientModel(
 	model.SourceTraceID = m.SourceTraceID.ValueString()
 	model.SourceObservationID = m.SourceObservationID.ValueString()
 
-	input, err := resourceutils.NormalizedToRaw(m.Input, "input")
+	input, err := resourceutils.JSONToRaw(m.Input, "input")
 	if err != nil {
 		return err
 	}
 	model.Input = input
 
-	expectedOutput, err := resourceutils.NormalizedToRaw(
+	expectedOutput, err := resourceutils.JSONToRaw(
 		m.ExpectedOutput, "expected_output",
 	)
 	if err != nil {
@@ -78,7 +77,7 @@ func (m *genaiDatasetItemResourceModel) ToClientModel(
 	}
 	model.ExpectedOutput = expectedOutput
 
-	metadata, err := resourceutils.NormalizedToRaw(m.Metadata, "metadata")
+	metadata, err := resourceutils.JSONToRaw(m.Metadata, "metadata")
 	if err != nil {
 		return err
 	}

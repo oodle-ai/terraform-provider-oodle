@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -18,11 +17,11 @@ import (
 // jsontypes.Normalized, which compares two documents by value, and
 // converted here.
 
-// NormalizedToRaw parses a JSON attribute into a json.RawMessage. A null,
+// JSONToRaw parses a JSON attribute into a json.RawMessage. A null,
 // unknown or empty value becomes nil, which the client models drop from the
 // request entirely.
-func NormalizedToRaw(
-	value jsontypes.Normalized,
+func JSONToRaw(
+	value JSON,
 	attribute string,
 ) (json.RawMessage, error) {
 	if value.IsNull() || value.IsUnknown() {
@@ -41,15 +40,15 @@ func NormalizedToRaw(
 	return json.RawMessage(text), nil
 }
 
-// RawToNormalized converts JSON from the API into a JSON attribute. The type
+// RawToJSON converts JSON from the API into a JSON attribute. The type
 // compares two documents by value, thus the key order and the spacing the API
 // returns raise no diff, and the prior value is not needed here.
-func RawToNormalized(raw json.RawMessage) jsontypes.Normalized {
+func RawToJSON(raw json.RawMessage) JSON {
 	if len(raw) == 0 || string(raw) == "null" {
-		return jsontypes.NewNormalizedNull()
+		return NewJSONNull()
 	}
 
-	return jsontypes.NewNormalizedValue(string(raw))
+	return NewJSONValue(string(raw))
 }
 
 // RawToJSONString converts JSON from the API back into a Terraform string.

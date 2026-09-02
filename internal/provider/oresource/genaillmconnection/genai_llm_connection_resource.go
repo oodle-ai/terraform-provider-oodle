@@ -3,12 +3,13 @@ package genaillmconnection
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"terraform-provider-oodle/internal/resourceutils"
 
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
@@ -124,14 +125,14 @@ func (r *genaiLLMConnectionResource) Schema(
 					"is specified.",
 			},
 			"custom_headers": schema.StringAttribute{
-				CustomType: jsontypes.NormalizedType{},
+				CustomType: resourceutils.JSONType{},
 				Optional:   true,
 				Sensitive:  true,
 				Description: "JSON object of extra HTTP headers to send to " +
 					"the provider. Stored encrypted and never returned.",
 			},
 			"default_params": schema.StringAttribute{
-				CustomType: jsontypes.NormalizedType{},
+				CustomType: resourceutils.JSONType{},
 				Optional:   true,
 				Description: "JSON object of default model parameters, for " +
 					"example {\"temperature\": 0}.",

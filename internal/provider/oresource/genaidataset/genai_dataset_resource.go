@@ -3,7 +3,6 @@ package genaidataset
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -12,6 +11,8 @@ import (
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/provider/oresource"
+
+	"terraform-provider-oodle/internal/resourceutils"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -96,7 +97,7 @@ func (r *genaiDatasetResource) Schema(
 				},
 			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+				CustomType:  resourceutils.JSONType{},
 				Optional:    true,
 				Description: "JSON object of arbitrary metadata.",
 				PlanModifiers: []planmodifier.String{

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/prometheus/alertmanager/config"
@@ -287,9 +286,9 @@ func encodePayload(
 	payload map[string]any,
 	notifier string,
 	diagnosticsOut *diag.Diagnostics,
-) jsontypes.Normalized {
+) resourceutils.JSON {
 	if len(payload) == 0 {
-		return jsontypes.NewNormalizedNull()
+		return resourceutils.NewJSONNull()
 	}
 
 	encoded, err := json.Marshal(payload)
@@ -298,16 +297,16 @@ func encodePayload(
 			fmt.Sprintf("Invalid %s payload", notifier),
 			fmt.Sprintf("Failed to encode the custom payload: %v", err),
 		)
-		return jsontypes.NewNormalizedNull()
+		return resourceutils.NewJSONNull()
 	}
 
-	return jsontypes.NewNormalizedValue(string(encoded))
+	return resourceutils.NewJSONValue(string(encoded))
 }
 
 // decodePayload parses a custom payload out of Terraform state. Unset, unknown
 // and blank all mean "no custom payload", which leaves the notifier sending
 // the default Alertmanager body.
-func decodePayload(value jsontypes.Normalized) (map[string]any, error) {
+func decodePayload(value resourceutils.JSON) (map[string]any, error) {
 	if value.IsNull() || value.IsUnknown() {
 		return nil, nil
 	}

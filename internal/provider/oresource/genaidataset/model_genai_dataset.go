@@ -3,7 +3,6 @@ package genaidataset
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -14,11 +13,11 @@ import (
 type genaiDatasetResourceModel struct {
 	// ID holds the dataset name: the read and delete endpoints are
 	// keyed by name, and the uuid is exposed as DatasetID.
-	ID          types.String         `tfsdk:"id"`
-	Name        types.String         `tfsdk:"name"`
-	Description types.String         `tfsdk:"description"`
-	Metadata    jsontypes.Normalized `tfsdk:"metadata"`
-	DatasetID   types.String         `tfsdk:"dataset_id"`
+	ID          types.String       `tfsdk:"id"`
+	Name        types.String       `tfsdk:"name"`
+	Description types.String       `tfsdk:"description"`
+	Metadata    resourceutils.JSON `tfsdk:"metadata"`
+	DatasetID   types.String       `tfsdk:"dataset_id"`
 }
 
 func (m *genaiDatasetResourceModel) GetID() types.String {
@@ -44,7 +43,7 @@ func (m *genaiDatasetResourceModel) FromClientModel(
 		m.Description = types.StringValue(model.Description)
 	}
 
-	m.Metadata = resourceutils.RawToNormalized(model.Metadata)
+	m.Metadata = resourceutils.RawToJSON(model.Metadata)
 }
 
 func (m *genaiDatasetResourceModel) ToClientModel(
@@ -54,7 +53,7 @@ func (m *genaiDatasetResourceModel) ToClientModel(
 	model.Name = m.Name.ValueString()
 	model.Description = m.Description.ValueString()
 
-	metadata, err := resourceutils.NormalizedToRaw(m.Metadata, "metadata")
+	metadata, err := resourceutils.JSONToRaw(m.Metadata, "metadata")
 	if err != nil {
 		return err
 	}

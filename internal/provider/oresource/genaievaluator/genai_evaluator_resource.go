@@ -3,12 +3,13 @@ package genaievaluator
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"terraform-provider-oodle/internal/resourceutils"
 
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
@@ -117,14 +118,14 @@ func (r *genaiEvaluatorResource) Schema(
 					"run per hour.",
 			},
 			"filters": schema.StringAttribute{
-				CustomType: jsontypes.NormalizedType{},
+				CustomType: resourceutils.JSONType{},
 				Optional:   true,
 				Description: "JSON array of filters selecting which spans " +
 					"are scored. An empty or unset value scores everything " +
 					"that matches target_type.",
 			},
 			"variable_mapping": schema.StringAttribute{
-				CustomType: jsontypes.NormalizedType{},
+				CustomType: resourceutils.JSONType{},
 				Optional:   true,
 				Description: "JSON describing how span fields populate the " +
 					"eval template's vars.",
@@ -135,7 +136,7 @@ func (r *genaiEvaluatorResource) Schema(
 					"judge calls. Required for 'llm' templates.",
 			},
 			"model_params": schema.StringAttribute{
-				CustomType: jsontypes.NormalizedType{},
+				CustomType: resourceutils.JSONType{},
 				Optional:   true,
 				Description: "JSON object of model parameters overriding " +
 					"the template's own.",
