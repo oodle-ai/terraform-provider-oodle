@@ -182,11 +182,11 @@ func (r *mutingRuleResource) Schema(
 			"schedule_ids": schema.ListAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
-				Description: "IDs of the schedules during which the alert " +
-					"is muted. Setting this makes the rule recurring, " +
-					"which today supports exactly one matcher — the " +
-					"`" + monitorIDLabel + "` one — and cannot be combined " +
-					"with starts_at or ends_at.",
+				Description: "IDs of the `oodle_muting_schedule`s during " +
+					"which the alert is muted. Setting this makes the " +
+					"rule recurring, which today supports exactly one " +
+					"matcher — the `" + monitorIDLabel + "` one — and " +
+					"cannot be combined with starts_at or ends_at.",
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
 				},
