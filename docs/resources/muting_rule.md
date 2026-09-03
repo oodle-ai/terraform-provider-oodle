@@ -90,7 +90,7 @@ resource "oodle_muting_rule" "overnight" {
 - `comment` (String) Note recorded alongside the rule, typically why the alerts are muted.
 - `ends_at` (String) RFC 3339 timestamp when muting ends. Muting is effective forever if unset, and the API rejects a time in the past. One-off rules only.
 - `name` (String) Human-readable name for the muting rule. Recurring rules only: a one-off rule is stored as an Alertmanager silence, which has no name field, so the API would silently drop it. Use comment instead.
-- `schedule_ids` (List of String) IDs of the schedules during which the alert is muted. Setting this makes the rule recurring, which today supports exactly one matcher — the `_oodle_monitor_id` one — and cannot be combined with starts_at or ends_at.
+- `schedule_ids` (List of String) IDs of the `oodle_muting_schedule`s during which the alert is muted. Setting this makes the rule recurring, which today supports exactly one matcher — the `_oodle_monitor_id` one — and cannot be combined with starts_at or ends_at.
 - `starts_at` (String) RFC 3339 timestamp when muting begins. Defaults to the time the rule is created. One-off rules only.
 
 ### Read-Only

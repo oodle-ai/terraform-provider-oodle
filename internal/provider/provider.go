@@ -33,6 +33,7 @@ import (
 	"terraform-provider-oodle/internal/provider/oresource/metricdroprule"
 	"terraform-provider-oodle/internal/provider/oresource/monitor"
 	"terraform-provider-oodle/internal/provider/oresource/mutingrule"
+	"terraform-provider-oodle/internal/provider/oresource/mutingschedule"
 	notificationPolicy "terraform-provider-oodle/internal/provider/oresource/notificationpolicy"
 	"terraform-provider-oodle/internal/provider/oresource/notifier"
 	"terraform-provider-oodle/internal/provider/oresource/syntheticmonitor"
@@ -255,5 +256,6 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		genaidatasetschedule.NewGenAIDatasetScheduleResource,
 		genaiprompt.NewGenAIPromptResource,
 		mutingrule.NewMutingRuleResource,
+		mutingschedule.NewMutingScheduleResource,
 	}
 }
