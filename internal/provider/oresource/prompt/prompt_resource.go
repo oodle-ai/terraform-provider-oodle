@@ -75,7 +75,11 @@ func (r *promptResource) Schema(
 		Description: "Manages a GenAI prompt. Changing the text " +
 			"publishes a new version and moves the label to it; " +
 			"a prompt edited outside Terraform is republished " +
-			"from this configuration on the next apply.",
+			"from this configuration on the next apply. Declare " +
+			"one resource per prompt name: destroying it removes " +
+			"every version, whatever label they carry. Experiment " +
+			"on another label in the UI, and let this own " +
+			"production.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
