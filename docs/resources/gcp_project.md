@@ -45,14 +45,7 @@ resource "oodle_gcp_project" "collected" {
 }
 
 # End to end: create the service account, grant it the viewer roles Oodle
-# reads with, let Oodle impersonate it, then register the project.
-locals {
-  # The default value of oodle_principal. Naming it here lets the token
-  # creator grant be applied before the project is registered, so the
-  # first scrape does not fail on a missing grant.
-  oodle_principal = "gcp-monitoring-integration@oodle-ai.iam.gserviceaccount.com"
-}
-
+# reads with, register the project, then let Oodle impersonate the account.
 resource "google_service_account" "oodle" {
   project      = "acme-prod"
   account_id   = "oodle"
@@ -72,22 +65,20 @@ resource "google_project_iam_member" "oodle" {
   member  = "serviceAccount:${google_service_account.oodle.email}"
 }
 
-# The grant that replaces a service account key.
-resource "google_service_account_iam_member" "oodle_token_creator" {
-  service_account_id = google_service_account.oodle.name
-  role               = "roles/iam.serviceAccountTokenCreator"
-  member             = "serviceAccount:${local.oodle_principal}"
-}
-
 resource "oodle_gcp_project" "managed" {
   project                  = "acme-prod"
   customer_service_account = google_service_account.oodle.email
-  oodle_principal          = local.oodle_principal
 
-  depends_on = [
-    google_project_iam_member.oodle,
-    google_service_account_iam_member.oodle_token_creator,
-  ]
+  depends_on = [google_project_iam_member.oodle]
+}
+
+# The grant that replaces a service account key. oodle_principal is read
+# back from the integration, so the address is never written out here and
+# stays right if Oodle ever changes it.
+resource "google_service_account_iam_member" "oodle_token_creator" {
+  service_account_id = google_service_account.oodle.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:${oodle_gcp_project.managed.oodle_principal}"
 }
 ```
 
@@ -99,12 +90,9 @@ resource "oodle_gcp_project" "managed" {
 - `customer_service_account` (String) Address of the service account in the project that Oodle impersonates. It needs the Browser, Compute Viewer, Monitoring Viewer and Cloud Asset Viewer roles on the project.
 - `project` (String) ID of the GCP project to pull metrics from (the project ID, not its number or display name).
 
-### Optional
-
-- `oodle_principal` (String) Oodle service account that `customer_service_account` grants the Service Account Token Creator role to. Defaults to gcp-monitoring-integration@oodle-ai.iam.gserviceaccount.com; set it only if Oodle gave you a different principal.
-
 ### Read-Only
 
 - `id` (String) ID of the integration assigned by Oodle.
 - `name` (String) Name of the integration as shown in the Oodle UI. Set by the server from `project`; it cannot be configured independently.
+- `oodle_principal` (String) Oodle service account that `customer_service_account` must grant the Service Account Token Creator role to. Set by the server, which uses the same principal for every customer; reference it from the IAM grant rather than writing the address out.
 - `status` (String) Lifecycle status of the integration (e.g. NOT_CONNECTED, RECEIVING). Set by the server; it becomes RECEIVING once Oodle collects metrics from the project.

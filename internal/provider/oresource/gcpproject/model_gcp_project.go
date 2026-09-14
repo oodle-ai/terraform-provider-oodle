@@ -85,10 +85,8 @@ func (m *gcpProjectResourceModel) ToClientModel(
 		return fmt.Errorf("customer_service_account is required")
 	}
 
-	oodlePrincipal := clientmodels.DefaultOodlePrincipal
-	if !m.OodlePrincipal.IsNull() && !m.OodlePrincipal.IsUnknown() {
-		oodlePrincipal = m.OodlePrincipal.ValueString()
-	}
+	// oodle_principal is Computed-only: the server fills it with the one
+	// principal it uses for every customer, so nothing is sent for it here.
 
 	// One project per row is what gives the project an id of its own. Sending
 	// more than one would recreate the shared array this resource exists to
@@ -97,7 +95,6 @@ func (m *gcpProjectResourceModel) ToClientModel(
 		{
 			Project:                m.Project.ValueString(),
 			CustomerServiceAccount: m.CustomerServiceAccount.ValueString(),
-			OodlePrincipal:         oodlePrincipal,
 		},
 	}
 

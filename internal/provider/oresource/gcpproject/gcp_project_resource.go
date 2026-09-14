@@ -123,16 +123,9 @@ func (r *gcpProjectResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"oodle_principal": schema.StringAttribute{
-				Optional: true,
 				Computed: true,
-				Description: "Oodle service account that `customer_service_account` grants the Service Account Token Creator role to. " +
-					"Defaults to " + clientmodels.DefaultOodlePrincipal + "; set it only if Oodle gave you a different principal.",
-				Validators: []validator.String{
-					validatorutils.NewRegexValidator(
-						gcpServiceAccountPattern,
-						"must be a service account address ending in .iam.gserviceaccount.com",
-					),
-				},
+				Description: "Oodle service account that `customer_service_account` must grant the Service Account Token Creator role to. " +
+					"Set by the server, which uses the same principal for every customer; reference it from the IAM grant rather than writing the address out.",
 			},
 		},
 	}

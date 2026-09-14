@@ -37,34 +37,14 @@ func TestGcpProjectModelRoundTrip(t *testing.T) {
 	assert.Nil(t, resourceModel.ToClientModel(ctx, newClientModel))
 
 	// Everything round-trips except the fields the server owns: the top-level
-	// name (derived from the project), both statuses, and the per-project
-	// timestamps the request shape does not carry.
+	// name (derived from the project), both statuses, and the principal, which
+	// the server fills with the one it uses for every customer.
 	expected := *clientModel
 	expected.Name = ""
 	expected.Status = ""
 	expected.TypeSpecificData.Projects[0].Status = ""
+	expected.TypeSpecificData.Projects[0].OodlePrincipal = ""
 	assert.DeepEqual(t, &expected, newClientModel)
-}
-
-// TestGcpProjectModelDefaultsOodlePrincipal pins the default. The backend
-// stores whatever principal it is sent and never fills one in, so a resource
-// that omits the attribute would otherwise write an empty principal, and the
-// customer would have nothing to grant the token creator role to.
-func TestGcpProjectModelDefaultsOodlePrincipal(t *testing.T) {
-	ctx := context.Background()
-	resourceModel := &gcpProjectResourceModel{
-		Project:                types.StringValue("acme-prod"),
-		CustomerServiceAccount: types.StringValue("oodle@acme-prod.iam.gserviceaccount.com"),
-		OodlePrincipal:         types.StringNull(),
-	}
-
-	clientModel := &clientmodels.GcpIntegration{}
-	assert.Nil(t, resourceModel.ToClientModel(ctx, clientModel))
-	assert.Equal(
-		t,
-		clientmodels.DefaultOodlePrincipal,
-		clientModel.TypeSpecificData.Projects[0].OodlePrincipal,
-	)
 }
 
 // TestGcpProjectModelWritesOneProject is the guard for the whole point of the

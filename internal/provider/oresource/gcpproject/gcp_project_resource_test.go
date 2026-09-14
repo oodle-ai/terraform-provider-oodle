@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/rubrikinc/testwell/assert"
 
-	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/validatorutils"
 )
 
@@ -72,12 +71,4 @@ func TestServiceAccountValidation(t *testing.T) {
 	for _, c := range cases {
 		assert.Equal(t, c.valid, accepts(t, v, c.account), c.account)
 	}
-}
-
-// TestDefaultOodlePrincipalIsValid keeps the default and the validator in
-// agreement. A default the schema then rejects would fail every apply that
-// omits the attribute.
-func TestDefaultOodlePrincipalIsValid(t *testing.T) {
-	v := validatorutils.NewRegexValidator(gcpServiceAccountPattern, "service account")
-	assert.True(t, accepts(t, v, clientmodels.DefaultOodlePrincipal))
 }
