@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -135,4 +136,34 @@ func SliceToStringList(
 	}
 
 	return list
+}
+
+// MapToStringMap converts a Go map to a Terraform map of strings. It is the
+// map counterpart of SliceToStringList: an empty map becomes a null map when
+// the prior value was null, so that an unset optional attribute does not start
+// showing a diff against an empty map, while an explicitly configured empty
+// map stays known.
+func MapToStringMap(
+	ctx context.Context,
+	values map[string]string,
+	prior types.Map,
+	diagnosticsOut *diag.Diagnostics,
+) types.Map {
+	if len(values) == 0 {
+		if prior.IsNull() || prior.IsUnknown() {
+			return types.MapNull(types.StringType)
+		}
+
+		// The configuration asked for an explicit empty map; keep it known so
+		// the applied state matches the plan.
+		return types.MapValueMust(types.StringType, map[string]attr.Value{})
+	}
+
+	result, diags := types.MapValueFrom(ctx, types.StringType, values)
+	if diags.HasError() {
+		diagnosticsOut.Append(diags...)
+		return prior
+	}
+
+	return result
 }

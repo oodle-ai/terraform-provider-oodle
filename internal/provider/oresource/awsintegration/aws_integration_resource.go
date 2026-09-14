@@ -33,12 +33,6 @@ var (
 	_ resource.ResourceWithImportState = &awsIntegrationResource{}
 )
 
-// integrationsResourcePath is the URL segment under
-// /v1/api/instance/{instance}/ that the backend uses for integration CRUD.
-// The AWS-specific shape is carried inside the body via the `type` and
-// `typeSpecificData.cloudWatchMetricPullIntegration` fields.
-const integrationsResourcePath = "integrations"
-
 type awsIntegrationResource struct {
 	oresource.BaseResource[*clientmodels.AwsIntegration, *awsIntegrationResourceModel]
 }
@@ -56,7 +50,7 @@ func NewAwsIntegrationResource() resource.Resource {
 			func(oodleHttpClient *oodlehttp.OodleApiClient) *oodlehttp.ModelClient[*clientmodels.AwsIntegration] {
 				return oodlehttp.NewModelClient[*clientmodels.AwsIntegration](
 					oodleHttpClient,
-					integrationsResourcePath,
+					clientmodels.IntegrationsResourcePath,
 					modelCreator,
 				)
 			},
