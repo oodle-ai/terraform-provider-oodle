@@ -26,6 +26,7 @@ import (
 	"terraform-provider-oodle/internal/provider/oresource/genaievaltemplate"
 	"terraform-provider-oodle/internal/provider/oresource/genaievaluator"
 	"terraform-provider-oodle/internal/provider/oresource/genaillmconnection"
+	"terraform-provider-oodle/internal/provider/oresource/genaiwebhook"
 	"terraform-provider-oodle/internal/provider/oresource/genaiprompt"
 	"terraform-provider-oodle/internal/provider/oresource/grafanadashboard"
 	"terraform-provider-oodle/internal/provider/oresource/grafanafolder"
@@ -249,6 +250,7 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		syntheticmonitor.NewSyntheticMonitorResource,
 		awsintegration.NewAwsIntegrationResource,
 		genaillmconnection.NewGenAILLMConnectionResource,
+		genaiwebhook.NewGenAIWebhookResource,
 		genaievaltemplate.NewGenAIEvalTemplateResource,
 		genaievaluator.NewGenAIEvaluatorResource,
 		genaidataset.NewGenAIDatasetResource,

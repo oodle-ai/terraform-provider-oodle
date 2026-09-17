@@ -473,6 +473,78 @@ func (c *GenAILLMConnectionClient) Delete(
 	)
 }
 
+// GenAIWebhookClient manages experiment webhooks. Updates are a PUT
+// that keeps stored headers when the request carries none, and the
+// resource always sends them so the applied state matches the
+// configuration.
+type GenAIWebhookClient struct {
+	*GenAIClient
+}
+
+func NewGenAIWebhookClient(client *OodleApiClient) *GenAIWebhookClient {
+	return &GenAIWebhookClient{GenAIClient: NewGenAIClient(client)}
+}
+
+func (c *GenAIWebhookClient) Create(
+	ctx context.Context,
+	webhook *clientmodels.GenAIWebhook,
+) (*clientmodels.GenAIWebhook, error) {
+	created := &clientmodels.GenAIWebhook{}
+	if err := c.Do(
+		ctx, http.MethodPost, "webhooks", webhook, created,
+	); err != nil {
+		return nil, err
+	}
+
+	return created, nil
+}
+
+func (c *GenAIWebhookClient) Get(
+	ctx context.Context,
+	id string,
+) (*clientmodels.GenAIWebhook, error) {
+	webhook := &clientmodels.GenAIWebhook{}
+	if err := c.Do(
+		ctx,
+		http.MethodGet,
+		"webhooks/"+url.PathEscape(id),
+		nil,
+		webhook,
+	); err != nil {
+		return nil, err
+	}
+
+	return webhook, nil
+}
+
+func (c *GenAIWebhookClient) Update(
+	ctx context.Context,
+	webhook *clientmodels.GenAIWebhook,
+) (*clientmodels.GenAIWebhook, error) {
+	updated := &clientmodels.GenAIWebhook{}
+	if err := c.Do(
+		ctx,
+		http.MethodPut,
+		"webhooks/"+url.PathEscape(webhook.ID),
+		webhook,
+		updated,
+	); err != nil {
+		return nil, err
+	}
+
+	return updated, nil
+}
+
+func (c *GenAIWebhookClient) Delete(ctx context.Context, id string) error {
+	return c.Do(
+		ctx,
+		http.MethodDelete,
+		"webhooks/"+url.PathEscape(id),
+		nil,
+		nil,
+	)
+}
+
 // GenAIPromptClient manages prompts, which are append-only: creating
 // a version and moving a label are the only writes.
 type GenAIPromptClient struct {
