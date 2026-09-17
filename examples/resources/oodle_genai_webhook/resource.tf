@@ -14,8 +14,8 @@ resource "oodle_genai_webhook" "support_agent" {
 
   # The body sent per item. A {{path}} placeholder reads the dataset
   # item ({{input}}, {{input.<field>}}, {{metadata.<field>}}, {{id}})
-  # and is inserted as JSON. Leave it out to send the item's input as
-  # the body.
+  # or the run ({{run.name}}, {{dataset.name}}) and is inserted as
+  # JSON. Leave it out to send the item's input as the body.
   request_template = "{\"query\": {{input.question}}, \"channel\": \"eval\"}"
 
   # Where the output is in the reply. Leave it out to store the whole

@@ -122,8 +122,9 @@ func (r *genaiWebhookResource) Schema(
 				Description: "The JSON body sent per item, with {{path}} " +
 					"placeholders read from the item ({{input}}, " +
 					"{{input.<field>}}, {{metadata.<field>}}, {{id}}) and " +
-					"inserted as JSON. Empty sends the item's input as the " +
-					"body.",
+					"the run ({{run.id}}, {{run.name}}, {{dataset.id}}, " +
+					"{{dataset.name}}), inserted as JSON. Empty sends the " +
+					"item's input as the body.",
 			},
 			"output_path": schema.StringAttribute{
 				Optional: true,
