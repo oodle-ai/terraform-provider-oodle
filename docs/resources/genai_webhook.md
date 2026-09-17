@@ -29,8 +29,8 @@ resource "oodle_genai_webhook" "support_agent" {
 
   # The body sent per item. A {{path}} placeholder reads the dataset
   # item ({{input}}, {{input.<field>}}, {{metadata.<field>}}, {{id}})
-  # and is inserted as JSON. Leave it out to send the item's input as
-  # the body.
+  # or the run ({{run.name}}, {{dataset.name}}) and is inserted as
+  # JSON. Leave it out to send the item's input as the body.
   request_template = "{\"query\": {{input.question}}, \"channel\": \"eval\"}"
 
   # Where the output is in the reply. Leave it out to store the whole
@@ -54,7 +54,7 @@ resource "oodle_genai_webhook" "support_agent" {
 - `description` (String) What the endpoint runs.
 - `headers` (Map of String, Sensitive) Headers sent on every request, on top of Content-Type and traceparent. Put the endpoint's credential here. The API stores them encrypted and returns only their names, so Terraform cannot detect a value changed outside of Terraform.
 - `output_path` (String) Where the output is in the reply, such as 'answer' or 'choices[0].message.content'. Empty stores the whole reply.
-- `request_template` (String) The JSON body sent per item, with {{path}} placeholders read from the item ({{input}}, {{input.<field>}}, {{metadata.<field>}}, {{id}}) and inserted as JSON. Empty sends the item's input as the body.
+- `request_template` (String) The JSON body sent per item, with {{path}} placeholders read from the item ({{input}}, {{input.<field>}}, {{metadata.<field>}}, {{id}}) and the run ({{run.id}}, {{run.name}}, {{dataset.id}}, {{dataset.name}}), inserted as JSON. Empty sends the item's input as the body.
 - `timeout_seconds` (Number) How long one item may take, 1 to 600. Defaults to 60.
 
 ### Read-Only
