@@ -168,6 +168,28 @@ type GenAILLMConnection struct {
 
 func (c *GenAILLMConnection) GetID() string { return c.ID }
 
+// GenAIWebhook is an experiment target the customer hosts. An
+// experiment run against one posts every dataset item to the URL,
+// rendered through RequestTemplate, and reads the output out of the
+// reply at OutputPath. Headers carry the endpoint's credential; the
+// API stores them encrypted and never returns them, so only their
+// names come back (HeaderNames).
+type GenAIWebhook struct {
+	ID              string            `json:"id,omitempty"`
+	Name            string            `json:"name"`
+	Description     string            `json:"description,omitempty"`
+	URL             string            `json:"url"`
+	Headers         map[string]string `json:"headers,omitempty"`
+	HeaderNames     []string          `json:"headerNames,omitempty"`
+	TimeoutSeconds  int               `json:"timeoutSeconds,omitempty"`
+	RequestTemplate string            `json:"requestTemplate"`
+	OutputPath      string            `json:"outputPath"`
+	CreatedAt       string            `json:"createdAt,omitempty"`
+	UpdatedAt       string            `json:"updatedAt,omitempty"`
+}
+
+func (w *GenAIWebhook) GetID() string { return w.ID }
+
 // GenAIPrompt is one version of a named prompt.
 //
 // Prompts are append-only: every create adds a version rather than
