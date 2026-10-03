@@ -2,6 +2,8 @@ package genaievaluator
 
 import (
 	"context"
+	"encoding/json"
+	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,6 +24,8 @@ type genaiEvaluatorResourceModel struct {
 	VariableMapping       resourceutils.JSON `tfsdk:"variable_mapping"`
 	LLMConnectionID       types.String       `tfsdk:"llm_connection_id"`
 	ModelParams           resourceutils.JSON `tfsdk:"model_params"`
+	Params                resourceutils.JSON `tfsdk:"params"`
+	ScoreInputRuleIDs     types.List         `tfsdk:"score_input_rule_ids"`
 	DependsOnRuleIDs      types.List         `tfsdk:"depends_on_rule_ids"`
 	DatasetID             types.String       `tfsdk:"dataset_id"`
 }
@@ -80,6 +84,15 @@ func (m *genaiEvaluatorResourceModel) FromClientModel(
 	m.Filters = resourceutils.RawToJSON(model.Filters)
 	m.VariableMapping = resourceutils.RawToJSON(model.VariableMapping)
 	m.ModelParams = resourceutils.RawToJSON(model.ModelParams)
+	m.Params = resourceutils.RawToJSONKeepingPrior(
+		model.Params, m.Params, sameParamValues,
+	)
+
+	scoreInputs, diags := types.ListValueFrom(
+		ctx, types.StringType, nonNilStrings(model.ScoreInputRuleIDs),
+	)
+	diagnosticsOut.Append(diags...)
+	m.ScoreInputRuleIDs = scoreInputs
 }
 
 func (m *genaiEvaluatorResourceModel) ToClientModel(
@@ -141,7 +154,62 @@ func (m *genaiEvaluatorResourceModel) ToClientModel(
 	}
 	model.ModelParams = modelParams
 
+	params, err := resourceutils.JSONToRaw(m.Params, "params")
+	if err != nil {
+		return err
+	}
+	// The update endpoint keeps the stored values when the request
+	// has none, so an empty object is sent to clear them. The API
+	// accepts an empty object on every template type.
+	if params == nil {
+		params = json.RawMessage("{}")
+	}
+	model.Params = params
+
 	return nil
+}
+
+// sameParamValues reports whether two params objects hold the same
+// values. The API stores no params for an empty object, and a setting
+// set to null means "not set", so both read as absent.
+func sameParamValues(a, b []byte) bool {
+	canonical := func(raw []byte) (map[string]any, bool) {
+		out := map[string]any{}
+		if len(raw) == 0 || string(raw) == "null" {
+			return out, true
+		}
+
+		var values map[string]any
+		if json.Unmarshal(raw, &values) != nil {
+			return nil, false
+		}
+		for name, value := range values {
+			if value != nil {
+				out[name] = value
+			}
+		}
+
+		return out, true
+	}
+
+	left, ok := canonical(a)
+	if !ok {
+		return false
+	}
+	right, ok := canonical(b)
+	if !ok {
+		return false
+	}
+
+	return reflect.DeepEqual(left, right)
+}
+
+func nonNilStrings(values []string) []string {
+	if values == nil {
+		return []string{}
+	}
+
+	return values
 }
 
 func derefString(value *string) string {

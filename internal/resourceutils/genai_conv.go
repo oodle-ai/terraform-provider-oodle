@@ -167,3 +167,26 @@ func MapToStringMap(
 
 	return result
 }
+
+// RawToJSONKeepingPrior converts JSON from the API into a JSON attribute, and
+// keeps the prior value when same reports that the two documents mean the
+// same thing.
+//
+// It serves an attribute that the API rewrites in a way that the JSON type
+// alone cannot see through: it drops a field set to its zero value, or it
+// gives back nothing for an empty object. Without the prior value, the apply
+// would fail with an inconsistent result, and each later plan would show a
+// diff.
+func RawToJSONKeepingPrior(
+	raw json.RawMessage,
+	prior JSON,
+	same func(prior, raw []byte) bool,
+) JSON {
+	if !prior.IsNull() && !prior.IsUnknown() && prior.ValueString() != "" {
+		if same([]byte(prior.ValueString()), raw) {
+			return prior
+		}
+	}
+
+	return RawToJSON(raw)
+}

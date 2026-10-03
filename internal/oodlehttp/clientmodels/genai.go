@@ -115,8 +115,14 @@ type GenAIEvalTemplate struct {
 	ModelParams        json.RawMessage `json:"modelParams,omitempty"`
 	SourceCode         string          `json:"sourceCode,omitempty"`
 	SourceCodeLanguage string          `json:"sourceCodeLanguage,omitempty"`
-	Version            int64           `json:"version,omitempty"`
-	CreatedAt          string          `json:"createdAt,omitempty"`
+	// Params declares the settings of a code template: a JSON array
+	// of setting specs. LibraryPins maps a shared code library name
+	// to the version the template runs. Both apply to code templates
+	// only; the API refuses them on any other type.
+	Params      json.RawMessage   `json:"params,omitempty"`
+	LibraryPins *map[string]int64 `json:"libraryPins,omitempty"`
+	Version     int64             `json:"version,omitempty"`
+	CreatedAt   string            `json:"createdAt,omitempty"`
 }
 
 func (e *GenAIEvalTemplate) GetID() string { return e.ID }
@@ -138,12 +144,49 @@ type GenAIEvaluationRule struct {
 	ModelParams           json.RawMessage `json:"modelParams,omitempty"`
 	Enabled               *bool           `json:"enabled,omitempty"`
 	DependsOnRuleIDs      *[]string       `json:"dependsOnRuleIds,omitempty"`
-	DatasetID             string          `json:"datasetId,omitempty"`
-	CreatedAt             string          `json:"createdAt,omitempty"`
-	UpdatedAt             string          `json:"updatedAt,omitempty"`
+	// Params are the values for the settings of a code template, by
+	// setting name.
+	Params json.RawMessage `json:"params,omitempty"`
+	// ScoreInputRuleIDs are the evaluators whose scores this one
+	// reads. The API derives them on each write; they are never sent.
+	ScoreInputRuleIDs []string `json:"scoreInputRuleIds,omitempty"`
+	DatasetID         string   `json:"datasetId,omitempty"`
+	CreatedAt         string   `json:"createdAt,omitempty"`
+	UpdatedAt         string   `json:"updatedAt,omitempty"`
 }
 
 func (e *GenAIEvaluationRule) GetID() string { return e.ID }
+
+// GenAICodeLibrary is a Python module that code templates import as
+// `shared.<name>`. Each change of the source adds a version, and a
+// template can pin the version it runs.
+type GenAICodeLibrary struct {
+	ID string `json:"id,omitempty"`
+	// Name is the module name. The API does not accept a change of
+	// it, because the code that imports the library names it.
+	Name string `json:"name,omitempty"`
+	// Description and SourceCode are pointers because the update
+	// endpoint leaves an omitted field alone: an empty description
+	// must be sent to clear one.
+	Description *string `json:"description,omitempty"`
+	SourceCode  *string `json:"sourceCode,omitempty"`
+	Version     int64   `json:"version,omitempty"`
+	// UsedBy lists the templates and libraries that import this one.
+	// Only a read of one library carries it.
+	UsedBy    []GenAINamedRef `json:"usedBy,omitempty"`
+	CreatedAt string          `json:"createdAt,omitempty"`
+	UpdatedAt string          `json:"updatedAt,omitempty"`
+}
+
+func (l *GenAICodeLibrary) GetID() string { return l.ID }
+
+// GenAINamedRef names an object that depends on another one.
+type GenAINamedRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// Kind is "template" or "library" in a library's used-by list.
+	Kind string `json:"kind,omitempty"`
+}
 
 // GenAILLMConnection is a provider credential the evaluators and
 // experiments authenticate with.

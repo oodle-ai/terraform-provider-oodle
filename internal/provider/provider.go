@@ -21,6 +21,7 @@ import (
 	dsNotifiers "terraform-provider-oodle/internal/provider/odatasource/notifiers"
 	"terraform-provider-oodle/internal/provider/oresource/awsintegration"
 	"terraform-provider-oodle/internal/provider/oresource/azureintegration"
+	"terraform-provider-oodle/internal/provider/oresource/genaicodelibrary"
 	"terraform-provider-oodle/internal/provider/oresource/genaidataset"
 	"terraform-provider-oodle/internal/provider/oresource/genaidatasetitem"
 	"terraform-provider-oodle/internal/provider/oresource/genaidatasetschedule"
@@ -253,6 +254,7 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		azureintegration.NewAzureIntegrationResource,
 		genaillmconnection.NewGenAILLMConnectionResource,
 		genaiwebhook.NewGenAIWebhookResource,
+		genaicodelibrary.NewGenAICodeLibraryResource,
 		genaievaltemplate.NewGenAIEvalTemplateResource,
 		genaievaluator.NewGenAIEvaluatorResource,
 		genaidataset.NewGenAIDatasetResource,

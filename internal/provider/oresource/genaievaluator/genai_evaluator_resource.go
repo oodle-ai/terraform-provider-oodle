@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"terraform-provider-oodle/internal/resourceutils"
@@ -14,6 +15,7 @@ import (
 	"terraform-provider-oodle/internal/oodlehttp"
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 	"terraform-provider-oodle/internal/provider/oresource"
+	"terraform-provider-oodle/internal/validatorutils"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -122,13 +124,50 @@ func (r *genaiEvaluatorResource) Schema(
 				Optional:   true,
 				Description: "JSON array of filters selecting which spans " +
 					"are scored. An empty or unset value scores everything " +
-					"that matches target_type.",
+					"that matches target_type.\n\n" +
+					"Each filter is an object with `name`, `type` and " +
+					"`value`. `name` is `span::<attribute>` for a span " +
+					"attribute, `resource::<attribute>` for a resource " +
+					"attribute, or a plain column name such as " +
+					"`service_name`. A dotted name without one of the two " +
+					"prefixes is refused, because it does not say which " +
+					"kind of attribute it is. `type` is the matcher in " +
+					"the form the API stores: `0` (equals), `1` (not " +
+					"equals), `2` (regex match), `3` (regex does not " +
+					"match), or `\"GT\"`, `\"GTE\"`, `\"LT\"`, `\"LTE\"` " +
+					"for numeric comparisons. Operator words such as " +
+					"`\"eq\"` are refused at plan time, because the API " +
+					"rewrites them and the stored value would never " +
+					"match the configuration.\n\n" +
+					"An evaluator that reads the scores of another one " +
+					"must have the same filters as it; the API refuses " +
+					"the pair otherwise.",
+				Validators: []validator.String{
+					validatorutils.NewGenAIFiltersValidator(),
+				},
 			},
 			"variable_mapping": schema.StringAttribute{
 				CustomType: resourceutils.JSONType{},
 				Optional:   true,
 				Description: "JSON describing how span fields populate the " +
 					"eval template's vars.",
+			},
+			"params": schema.StringAttribute{
+				CustomType: resourceutils.JSONType{},
+				Optional:   true,
+				Description: "JSON object of values for the settings " +
+					"that a 'code' template declares in its params, by " +
+					"setting name, for example " +
+					"{\"threshold\": 0.8}. A setting left out runs with " +
+					"the template's default. Only for evaluators on " +
+					"'code' templates.",
+			},
+			"score_input_rule_ids": schema.ListAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "IDs of the evaluators whose scores this " +
+					"one reads. The API derives them from the template " +
+					"on each write.",
 			},
 			"llm_connection_id": schema.StringAttribute{
 				Optional: true,
