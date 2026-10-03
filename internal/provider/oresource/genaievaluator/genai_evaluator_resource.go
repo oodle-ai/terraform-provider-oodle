@@ -126,7 +126,8 @@ func (r *genaiEvaluatorResource) Schema(
 					"are scored. An empty or unset value scores everything " +
 					"that matches target_type.\n\n" +
 					"Each filter is an object with `name`, `type` and " +
-					"`value`. `name` is `span::<attribute>` for a span " +
+					"`value`, or `multi_value` for types 4 and 5. " +
+					"`name` is `span::<attribute>` for a span " +
 					"attribute, `resource::<attribute>` for a resource " +
 					"attribute, or a plain column name such as " +
 					"`service_name`. A dotted name without one of the two " +
@@ -134,8 +135,11 @@ func (r *genaiEvaluatorResource) Schema(
 					"kind of attribute it is. `type` is the matcher in " +
 					"the form the API stores: `0` (equals), `1` (not " +
 					"equals), `2` (regex match), `3` (regex does not " +
-					"match), or `\"GT\"`, `\"GTE\"`, `\"LT\"`, `\"LTE\"` " +
-					"for numeric comparisons. Operator words such as " +
+					"match), `4` (one of), `5` (not one of), or " +
+					"`\"GT\"`, `\"GTE\"`, `\"LT\"`, `\"LTE\"` for numeric " +
+					"comparisons. Types 4 and 5 take their " +
+					"values in a `multi_value` list instead of `value`. " +
+					"Operator words such as " +
 					"`\"eq\"` are refused at plan time, because the API " +
 					"rewrites them and the stored value would never " +
 					"match the configuration.\n\n" +

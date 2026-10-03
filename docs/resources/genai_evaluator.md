@@ -50,7 +50,8 @@ resource "oodle_genai_evaluator" "hallucination" {
 # An evaluator on a code template. params sets values for the
 # template's settings. filters are written in the form the API stores:
 # a span:: or resource:: prefix on attribute names, and type 0 (eq),
-# 1 (neq), 2 (re), 3 (nre), or "GT", "GTE", "LT", "LTE".
+# 1 (neq), 2 (re), 3 (nre), 4 (one of), 5 (not one of), or "GT", "GTE",
+# "LT", "LTE". Types 4 and 5 take a multi_value list instead of value.
 resource "oodle_genai_evaluator" "house_style" {
   name             = "house-style"
   eval_template_id = oodle_genai_eval_template.house_style_ok.id
@@ -72,6 +73,11 @@ resource "oodle_genai_evaluator" "house_style" {
       type  = 2
       value = "support-.*"
     },
+    {
+      name        = "span::gen_ai.request.model"
+      type        = 4
+      multi_value = ["gpt-4o", "gpt-4.1"]
+    },
   ])
 }
 ```
@@ -91,7 +97,7 @@ resource "oodle_genai_evaluator" "house_style" {
 - `enabled` (Boolean) Whether the evaluator scores new traffic.
 - `filters` (String) JSON array of filters selecting which spans are scored. An empty or unset value scores everything that matches target_type.
 
-Each filter is an object with `name`, `type` and `value`. `name` is `span::<attribute>` for a span attribute, `resource::<attribute>` for a resource attribute, or a plain column name such as `service_name`. A dotted name without one of the two prefixes is refused, because it does not say which kind of attribute it is. `type` is the matcher in the form the API stores: `0` (equals), `1` (not equals), `2` (regex match), `3` (regex does not match), or `"GT"`, `"GTE"`, `"LT"`, `"LTE"` for numeric comparisons. Operator words such as `"eq"` are refused at plan time, because the API rewrites them and the stored value would never match the configuration.
+Each filter is an object with `name`, `type` and `value`, or `multi_value` for types 4 and 5. `name` is `span::<attribute>` for a span attribute, `resource::<attribute>` for a resource attribute, or a plain column name such as `service_name`. A dotted name without one of the two prefixes is refused, because it does not say which kind of attribute it is. `type` is the matcher in the form the API stores: `0` (equals), `1` (not equals), `2` (regex match), `3` (regex does not match), `4` (one of), `5` (not one of), or `"GT"`, `"GTE"`, `"LT"`, `"LTE"` for numeric comparisons. Types 4 and 5 take their values in a `multi_value` list instead of `value`. Operator words such as `"eq"` are refused at plan time, because the API rewrites them and the stored value would never match the configuration.
 
 An evaluator that reads the scores of another one must have the same filters as it; the API refuses the pair otherwise.
 - `llm_connection_id` (String) ID of the oodle_genai_llm_connection the judge calls. Required for 'llm' templates.

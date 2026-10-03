@@ -16,7 +16,17 @@ var genaiFilterNumericTypes = map[string]int{
 	"neq": 1, "!=": 1,
 	"re": 2, "=~": 2,
 	"nre": 3, "!~": 3,
+	"oneof": 4, "not_oneof": 5,
 }
+
+// genaiFilterTypesText lists the stored matcher types, for messages.
+const genaiFilterTypesText = "0 (eq), 1 (neq), 2 (re), 3 (nre), " +
+	"4 (oneof), 5 (not_oneof), \"GT\", \"GTE\", \"LT\", \"LTE\""
+
+// genaiFilterMaxNumericType is the highest numbered matcher type.
+// Types 4 and 5 match one of a list of values, read from the
+// "multi_value" field rather than from "value".
+const genaiFilterMaxNumericType = 5
 
 // genaiFilterStringTypes are the matcher types the API stores as
 // strings.
@@ -44,8 +54,8 @@ func NewGenAIFiltersValidator() validator.String {
 
 func (v genaiFiltersValidator) Description(_ context.Context) string {
 	return "Each filter names a span::/resource:: attribute or a plain " +
-		"column, and has a type of 0 (eq), 1 (neq), 2 (re), 3 (nre), " +
-		"\"GT\", \"GTE\", \"LT\" or \"LTE\"."
+		"column, and has a type of " + genaiFilterTypesText + ". Types 4 " +
+		"and 5 take their values in a multi_value list."
 }
 
 func (v genaiFiltersValidator) MarkdownDescription(ctx context.Context) string {
@@ -107,11 +117,27 @@ func genaiFilterError(entry map[string]json.RawMessage) string {
 
 	var number float64
 	if json.Unmarshal(rawType, &number) == nil {
-		if number != float64(int(number)) || number < 0 || number > 3 {
+		if number != float64(int(number)) || number < 0 ||
+			number > genaiFilterMaxNumericType {
 			return fmt.Sprintf(
-				"filter %q: type %s is not one of 0 (eq), 1 (neq), "+
-					"2 (re), 3 (nre)", name, string(rawType),
+				"filter %q: type %s is not one of %s",
+				name, string(rawType), genaiFilterTypesText,
 			)
+		}
+
+		// A one-of matcher reads its values from multi_value only. Without
+		// the list, the filter matches nothing.
+		if number >= 4 {
+			var values []any
+			if json.Unmarshal(entry["multi_value"], &values) != nil ||
+				values == nil {
+				return fmt.Sprintf(
+					"filter %q: type %s needs its values as a "+
+						"multi_value list, for example "+
+						"\"multi_value\": [\"a\", \"b\"]",
+					name, string(rawType),
+				)
+			}
 		}
 
 		return ""
@@ -142,7 +168,7 @@ func genaiFilterError(entry map[string]json.RawMessage) string {
 	}
 
 	return fmt.Sprintf(
-		"filter %q: type %q is not one of 0 (eq), 1 (neq), 2 (re), "+
-			"3 (nre), \"GT\", \"GTE\", \"LT\", \"LTE\"", name, word,
+		"filter %q: type %q is not one of %s",
+		name, word, genaiFilterTypesText,
 	)
 }
