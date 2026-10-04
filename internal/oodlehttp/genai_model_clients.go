@@ -2,10 +2,13 @@ package oodlehttp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 )
@@ -316,6 +319,117 @@ func (c *GenAIEvalTemplateClient) Delete(ctx context.Context, id string) error {
 		"eval-templates/"+url.PathEscape(id),
 		nil,
 		nil,
+	)
+}
+
+// GenAICodeLibraryClient manages shared code libraries. Updates are
+// a PATCH that leaves omitted fields alone, and a change of the
+// source adds a version.
+type GenAICodeLibraryClient struct {
+	*GenAIClient
+}
+
+func NewGenAICodeLibraryClient(
+	client *OodleApiClient,
+) *GenAICodeLibraryClient {
+	return &GenAICodeLibraryClient{GenAIClient: NewGenAIClient(client)}
+}
+
+func codeLibraryPath(id string) string {
+	return "code-libraries/" + url.PathEscape(id)
+}
+
+func (c *GenAICodeLibraryClient) Create(
+	ctx context.Context,
+	library *clientmodels.GenAICodeLibrary,
+) (*clientmodels.GenAICodeLibrary, error) {
+	created := &clientmodels.GenAICodeLibrary{}
+	if err := c.Do(
+		ctx, http.MethodPost, "code-libraries", library, created,
+	); err != nil {
+		return nil, err
+	}
+
+	return created, nil
+}
+
+// Get reads a library, with the templates and libraries that import
+// it.
+func (c *GenAICodeLibraryClient) Get(
+	ctx context.Context,
+	id string,
+) (*clientmodels.GenAICodeLibrary, error) {
+	library := &clientmodels.GenAICodeLibrary{}
+	if err := c.Do(
+		ctx, http.MethodGet, codeLibraryPath(id), nil, library,
+	); err != nil {
+		return nil, err
+	}
+
+	return library, nil
+}
+
+// Update sends the description and the source. The name is not sent:
+// the API does not accept a change of it.
+func (c *GenAICodeLibraryClient) Update(
+	ctx context.Context,
+	library *clientmodels.GenAICodeLibrary,
+) (*clientmodels.GenAICodeLibrary, error) {
+	body := &clientmodels.GenAICodeLibrary{
+		Description: library.Description,
+		SourceCode:  library.SourceCode,
+	}
+	updated := &clientmodels.GenAICodeLibrary{}
+	if err := c.Do(
+		ctx, http.MethodPatch, codeLibraryPath(library.ID), body, updated,
+	); err != nil {
+		return nil, err
+	}
+
+	return updated, nil
+}
+
+// Delete removes a library. The API refuses with 409 while a template
+// or another library imports it; the error then names the importers,
+// because the raw body does not tell the user what to change.
+func (c *GenAICodeLibraryClient) Delete(ctx context.Context, id string) error {
+	err := c.Do(ctx, http.MethodDelete, codeLibraryPath(id), nil, nil)
+
+	var statusErr *GenAIStatusError
+	if !errors.As(err, &statusErr) ||
+		statusErr.StatusCode != http.StatusConflict {
+		return err
+	}
+
+	return codeLibraryInUseError(statusErr.Body, err)
+}
+
+// codeLibraryInUseError turns the 409 body of a library delete into
+// an error that names each importer. A body it cannot read gives the
+// original error back.
+func codeLibraryInUseError(body []byte, original error) error {
+	var answer struct {
+		UsedBy []clientmodels.GenAINamedRef `json:"usedBy"`
+	}
+	if json.Unmarshal(body, &answer) != nil || len(answer.UsedBy) == 0 {
+		return original
+	}
+
+	importers := make([]string, 0, len(answer.UsedBy))
+	for _, ref := range answer.UsedBy {
+		kind := ref.Kind
+		if kind == "" {
+			kind = "object"
+		}
+		importers = append(
+			importers, fmt.Sprintf("%s %q (id %s)", kind, ref.Name, ref.ID),
+		)
+	}
+
+	return fmt.Errorf(
+		"the code library is still imported by %s; remove the import "+
+			"or the library pin from each of them first",
+		strings.Join(importers, ", "),
 	)
 }
 

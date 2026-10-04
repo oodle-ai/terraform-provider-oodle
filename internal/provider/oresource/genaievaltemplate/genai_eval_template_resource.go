@@ -2,7 +2,10 @@ package genaievaltemplate
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -20,9 +23,10 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &genaiEvalTemplateResource{}
-	_ resource.ResourceWithConfigure   = &genaiEvalTemplateResource{}
-	_ resource.ResourceWithImportState = &genaiEvalTemplateResource{}
+	_ resource.Resource                   = &genaiEvalTemplateResource{}
+	_ resource.ResourceWithConfigure      = &genaiEvalTemplateResource{}
+	_ resource.ResourceWithImportState    = &genaiEvalTemplateResource{}
+	_ resource.ResourceWithValidateConfig = &genaiEvalTemplateResource{}
 )
 
 var validTemplateTypes = map[string]struct{}{
@@ -30,6 +34,10 @@ var validTemplateTypes = map[string]struct{}{
 	"code":            {},
 	"output_comparer": {},
 }
+
+// managedTemplatePrefix starts the id of each Oodle-managed template.
+// The API does not accept a change of a managed template.
+const managedTemplatePrefix = "oodle-managed-"
 
 // genaiEvalTemplateResource is the resource implementation.
 type genaiEvalTemplateResource struct {
@@ -59,6 +67,67 @@ func NewGenAIEvalTemplateResource() resource.Resource {
 				return oodlehttp.NewGenAIEvalTemplateClient(oodleHttpClient)
 			},
 		),
+	}
+}
+
+// ImportState refuses an Oodle-managed template. The API does not accept
+// a change or a delete of one, thus each later apply or destroy would
+// fail. An evaluator uses a managed template by its id instead.
+func (r *genaiEvalTemplateResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	if strings.HasPrefix(req.ID, managedTemplatePrefix) {
+		resp.Diagnostics.AddError(
+			"Cannot import an Oodle-managed eval template",
+			fmt.Sprintf(
+				"%q is an Oodle-managed template, which cannot be "+
+					"changed. Set it as the eval_template_id of an "+
+					"oodle_genai_evaluator instead of importing it.",
+				req.ID,
+			),
+		)
+
+		return
+	}
+
+	r.APIBaseResource.ImportState(ctx, req, resp)
+}
+
+// ValidateConfig refuses params and library_pins on a template that is
+// not 'code' at plan time. The API refuses them too, but only when the
+// apply has started.
+func (r *genaiEvalTemplateResource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
+	var config genaiEvalTemplateResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if config.Type.IsNull() || config.Type.IsUnknown() ||
+		config.Type.ValueString() == codeTemplateType {
+		return
+	}
+
+	if !config.Params.IsNull() && config.Params.ValueString() != "" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("params"),
+			"params is only for 'code' templates",
+			"Remove params, or set type to 'code'.",
+		)
+	}
+
+	if !config.LibraryPins.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("library_pins"),
+			"library_pins is only for 'code' templates",
+			"Remove library_pins, or set type to 'code'.",
+		)
 	}
 }
 
@@ -147,6 +216,31 @@ func (r *genaiEvalTemplateResource) Schema(
 			"source_code_language": schema.StringAttribute{
 				Optional:    true,
 				Description: "Language of source_code. Only 'python' today.",
+			},
+			"params": schema.StringAttribute{
+				CustomType: resourceutils.JSONType{},
+				Optional:   true,
+				Description: "JSON array of the settings a 'code' " +
+					"template declares. Each evaluator on the template " +
+					"sets its own values for them in its params, and " +
+					"the code reads them from ctx.params. Each setting " +
+					"is an object with `name` (a lower-case Python " +
+					"identifier), `type` (one of string, text, number, " +
+					"integer, boolean, string_list, enum, json), and " +
+					"optionally `label`, " +
+					"`description`, `default`, `required` and, for an " +
+					"enum, `options`. Only for 'code' templates.",
+			},
+			"library_pins": schema.MapAttribute{
+				Optional:    true,
+				ElementType: types.Int64Type,
+				Description: "Map of shared code library name to the " +
+					"version of it this template runs, for example " +
+					"{ text_utils = 2 }. A library that is not pinned " +
+					"runs at its latest version. Use the name and " +
+					"version attributes of an oodle_genai_code_library " +
+					"so that Terraform creates the library first. " +
+					"Only for 'code' templates.",
 			},
 			"version": schema.Int64Attribute{
 				Computed:    true,

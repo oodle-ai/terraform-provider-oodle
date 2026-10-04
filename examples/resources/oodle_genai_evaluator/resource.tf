@@ -31,3 +31,37 @@ resource "oodle_genai_evaluator" "hallucination" {
   llm_connection_id = oodle_genai_llm_connection.openai.id
   sampling_rate     = 0.05
 }
+
+# An evaluator on a code template. params sets values for the
+# template's settings. filters are written in the form the API stores:
+# a span:: or resource:: prefix on attribute names, and type 0 (eq),
+# 1 (neq), 2 (re), 3 (nre), 4 (one of), 5 (not one of), or "GT", "GTE",
+# "LT", "LTE". Types 4 and 5 take a multi_value list instead of value.
+resource "oodle_genai_evaluator" "house_style" {
+  name             = "house-style"
+  eval_template_id = oodle_genai_eval_template.house_style_ok.id
+  enabled          = true
+  sampling_rate    = 1
+
+  params = jsonencode({
+    phrases = ["per my last message", "as previously stated"]
+  })
+
+  filters = jsonencode([
+    {
+      name  = "span::gen_ai.operation.name"
+      type  = 0
+      value = "chat"
+    },
+    {
+      name  = "resource::service.name"
+      type  = 2
+      value = "support-.*"
+    },
+    {
+      name        = "span::gen_ai.request.model"
+      type        = 4
+      multi_value = ["gpt-4o", "gpt-4.1"]
+    },
+  ])
+}

@@ -82,13 +82,13 @@ func (c *GenAIClient) Do(
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf(
-			"%s %s failed: %v, body: %v",
-			method,
-			subPath,
-			resp.Status,
-			string(bodyBytes),
-		)
+		return &GenAIStatusError{
+			Method:     method,
+			SubPath:    subPath,
+			Status:     resp.Status,
+			StatusCode: resp.StatusCode,
+			Body:       bodyBytes,
+		}
 	}
 
 	if out == nil {
@@ -96,6 +96,28 @@ func (c *GenAIClient) Do(
 	}
 
 	return jsoniter.Unmarshal(bodyBytes, out)
+}
+
+// GenAIStatusError is a response with a status other than 2xx or 404.
+// It keeps the status code and the body, so that a caller can turn an
+// answer it expects, such as a 409 that lists what blocks a delete,
+// into a message that tells the user what to do.
+type GenAIStatusError struct {
+	Method     string
+	SubPath    string
+	Status     string
+	StatusCode int
+	Body       []byte
+}
+
+func (e *GenAIStatusError) Error() string {
+	return fmt.Sprintf(
+		"%s %s failed: %v, body: %v",
+		e.Method,
+		e.SubPath,
+		e.Status,
+		string(e.Body),
+	)
 }
 
 // genaiListEnvelope is the shape every GenAI list endpoint returns.

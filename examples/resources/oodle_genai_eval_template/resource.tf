@@ -63,3 +63,39 @@ resource "oodle_genai_eval_template" "matches_expected_answer" {
     reasoning = "one sentence explaining the score"
   })
 }
+
+# A code scorer with settings that imports a shared library. Each
+# evaluator on it sets its own values for the settings in params, and
+# library_pins fixes the library version it runs. Referencing the
+# library's attributes makes Terraform create the library first and
+# delete it last.
+resource "oodle_genai_eval_template" "house_style_ok" {
+  name                 = "house-style-ok"
+  type                 = "code"
+  source_code_language = "python"
+
+  source_code = <<-EOT
+    from oodle_eval.v1 import text
+    from shared.house_style import banned_phrases_found
+
+    def evaluate(ctx):
+        found = banned_phrases_found(text.reply(ctx), ctx.params["phrases"])
+        return EvaluationResult(scores=[
+            Score(name="house_style_ok", value=not found, data_type="BOOLEAN"),
+        ])
+  EOT
+
+  params = jsonencode([
+    {
+      name        = "phrases"
+      type        = "string_list"
+      label       = "Banned phrases"
+      description = "Phrases the reply must not use."
+      default     = ["per my last message"]
+    },
+  ])
+
+  library_pins = {
+    (oodle_genai_code_library.house_style.name) = oodle_genai_code_library.house_style.version
+  }
+}
