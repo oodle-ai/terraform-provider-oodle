@@ -69,7 +69,7 @@ resource "oodle_genai_prompt" "support_reply_chat" {
 - `commit_message` (String) Message describing this version's change.
 - `config` (String) JSON object of model configuration stored alongside the prompt.
 - `labels` (List of String) Labels pointing at this version, for example ["production"]. A label moves off whichever version held it. The server-managed "latest" label is not accepted here.
-- `tags` (List of String) Tags applied to the prompt.
+- `tags` (List of String) Tags applied to the prompt. Tags belong to the prompt rather than to one version: publishing a version adds its tags to every version of the same name. A version may therefore hold more tags than its configuration, in any order, and that is not reported as a change; a configured tag that is missing is.
 - `type` (String) 'text' for a single prompt string, or 'chat' for a list of chat messages. Defaults to 'text' and must match the other versions of the same name, so changing it forces replacement.
 
 ### Read-Only

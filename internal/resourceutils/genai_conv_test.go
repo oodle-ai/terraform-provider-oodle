@@ -148,3 +148,115 @@ func TestSliceToStringListEmptyStaysNull(t *testing.T) {
 		t.Errorf("got %v, want a null list", got)
 	}
 }
+
+func stringList(t *testing.T, values ...string) types.List {
+	t.Helper()
+	list, diags := types.ListValueFrom(context.Background(), types.StringType, values)
+	if diags.HasError() {
+		t.Fatalf("list: %v", diags)
+	}
+	return list
+}
+
+func listValues(t *testing.T, list types.List) []string {
+	t.Helper()
+	values, err := StringListToSlice(context.Background(), list)
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	return values
+}
+
+// The server's order is not a change. Taken as it comes, every plan
+// would show the list moving and apply it again.
+func TestUnorderedSliceToStringListKeepsPriorOrder(t *testing.T) {
+	var diags diag.Diagnostics
+	prior := stringList(t, "shopassist", "demo")
+
+	got := UnorderedSliceToStringList(
+		context.Background(), []string{"demo", "shopassist"}, prior, &diags,
+	)
+
+	if diags.HasError() {
+		t.Fatalf("diags: %v", diags)
+	}
+	if !got.Equal(prior) {
+		t.Fatalf("got %v, want the prior order %v", got, prior)
+	}
+}
+
+func TestUnorderedSliceToStringListTakesARealChange(t *testing.T) {
+	var diags diag.Diagnostics
+	prior := stringList(t, "a", "b")
+
+	for _, server := range [][]string{
+		{"a", "c"},
+		{"a"},
+		{"a", "b", "b"},
+	} {
+		got := UnorderedSliceToStringList(
+			context.Background(), server, prior, &diags,
+		)
+		values := listValues(t, got)
+		if len(values) != len(server) {
+			t.Fatalf("server %v: got %v", server, values)
+		}
+		for i := range server {
+			if values[i] != server[i] {
+				t.Fatalf("server %v: got %v", server, values)
+			}
+		}
+	}
+}
+
+func TestUnorderedSliceToStringListNullPrior(t *testing.T) {
+	var diags diag.Diagnostics
+
+	got := UnorderedSliceToStringList(
+		context.Background(), nil, types.ListNull(types.StringType), &diags,
+	)
+	if !got.IsNull() {
+		t.Fatalf("an unset list with no values must stay null, got %v", got)
+	}
+
+	got = UnorderedSliceToStringList(
+		context.Background(), []string{"x"}, types.ListNull(types.StringType), &diags,
+	)
+	if values := listValues(t, got); len(values) != 1 || values[0] != "x" {
+		t.Fatalf("got %v", values)
+	}
+}
+
+func TestSameStrings(t *testing.T) {
+	tests := []struct {
+		a, b []string
+		want bool
+	}{
+		{[]string{"a", "b"}, []string{"b", "a"}, true},
+		{nil, []string{}, true},
+		{[]string{"a"}, []string{"b"}, false},
+		{[]string{"a", "a"}, []string{"a", "b"}, false},
+		{[]string{"a", "b"}, []string{"a"}, false},
+	}
+	for _, tt := range tests {
+		if got := SameStrings(tt.a, tt.b); got != tt.want {
+			t.Errorf("SameStrings(%v, %v) = %v, want %v", tt.a, tt.b, got, tt.want)
+		}
+	}
+}
+
+func TestSameStringLists(t *testing.T) {
+	ctx := context.Background()
+	if !SameStringLists(ctx, stringList(t, "x", "y"), stringList(t, "y", "x")) {
+		t.Error("reordered lists must be the same")
+	}
+	if SameStringLists(ctx, stringList(t, "x"), stringList(t, "y")) {
+		t.Error("different lists must differ")
+	}
+	if !SameStringLists(ctx, types.ListNull(types.StringType), stringList(t)) {
+		t.Error("null and empty both hold no strings")
+	}
+	if SameStringLists(ctx, types.ListUnknown(types.StringType), stringList(t)) {
+		t.Error("an unknown list is not known to be empty")
+	}
+}

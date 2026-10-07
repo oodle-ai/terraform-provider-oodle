@@ -40,12 +40,12 @@ func (m *genaiPromptResourceModel) FromClientModel(
 	m.Prompt = rawToPrompt(model.Prompt, promptType, m.Prompt)
 	m.Config = resourceutils.RawToJSON(model.Config)
 
-	m.Labels = resourceutils.SliceToStringList(
+	// The server returns labels in its own order, which means
+	// nothing.
+	m.Labels = resourceutils.UnorderedSliceToStringList(
 		ctx, withoutLatestLabel(model.Labels), m.Labels, diagnosticsOut,
 	)
-	m.Tags = resourceutils.SliceToStringList(
-		ctx, model.Tags, m.Tags, diagnosticsOut,
-	)
+	m.Tags = tagsFromServer(ctx, model.Tags, m.Tags, diagnosticsOut)
 
 	if model.CommitMessage == "" {
 		m.CommitMessage = types.StringNull()
@@ -94,6 +94,47 @@ func (m *genaiPromptResourceModel) ToClientModel(
 	return nil
 }
 
+// tagsFromServer reads a version's tags back without reporting what
+// the server did on its own as drift.
+//
+// Tags belong to the prompt, not to one version: publishing a
+// version adds its tags to every older version of the same name, in
+// no particular order. So the version this resource manages comes
+// back holding the tags of the versions after it, sorted however the
+// database returned them. Read as a change, that made the next apply
+// publish another version, and that one changed the tags of the
+// others again. The configured tags still have to be there; one
+// that is missing is real drift and is reported.
+func tagsFromServer(
+	ctx context.Context,
+	server []string,
+	prior types.List,
+	diagnosticsOut *diag.Diagnostics,
+) types.List {
+	if !prior.IsNull() && !prior.IsUnknown() {
+		configured, err := resourceutils.StringListToSlice(ctx, prior)
+		if err == nil && containsAll(server, configured) {
+			return prior
+		}
+	}
+
+	return resourceutils.SliceToStringList(ctx, server, prior, diagnosticsOut)
+}
+
+func containsAll(have, want []string) bool {
+	set := make(map[string]struct{}, len(have))
+	for _, v := range have {
+		set[v] = struct{}{}
+	}
+	for _, v := range want {
+		if _, ok := set[v]; !ok {
+			return false
+		}
+	}
+
+	return true
+}
+
 // withoutLatestLabel drops the server-managed "latest" label.
 //
 // The API attaches it to whichever version was published most
@@ -116,13 +157,17 @@ func withoutLatestLabel(labels []string) []string {
 // prompt version, ignoring labels. Labels move between existing
 // versions; everything else here is what a version is made of, so a
 // change to any of it has to be published as a new version.
+//
+// Tags are compared as a set: reordering them in the configuration
+// is not new content, and must not publish a version.
 func (m *genaiPromptResourceModel) sameContentAs(
+	ctx context.Context,
 	other *genaiPromptResourceModel,
 ) bool {
 	return m.Name.Equal(other.Name) &&
 		m.Type.Equal(other.Type) &&
 		m.Prompt.Equal(other.Prompt) &&
 		m.Config.Equal(other.Config) &&
-		m.Tags.Equal(other.Tags) &&
+		resourceutils.SameStringLists(ctx, m.Tags, other.Tags) &&
 		m.CommitMessage.Equal(other.CommitMessage)
 }

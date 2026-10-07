@@ -27,6 +27,7 @@ var (
 	_ resource.Resource                = &genaiPromptResource{}
 	_ resource.ResourceWithConfigure   = &genaiPromptResource{}
 	_ resource.ResourceWithImportState = &genaiPromptResource{}
+	_ resource.ResourceWithModifyPlan  = &genaiPromptResource{}
 )
 
 const (
@@ -134,6 +135,12 @@ func (r *genaiPromptResource) Schema(
 					validatorutils.NewChoiceValidator(validPromptTypes),
 				},
 				PlanModifiers: []planmodifier.String{
+					// Unset in the configuration, the type is
+					// computed, and a computed value plans as
+					// unknown on every update. RequiresReplace
+					// reads unknown as a change, so moving a label
+					// deleted the version and published a new one.
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -155,7 +162,13 @@ func (r *genaiPromptResource) Schema(
 			"tags": schema.ListAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
-				Description: "Tags applied to the prompt.",
+				Description: "Tags applied to the prompt. Tags belong to the " +
+					"prompt rather than to one version: publishing a " +
+					"version adds its tags to every version of the same " +
+					"name. A version may therefore hold more tags than " +
+					"its configuration, in any order, and that is not " +
+					"reported as a change; a configured tag that is " +
+					"missing is.",
 			},
 			"config": schema.StringAttribute{
 				CustomType: resourceutils.JSONType{},
@@ -173,6 +186,37 @@ func (r *genaiPromptResource) Schema(
 			},
 		},
 	}
+}
+
+// ModifyPlan keeps the version and its id in the plan when the
+// change is to labels alone.
+//
+// Both are computed, so by default any update plans them as unknown,
+// and a plan that only moves a label reads as if it publishes a new
+// version. Update moves labels without publishing (sameContentAs),
+// so the plan can say what will happen.
+func (r *genaiPromptResource) ModifyPlan(
+	ctx context.Context,
+	req resource.ModifyPlanRequest,
+	resp *resource.ModifyPlanResponse,
+) {
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+
+	var plan, state genaiPromptResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !plan.sameContentAs(ctx, &state) {
+		return
+	}
+
+	plan.ID = state.ID
+	plan.Version = state.Version
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
 }
 
 func (r *genaiPromptResource) Create(
@@ -264,7 +308,7 @@ func (r *genaiPromptResource) Update(
 	// publish a version. Rolling "production" onto an existing
 	// version is the common case and would otherwise leave a trail
 	// of identical versions behind.
-	if plan.sameContentAs(&state) {
+	if plan.sameContentAs(ctx, &state) {
 		labels, err := resourceutils.StringListToSlice(ctx, plan.Labels)
 		if err != nil {
 			resp.Diagnostics.AddError("Invalid labels", err.Error())

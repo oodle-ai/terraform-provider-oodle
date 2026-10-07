@@ -138,6 +138,65 @@ func SliceToStringList(
 	return list
 }
 
+// UnorderedSliceToStringList is SliceToStringList for a list whose
+// order means nothing to the server, such as tags or labels.
+//
+// The server may return such a list in its own order. Taken as it
+// comes, that order differs from the configuration and Terraform
+// plans a change on every run, even though nothing changed. When the
+// prior value holds the same strings, it is kept as it is.
+func UnorderedSliceToStringList(
+	ctx context.Context,
+	values []string,
+	prior types.List,
+	diagnosticsOut *diag.Diagnostics,
+) types.List {
+	if !prior.IsNull() && !prior.IsUnknown() {
+		priorValues, err := StringListToSlice(ctx, prior)
+		if err == nil && SameStrings(priorValues, values) {
+			return prior
+		}
+	}
+
+	return SliceToStringList(ctx, values, prior, diagnosticsOut)
+}
+
+// SameStrings reports whether the two slices hold the same strings,
+// each the same number of times, in any order.
+func SameStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	counts := make(map[string]int, len(a))
+	for _, v := range a {
+		counts[v]++
+	}
+	for _, v := range b {
+		counts[v]--
+		if counts[v] < 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
+// SameStringLists is SameStrings for two Terraform lists. A null or
+// unknown list holds no strings, so it equals an empty list; two
+// lists that cannot be read are equal only when Terraform says so.
+func SameStringLists(ctx context.Context, a, b types.List) bool {
+	av, errA := StringListToSlice(ctx, a)
+	bv, errB := StringListToSlice(ctx, b)
+	if errA != nil || errB != nil {
+		return a.Equal(b)
+	}
+	if a.IsUnknown() != b.IsUnknown() {
+		return false
+	}
+
+	return SameStrings(av, bv)
+}
+
 // MapToStringMap converts a Go map to a Terraform map of strings. It is the
 // map counterpart of SliceToStringList: an empty map becomes a null map when
 // the prior value was null, so that an unset optional attribute does not start
