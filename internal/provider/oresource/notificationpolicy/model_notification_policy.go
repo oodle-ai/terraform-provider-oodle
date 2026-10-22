@@ -23,7 +23,10 @@ type notificationPolicyResourceModel struct {
 }
 
 type notifiersBySeverity struct {
-	Warn     types.List `tfsdk:"warn"`
+	Warn types.List `tfsdk:"warn"`
+	// Warning is the same list as Warn, under the name that
+	// monitor conditions use. The config sets at most one.
+	Warning  types.List `tfsdk:"warning"`
 	Critical types.List `tfsdk:"critical"`
 }
 
@@ -46,10 +49,19 @@ func (n *notificationPolicyResourceModel) FromClientModel(
 		n.Notifiers.Critical = types.ListNull(types.StringType)
 	}
 
+	// The API has one warning list. Write it back under the
+	// name the config used, or every plan shows a change.
+	useWarning := !n.Notifiers.Warning.IsNull() && !n.Notifiers.Warning.IsUnknown()
+	warn := types.ListNull(types.StringType)
 	if len(model.Notifiers.Warn) > 0 {
-		n.Notifiers.Warn = validatorutils.IDsToAttrList(model.Notifiers.Warn, diagnosticsOut)
-	} else {
+		warn = validatorutils.IDsToAttrList(model.Notifiers.Warn, diagnosticsOut)
+	}
+	if useWarning {
+		n.Notifiers.Warning = warn
 		n.Notifiers.Warn = types.ListNull(types.StringType)
+	} else {
+		n.Notifiers.Warn = warn
+		n.Notifiers.Warning = types.ListNull(types.StringType)
 	}
 }
 
@@ -75,9 +87,12 @@ func (n *notificationPolicyResourceModel) ToClientModel(ctx context.Context, mod
 		}
 	}
 
-	warnNotifIDs := n.Notifiers.Warn.Elements()
-	if len(warnNotifIDs) > 0 {
-		model.Notifiers.Warn, err = validatorutils.AttrListToIDs(n.Notifiers.Warn)
+	warn := n.Notifiers.Warn
+	if len(warn.Elements()) == 0 {
+		warn = n.Notifiers.Warning
+	}
+	if len(warn.Elements()) > 0 {
+		model.Notifiers.Warn, err = validatorutils.AttrListToIDs(warn)
 		if err != nil {
 			return err
 		}

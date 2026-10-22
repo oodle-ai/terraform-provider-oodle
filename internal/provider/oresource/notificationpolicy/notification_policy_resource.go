@@ -71,10 +71,18 @@ func (n *notificationPolicyResource) Schema(ctx context.Context, req resource.Sc
 			"notifiers": schema.SingleNestedAttribute{
 				Required:    true,
 				Description: "Notifiers by severity.",
+				Validators: []validator.Object{
+					validatorutils.NewAliasValidator("warn", "warning"),
+				},
 				Attributes: map[string]schema.Attribute{
 					"warn": schema.ListAttribute{
 						Optional:    true,
-						Description: "Notifier IDs for warning severity.",
+						Description: "Notifier IDs for warning severity. Same as warning; set only one of them.",
+						ElementType: types.StringType,
+					},
+					"warning": schema.ListAttribute{
+						Optional:    true,
+						Description: "Notifier IDs for warning severity. Same as warn, under the name that monitor conditions use; set only one of them.",
 						ElementType: types.StringType,
 					},
 					"critical": schema.ListAttribute{

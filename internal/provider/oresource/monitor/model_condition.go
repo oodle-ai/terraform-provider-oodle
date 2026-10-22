@@ -11,7 +11,11 @@ import (
 )
 
 type conditionsModel struct {
-	Warning  *conditionModel       `tfsdk:"warning"`
+	Warning *conditionModel `tfsdk:"warning"`
+	// Warn is the same threshold as Warning, under the name
+	// that notification policies use. The config sets at most
+	// one of them.
+	Warn     *conditionModel       `tfsdk:"warn"`
 	Critical *conditionModel       `tfsdk:"critical"`
 	NoData   *noDataConditionModel `tfsdk:"no_data"`
 }
