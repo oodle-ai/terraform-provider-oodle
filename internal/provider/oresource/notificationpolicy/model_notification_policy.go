@@ -14,12 +14,14 @@ import (
 )
 
 type notificationPolicyResourceModel struct {
-	ID            types.String        `tfsdk:"id"`
-	Name          types.String        `tfsdk:"name"`
-	Notifiers     notifiersBySeverity `tfsdk:"notifiers"`
-	Global        types.Bool          `tfsdk:"global"`
-	MuteGlobal    types.Bool          `tfsdk:"mute_global"`
-	MuteNonGlobal types.Bool          `tfsdk:"mute_non_global"`
+	ID   types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
+	// Notifiers is a pointer: on import the state holds only the
+	// id, and a struct cannot take the null value.
+	Notifiers     *notifiersBySeverity `tfsdk:"notifiers"`
+	Global        types.Bool           `tfsdk:"global"`
+	MuteGlobal    types.Bool           `tfsdk:"mute_global"`
+	MuteNonGlobal types.Bool           `tfsdk:"mute_non_global"`
 }
 
 type notifiersBySeverity struct {
@@ -43,6 +45,8 @@ func (n *notificationPolicyResourceModel) FromClientModel(
 	n.MuteGlobal = types.BoolValue(model.MuteGlobal)
 	n.MuteNonGlobal = types.BoolValue(model.MuteNonGlobal)
 
+	prior := n.Notifiers
+	n.Notifiers = &notifiersBySeverity{}
 	if len(model.Notifiers.Critical) > 0 {
 		n.Notifiers.Critical = validatorutils.IDsToAttrList(model.Notifiers.Critical, diagnosticsOut)
 	} else {
@@ -51,7 +55,7 @@ func (n *notificationPolicyResourceModel) FromClientModel(
 
 	// The API has one warning list. Write it back under the
 	// name the config used, or every plan shows a change.
-	useWarning := !n.Notifiers.Warning.IsNull() && !n.Notifiers.Warning.IsUnknown()
+	useWarning := prior != nil && !prior.Warning.IsNull() && !prior.Warning.IsUnknown()
 	warn := types.ListNull(types.StringType)
 	if len(model.Notifiers.Warn) > 0 {
 		warn = validatorutils.IDsToAttrList(model.Notifiers.Warn, diagnosticsOut)
@@ -79,6 +83,9 @@ func (n *notificationPolicyResourceModel) ToClientModel(ctx context.Context, mod
 	model.MuteGlobal = n.MuteGlobal.ValueBool()
 	model.MuteNonGlobal = n.MuteNonGlobal.ValueBool()
 
+	if n.Notifiers == nil {
+		return nil
+	}
 	criticalNotifIDs := n.Notifiers.Critical.Elements()
 	if len(criticalNotifIDs) > 0 {
 		model.Notifiers.Critical, err = validatorutils.AttrListToIDs(n.Notifiers.Critical)
@@ -99,6 +106,14 @@ func (n *notificationPolicyResourceModel) ToClientModel(ctx context.Context, mod
 	}
 
 	return nil
+}
+
+// TakeNamesFrom copies the field that tells which warning name
+// the config uses. FromClientModel reads it, then replaces it.
+func (n *notificationPolicyResourceModel) TakeNamesFrom(plan *notificationPolicyResourceModel) {
+	if plan.Notifiers != nil {
+		n.Notifiers = &notifiersBySeverity{Warning: plan.Notifiers.Warning}
+	}
 }
 
 func (n *notificationPolicyResourceModel) SetID(id types.String) {

@@ -97,6 +97,13 @@ type labelMatcherModel struct {
 
 var _ resourceutils.ResourceModel[*clientmodels.Monitor] = (*monitorResourceModel)(nil)
 
+// TakeNamesFrom copies the fields that tell which warning name
+// the config uses. FromClientModel reads them, then replaces them.
+func (m *monitorResourceModel) TakeNamesFrom(plan *monitorResourceModel) {
+	m.Conditions = plan.Conditions
+	m.Notifications = plan.Notifications
+}
+
 func (m *monitorResourceModel) GetID() types.String {
 	return m.ID
 }

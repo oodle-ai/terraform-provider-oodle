@@ -23,7 +23,7 @@ func TestWarningIsTheWarnList(t *testing.T) {
 	for _, useWarning := range []bool{true, false} {
 		n := &notificationPolicyResourceModel{
 			Name: types.StringValue("p"),
-			Notifiers: notifiersBySeverity{
+			Notifiers: &notifiersBySeverity{
 				Warn: null, Warning: null, Critical: null,
 			},
 		}
@@ -49,4 +49,17 @@ func TestWarningIsTheWarnList(t *testing.T) {
 			assert.True(t, n.Notifiers.Warning.IsNull())
 		}
 	}
+}
+
+// On import the state holds only the id, so the model starts
+// with no notifiers block.
+func TestReadWithNoNotifiersInState(t *testing.T) {
+	n := &notificationPolicyResourceModel{}
+	client := &clientmodels.NotificationPolicy{ID: clientmodels.ID{UUID: uuid.New()}, Name: "p"}
+	client.Notifiers.Warn = []clientmodels.ID{{UUID: uuid.New()}}
+	diags := &diag.Diagnostics{}
+	n.FromClientModel(context.Background(), client, diags)
+	assert.False(t, diags.HasError())
+	assert.NotNil(t, n.Notifiers)
+	assert.Equal(t, 1, len(n.Notifiers.Warn.Elements()))
 }
