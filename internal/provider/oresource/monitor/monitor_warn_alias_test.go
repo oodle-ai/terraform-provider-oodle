@@ -63,21 +63,30 @@ func monitorSchema(t *testing.T) resource.SchemaResponse {
 	return resp
 }
 
+func asObject(t *testing.T, typ tftypes.Type) tftypes.Object {
+	t.Helper()
+	obj, ok := typ.(tftypes.Object)
+	if !ok {
+		t.Fatalf("expected tftypes.Object, got %T", typ)
+	}
+	return obj
+}
+
 // monitorConfig builds a config whose conditions set only the
 // named thresholds; every other attribute is null.
 func monitorConfig(t *testing.T, thresholds ...string) tfsdk.Config {
 	t.Helper()
 	ctx := context.Background()
 	s := monitorSchema(t).Schema
-	objType := s.Type().TerraformType(ctx).(tftypes.Object)
-	condType := objType.AttributeTypes["conditions"].(tftypes.Object)
+	objType := asObject(t, s.Type().TerraformType(ctx))
+	condType := asObject(t, objType.AttributeTypes["conditions"])
 
 	conds := map[string]tftypes.Value{}
 	for name, attrType := range condType.AttributeTypes {
 		conds[name] = tftypes.NewValue(attrType, nil)
 	}
 	for _, name := range thresholds {
-		levelType := condType.AttributeTypes[name].(tftypes.Object)
+		levelType := asObject(t, condType.AttributeTypes[name])
 		level := map[string]tftypes.Value{}
 		for attr, at := range levelType.AttributeTypes {
 			level[attr] = tftypes.NewValue(at, nil)
