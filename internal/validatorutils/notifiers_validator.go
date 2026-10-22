@@ -49,7 +49,7 @@ func (n notifiersValidator) ValidateObject(
 
 	if anyHasElements {
 		// Check if any other fields are set
-		otherFields := []string{"warn", "critical", "no_data"}
+		otherFields := []string{"warn", "warning", "critical", "no_data"}
 		for _, field := range otherFields {
 			if attr, exists := attrs[field]; exists && !attr.IsNull() && !attr.IsUnknown() {
 				if list, ok := attr.(types.List); ok && len(list.Elements()) > 0 {

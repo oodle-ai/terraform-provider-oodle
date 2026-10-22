@@ -31,3 +31,12 @@ type ResourceModel[M clientmodels.ClientModel] interface {
 	// GetID returns the ID of the resource model.
 	GetID() types.String
 }
+
+// NameKeeper is a model where two attribute names can hold one API
+// value (for example warn and warning). The API answer does not say
+// which name the config used, so before a create or an update reads
+// the answer, the model takes the names from the plan. Without it,
+// the state uses the other name and Terraform reports an error.
+type NameKeeper[R any] interface {
+	TakeNamesFrom(plan R)
+}

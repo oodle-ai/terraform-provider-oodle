@@ -46,10 +46,47 @@ type labelMatcherNotificationsModel struct {
 }
 
 type notifiersByCondition struct {
-	Any      types.List `tfsdk:"any"`
-	Warn     types.List `tfsdk:"warn"`
+	Any  types.List `tfsdk:"any"`
+	Warn types.List `tfsdk:"warn"`
+	// Warning is the same list as Warn. The config sets at
+	// most one of them.
+	Warning  types.List `tfsdk:"warning"`
 	Critical types.List `tfsdk:"critical"`
 	NoData   types.List `tfsdk:"no_data"`
+}
+
+// notifiersAttrTypes is the object type of a notifiers block.
+// One definition keeps the many places that build it in step.
+func notifiersAttrTypes() map[string]attr.Type {
+	list := types.ListType{ElemType: types.StringType}
+	return map[string]attr.Type{
+		"any":      list,
+		"warn":     list,
+		"warning":  list,
+		"critical": list,
+		"no_data":  list,
+	}
+}
+
+// notificationsUsingWarning returns, for each notification in
+// the config or state, whether its notifiers block uses the
+// name warning rather than warn.
+func notificationsUsingWarning(ctx context.Context, list types.List) map[int]bool {
+	out := map[int]bool{}
+	if list.IsNull() || list.IsUnknown() {
+		return out
+	}
+	var items []labelMatcherNotificationsModel
+	if diags := list.ElementsAs(ctx, &items, false); diags.HasError() {
+		return out
+	}
+	for i, item := range items {
+		if item.Notifiers != nil && !item.Notifiers.Warning.IsNull() &&
+			!item.Notifiers.Warning.IsUnknown() {
+			out[i] = true
+		}
+	}
+	return out
 }
 
 type labelMatcherModel struct {
@@ -59,6 +96,13 @@ type labelMatcherModel struct {
 }
 
 var _ resourceutils.ResourceModel[*clientmodels.Monitor] = (*monitorResourceModel)(nil)
+
+// TakeNamesFrom copies the fields that tell which warning name
+// the config uses. FromClientModel reads them, then replaces them.
+func (m *monitorResourceModel) TakeNamesFrom(plan *monitorResourceModel) {
+	m.Conditions = plan.Conditions
+	m.Notifications = plan.Notifications
+}
 
 func (m *monitorResourceModel) GetID() types.String {
 	return m.ID
@@ -73,6 +117,11 @@ func (m *monitorResourceModel) FromClientModel(
 	model *clientmodels.Monitor,
 	diagnosticsOut *diag.Diagnostics,
 ) {
+	// The API has one warning threshold. Write it back under
+	// the name the config used, or every plan shows a change.
+	useWarn := m.Conditions != nil && m.Conditions.Warn != nil
+	usingWarning := notificationsUsingWarning(ctx, m.Notifications)
+
 	// Reset the model to clear any existing data.
 	*m = monitorResourceModel{}
 
@@ -85,7 +134,11 @@ func (m *monitorResourceModel) FromClientModel(
 			m.Conditions = &conditionsModel{}
 		}
 
-		m.Conditions.Warning = newConditionFromModel(model.Conditions.Warn)
+		if useWarn {
+			m.Conditions.Warn = newConditionFromModel(model.Conditions.Warn)
+		} else {
+			m.Conditions.Warning = newConditionFromModel(model.Conditions.Warn)
+		}
 	}
 
 	if model.Conditions.Critical != nil {
@@ -229,7 +282,7 @@ func (m *monitorResourceModel) FromClientModel(
 
 	if len(model.Notifications) > 0 {
 		notifications := make([]attr.Value, 0, len(model.Notifications))
-		for _, notification := range model.Notifications {
+		for i, notification := range model.Notifications {
 			var matchersList attr.Value
 			if len(notification.Matchers) > 0 {
 				matchers := make([]attr.Value, 0, len(notification.Matchers))
@@ -303,16 +356,16 @@ func (m *monitorResourceModel) FromClientModel(
 					noDataList = validatorutils.IDsToAttrList(notification.Notifiers.NoData, diagnosticsOut)
 				}
 
+				warningList := types.ListNull(types.StringType)
+				if usingWarning[i] {
+					warningList, warnList = warnList, warningList
+				}
 				notifiersObj, diags := types.ObjectValue(
-					map[string]attr.Type{
-						"any":      types.ListType{ElemType: types.StringType},
-						"warn":     types.ListType{ElemType: types.StringType},
-						"critical": types.ListType{ElemType: types.StringType},
-						"no_data":  types.ListType{ElemType: types.StringType},
-					},
+					notifiersAttrTypes(),
 					map[string]attr.Value{
 						"any":      anyList,
 						"warn":     warnList,
+						"warning":  warningList,
 						"critical": criticalList,
 						"no_data":  noDataList,
 					},
@@ -323,12 +376,7 @@ func (m *monitorResourceModel) FromClientModel(
 				}
 				notifiersValue = notifiersObj
 			} else {
-				notifiersValue = types.ObjectNull(map[string]attr.Type{
-					"any":      types.ListType{ElemType: types.StringType},
-					"warn":     types.ListType{ElemType: types.StringType},
-					"critical": types.ListType{ElemType: types.StringType},
-					"no_data":  types.ListType{ElemType: types.StringType},
-				})
+				notifiersValue = types.ObjectNull(notifiersAttrTypes())
 			}
 
 			var notificationPolicyIDValue attr.Value
@@ -351,12 +399,7 @@ func (m *monitorResourceModel) FromClientModel(
 					},
 					"notification_policy_id": types.StringType,
 					"notifiers": types.ObjectType{
-						AttrTypes: map[string]attr.Type{
-							"any":      types.ListType{ElemType: types.StringType},
-							"warn":     types.ListType{ElemType: types.StringType},
-							"critical": types.ListType{ElemType: types.StringType},
-							"no_data":  types.ListType{ElemType: types.StringType},
-						},
+						AttrTypes: notifiersAttrTypes(),
 					},
 				},
 				map[string]attr.Value{
@@ -385,12 +428,7 @@ func (m *monitorResourceModel) FromClientModel(
 				},
 				"notification_policy_id": types.StringType,
 				"notifiers": types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"any":      types.ListType{ElemType: types.StringType},
-						"warn":     types.ListType{ElemType: types.StringType},
-						"critical": types.ListType{ElemType: types.StringType},
-						"no_data":  types.ListType{ElemType: types.StringType},
-					},
+					AttrTypes: notifiersAttrTypes(),
 				},
 			},
 		}
@@ -409,12 +447,7 @@ func (m *monitorResourceModel) FromClientModel(
 				},
 				"notification_policy_id": types.StringType,
 				"notifiers": types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"any":      types.ListType{ElemType: types.StringType},
-						"warn":     types.ListType{ElemType: types.StringType},
-						"critical": types.ListType{ElemType: types.StringType},
-						"no_data":  types.ListType{ElemType: types.StringType},
-					},
+					AttrTypes: notifiersAttrTypes(),
 				},
 			},
 		})
@@ -447,8 +480,12 @@ func (m *monitorResourceModel) ToClientModel(
 	}
 
 	if m.Conditions != nil {
-		if m.Conditions.Warning != nil {
-			model.Conditions.Warn, err = m.Conditions.Warning.toModel()
+		warning := m.Conditions.Warning
+		if warning == nil {
+			warning = m.Conditions.Warn
+		}
+		if warning != nil {
+			model.Conditions.Warn, err = warning.toModel()
 			if err != nil {
 				return fmt.Errorf("failed to parse warning condition: %v", err)
 			}
@@ -655,8 +692,12 @@ func (m *monitorResourceModel) ToClientModel(
 					notifiers.Any = anyIDs
 				}
 
-				if !notification.Notifiers.Warn.IsNull() && len(notification.Notifiers.Warn.Elements()) > 0 {
-					warnIDs, err := validatorutils.AttrListToIDs(notification.Notifiers.Warn)
+				warn := notification.Notifiers.Warn
+				if warn.IsNull() || len(warn.Elements()) == 0 {
+					warn = notification.Notifiers.Warning
+				}
+				if !warn.IsNull() && len(warn.Elements()) > 0 {
+					warnIDs, err := validatorutils.AttrListToIDs(warn)
 					if err != nil {
 						return fmt.Errorf("failed to parse warn notifier IDs: %v", err)
 					}

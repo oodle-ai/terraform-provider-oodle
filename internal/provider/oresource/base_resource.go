@@ -86,6 +86,9 @@ func (r *BaseResource[M, R]) Create(ctx context.Context, req resource.CreateRequ
 
 	// Update plan with newly created object.
 	newPlan := r.newResourceModel()
+	if k, ok := any(newPlan).(resourceutils.NameKeeper[R]); ok {
+		k.TakeNamesFrom(plan)
+	}
 	newPlan.FromClientModel(ctx, createdObj, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -178,6 +181,9 @@ func (r *BaseResource[M, R]) Update(ctx context.Context, req resource.UpdateRequ
 
 	// Update plan with newly created monitor.
 	newState := r.newResourceModel()
+	if k, ok := any(newState).(resourceutils.NameKeeper[R]); ok {
+		k.TakeNamesFrom(plan)
+	}
 	newState.FromClientModel(ctx, updatedObj, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return

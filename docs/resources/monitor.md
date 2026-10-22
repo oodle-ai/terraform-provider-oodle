@@ -108,7 +108,8 @@ Optional:
 
 - `critical` (Attributes) (see [below for nested schema](#nestedatt--conditions--critical))
 - `no_data` (Attributes) (see [below for nested schema](#nestedatt--conditions--no_data))
-- `warning` (Attributes) (see [below for nested schema](#nestedatt--conditions--warning))
+- `warn` (Attributes) Warning threshold. Same as warning, under the name that notification policies use; set only one of them. (see [below for nested schema](#nestedatt--conditions--warn))
+- `warning` (Attributes) Warning threshold. Same as warn; set only one of them. (see [below for nested schema](#nestedatt--conditions--warning))
 
 <a id="nestedatt--conditions--critical"></a>
 ### Nested Schema for `conditions.critical`
@@ -134,6 +135,21 @@ Required:
 
 Optional:
 
+- `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
+
+
+<a id="nestedatt--conditions--warn"></a>
+### Nested Schema for `conditions.warn`
+
+Required:
+
+- `for` (String) Duration for which the condition should be true before the alert is triggered.
+- `operation` (String) The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.
+- `value` (Number) Value to compare against.
+
+Optional:
+
+- `alert_on_no_data` (Boolean, Deprecated) Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.
 - `keep_firing_for` (String) Duration for which the alert should keep firing after the condition is no longer true.
 
 
@@ -209,7 +225,8 @@ Optional:
 - `any` (List of String) Notifier IDs for any severity. If set, other severity-specific notifiers must be empty.
 - `critical` (List of String) Notifier IDs for critical severity.
 - `no_data` (List of String) Notifier IDs for no data scenarios.
-- `warn` (List of String) Notifier IDs for warning severity.
+- `warn` (List of String) Notifier IDs for warning severity. Same as warning; set only one of them.
+- `warning` (List of String) Notifier IDs for warning severity. Same as warn; set only one of them.
 
 ## Import
 

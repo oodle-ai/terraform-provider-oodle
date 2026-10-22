@@ -103,43 +103,14 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Required: true,
 				Attributes: map[string]schema.Attribute{
 					"warning": schema.SingleNestedAttribute{
-						Optional: true,
-						Attributes: map[string]schema.Attribute{
-							"operation": schema.StringAttribute{
-								Required:    true,
-								Description: "The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.",
-								Validators: []validator.String{
-									validatorutils.NewChoiceValidator(validComparators),
-								},
-							},
-							"value": schema.Float64Attribute{
-								Required:    true,
-								Description: "Value to compare against.",
-							},
-							"for": schema.StringAttribute{
-								Required:   true,
-								CustomType: validatorutils.NewDurationType(),
-								Validators: []validator.String{
-									validatorutils.NewDurationValidator(),
-								},
-								Description: "Duration for which the condition should be true before the alert is triggered.",
-							},
-							"keep_firing_for": schema.StringAttribute{
-								Optional:   true,
-								CustomType: validatorutils.NewDurationType(),
-								Validators: []validator.String{
-									validatorutils.NewDurationValidator(),
-								},
-								Description: "Duration for which the alert should keep firing after the condition is no longer true.",
-							},
-							"alert_on_no_data": schema.BoolAttribute{
-								Optional:           true,
-								Computed:           true,
-								DeprecationMessage: "Use conditions.no_data instead",
-								Description:        "Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.",
-								Default:            booldefault.StaticBool(false),
-							},
-						},
+						Optional:    true,
+						Attributes:  levelConditionAttributes(),
+						Description: "Warning threshold. Same as warn; set only one of them.",
+					},
+					"warn": schema.SingleNestedAttribute{
+						Optional:    true,
+						Attributes:  levelConditionAttributes(),
+						Description: "Warning threshold. Same as warning, under the name that notification policies use; set only one of them.",
 					},
 					"critical": schema.SingleNestedAttribute{
 						Optional: true,
@@ -317,6 +288,7 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Description: "Notifiers by severity. Either this or notification_policy_id must be specified.",
 							Validators: []validator.Object{
 								validatorutils.NewNotifiersValidator(),
+								validatorutils.NewAliasValidator("warn", "warning"),
 							},
 							Attributes: map[string]schema.Attribute{
 								"any": schema.ListAttribute{
@@ -326,7 +298,12 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								},
 								"warn": schema.ListAttribute{
 									Optional:    true,
-									Description: "Notifier IDs for warning severity.",
+									Description: "Notifier IDs for warning severity. Same as warning; set only one of them.",
+									ElementType: types.StringType,
+								},
+								"warning": schema.ListAttribute{
+									Optional:    true,
+									Description: "Notifier IDs for warning severity. Same as warn; set only one of them.",
 									ElementType: types.StringType,
 								},
 								"critical": schema.ListAttribute{
@@ -376,5 +353,47 @@ func (r *monitorResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 func (r *monitorResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
 	return []resource.ConfigValidator{
 		validatorutils.NewMonitorConfigValidator(),
+	}
+}
+
+// levelConditionAttributes are the attributes of a warning
+// threshold. warning and warn share them, so the two names
+// cannot drift apart.
+func levelConditionAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"operation": schema.StringAttribute{
+			Required:    true,
+			Description: "The operation to perform for the condition. Possible values are: '>', '<', '>=', '<=', '==', '!='.",
+			Validators: []validator.String{
+				validatorutils.NewChoiceValidator(validComparators),
+			},
+		},
+		"value": schema.Float64Attribute{
+			Required:    true,
+			Description: "Value to compare against.",
+		},
+		"for": schema.StringAttribute{
+			Required:   true,
+			CustomType: validatorutils.NewDurationType(),
+			Validators: []validator.String{
+				validatorutils.NewDurationValidator(),
+			},
+			Description: "Duration for which the condition should be true before the alert is triggered.",
+		},
+		"keep_firing_for": schema.StringAttribute{
+			Optional:   true,
+			CustomType: validatorutils.NewDurationType(),
+			Validators: []validator.String{
+				validatorutils.NewDurationValidator(),
+			},
+			Description: "Duration for which the alert should keep firing after the condition is no longer true.",
+		},
+		"alert_on_no_data": schema.BoolAttribute{
+			Optional:           true,
+			Computed:           true,
+			DeprecationMessage: "Use conditions.no_data instead",
+			Description:        "Deprecated: Use conditions.no_data instead. If true, the monitor is considered firing when there is no data for the query.",
+			Default:            booldefault.StaticBool(false),
+		},
 	}
 }

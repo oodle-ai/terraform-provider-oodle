@@ -65,7 +65,8 @@ resource "oodle_notification_policy" "default" {
 Optional:
 
 - `critical` (List of String) Notifier IDs for critical severity.
-- `warn` (List of String) Notifier IDs for warning severity.
+- `warn` (List of String) Notifier IDs for warning severity. Same as warning; set only one of them.
+- `warning` (List of String) Notifier IDs for warning severity. Same as warn, under the name that monitor conditions use; set only one of them.
 
 ## Import
 
