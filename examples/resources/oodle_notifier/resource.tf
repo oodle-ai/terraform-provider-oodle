@@ -50,6 +50,20 @@ resource "oodle_notifier" "team_msteams" {
   }
 }
 
+# Splunk On-Call (formerly VictorOps) notifier for on-call paging.
+# In Splunk On-Call, open Integrations > 3rd Party Integrations > REST - Generic.
+# `api_key` is the part of the REST endpoint URL between `/alert/` and
+# `/$routing_key`. Find routing keys in Settings > Routing Keys.
+resource "oodle_notifier" "oncall_splunk" {
+  name = "database_oncall_splunk"
+  type = "victorops"
+  victorops_config = {
+    api_key       = "splunk_on_call_rest_endpoint_api_key"
+    routing_key   = "database"
+    send_resolved = true
+  }
+}
+
 # Rootly notifier for incident coordination and on-call paging.
 # Create an Alertmanager alert source in Rootly and paste its bearer token here;
 # `url` defaults to the Rootly Alertmanager webhook endpoint.

@@ -65,6 +65,20 @@ resource "oodle_notifier" "team_msteams" {
   }
 }
 
+# Splunk On-Call (formerly VictorOps) notifier for on-call paging.
+# In Splunk On-Call, open Integrations > 3rd Party Integrations > REST - Generic.
+# `api_key` is the part of the REST endpoint URL between `/alert/` and
+# `/$routing_key`. Find routing keys in Settings > Routing Keys.
+resource "oodle_notifier" "oncall_splunk" {
+  name = "database_oncall_splunk"
+  type = "victorops"
+  victorops_config = {
+    api_key       = "splunk_on_call_rest_endpoint_api_key"
+    routing_key   = "database"
+    send_resolved = true
+  }
+}
+
 # Rootly notifier for incident coordination and on-call paging.
 # Create an Alertmanager alert source in Rootly and paste its bearer token here;
 # `url` defaults to the Rootly Alertmanager webhook endpoint.
@@ -145,6 +159,7 @@ resource "oodle_notifier" "custom_payload_webhook" {
 - `pagerduty_config` (Attributes) PagerDuty notifier configuration. (see [below for nested schema](#nestedatt--pagerduty_config))
 - `rootly_config` (Attributes) Rootly notifier configuration. (see [below for nested schema](#nestedatt--rootly_config))
 - `slack_config` (Attributes) Slack notifier configuration. (see [below for nested schema](#nestedatt--slack_config))
+- `victorops_config` (Attributes) Splunk On-Call (formerly VictorOps) notifier configuration. Oodle sends CRITICAL for critical and no-data alerts, WARNING for warning alerts, and RECOVERY when the alert resolves. (see [below for nested schema](#nestedatt--victorops_config))
 - `webhook_config` (Attributes) Webhook notifier configuration. (see [below for nested schema](#nestedatt--webhook_config))
 
 ### Read-Only
@@ -239,6 +254,19 @@ Optional:
 - `send_resolved` (Boolean) Send notifications when incident is resolved.
 - `text` (String) Text to be included in the Slack notification.
 - `title_link` (String) Link to be included in the notification title.
+
+
+<a id="nestedatt--victorops_config"></a>
+### Nested Schema for `victorops_config`
+
+Required:
+
+- `api_key` (String, Sensitive) API key of the Splunk On-Call REST endpoint integration (Integrations > 3rd Party Integrations > REST - Generic). It is the part of the endpoint URL between `/alert/` and `/$routing_key`.
+- `routing_key` (String) Splunk On-Call routing key that selects the escalation policy (Settings > Routing Keys).
+
+Optional:
+
+- `send_resolved` (Boolean) Send notifications when incident is resolved.
 
 
 <a id="nestedatt--webhook_config"></a>

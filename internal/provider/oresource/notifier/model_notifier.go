@@ -28,6 +28,7 @@ type notifierResourceModel struct {
 	GoogleChatConfig *googleChatConfigModel `tfsdk:"googlechat_config"`
 	MSTeamsV2Config  *msTeamsV2ConfigModel  `tfsdk:"msteamsv2_config"`
 	RootlyConfig     *rootlyConfigModel     `tfsdk:"rootly_config"`
+	VictorOpsConfig  *victorOpsConfigModel  `tfsdk:"victorops_config"`
 }
 
 var _ resourceutils.ResourceModel[*clientmodels.Notifier] = (*notifierResourceModel)(nil)
@@ -141,6 +142,16 @@ func (n *notifierResourceModel) FromClientModel(
 		if diagnosticsOut.HasError() {
 			return
 		}
+	case clientmodels.NotifierConfigVictorOps:
+		if model.VictorOpsConfig == nil {
+			diagnosticsOut.AddError("Missing Splunk On-Call config", "Splunk On-Call config is required for Splunk On-Call notifier")
+			return
+		}
+
+		n.VictorOpsConfig = &victorOpsConfigModel{}
+		n.VictorOpsConfig.SendResolved = types.BoolValue(model.VictorOpsConfig.SendResolved())
+		n.VictorOpsConfig.APIKey = types.StringValue(model.VictorOpsConfig.APIKey)
+		n.VictorOpsConfig.RoutingKey = types.StringValue(model.VictorOpsConfig.RoutingKey)
 	default:
 		diagnosticsOut.AddError("Unknown type", fmt.Sprintf("Unknown notifier type %v", model.Type))
 		return
@@ -272,6 +283,18 @@ func (n *notifierResourceModel) ToClientModel(
 			n.RootlyConfig.SendResolved.ValueBool(),
 			rootlyPayload,
 		)
+	case clientmodels.NotifierConfigVictorOps:
+		if n.VictorOpsConfig == nil {
+			return fmt.Errorf("missing Splunk On-Call config")
+		}
+
+		model.VictorOpsConfig = &oprom.VictorOpsConfig{
+			APIKey:     n.VictorOpsConfig.APIKey.ValueString(),
+			RoutingKey: n.VictorOpsConfig.RoutingKey.ValueString(),
+			NotifierConfig: config.NotifierConfig{
+				VSendResolved: n.VictorOpsConfig.SendResolved.ValueBool(),
+			},
+		}
 	default:
 		return fmt.Errorf("unknown notifier type %v", model.Type)
 	}

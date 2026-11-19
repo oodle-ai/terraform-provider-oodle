@@ -157,6 +157,18 @@ func TestNotificationPolicyModel(t *testing.T) {
 				},
 			),
 		},
+		{
+			ID:   clientmodels.ID{UUID: uuid.New()},
+			Name: "test",
+			Type: clientmodels.NotifierConfigVictorOps,
+			VictorOpsConfig: &oprom.VictorOpsConfig{
+				NotifierConfig: config.NotifierConfig{
+					VSendResolved: true,
+				},
+				APIKey:     "558e7ebc-0000-0000-0000-000000000000",
+				RoutingKey: "database",
+			},
+		},
 	}
 
 	for _, clientModel := range testCases {
