@@ -5,6 +5,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"terraform-provider-oodle/internal/oodlehttp"
@@ -86,7 +88,10 @@ func (r *metricDropRuleResource) Schema(_ context.Context, _ resource.SchemaRequ
 		Description: "Manages a metric drop rule. Drop rules prevent specific metric time-series from being ingested into Oodle.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 				Description: "ID of the metric drop rule.",
 			},
 			"rule_name": schema.StringAttribute{
