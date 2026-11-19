@@ -298,6 +298,36 @@ func (n *notifierResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 				},
 			},
+			"victorops_config": schema.SingleNestedAttribute{
+				Optional: true,
+				Description: "Splunk On-Call (formerly VictorOps) notifier " +
+					"configuration. Oodle sends CRITICAL for critical and " +
+					"no-data alerts, WARNING for warning alerts, and " +
+					"RECOVERY when the alert resolves.",
+				Attributes: map[string]schema.Attribute{
+					"api_key": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+						Description: "API key of the Splunk On-Call REST " +
+							"endpoint integration (Integrations > 3rd Party " +
+							"Integrations > REST - Generic). It is the part " +
+							"of the endpoint URL between `/alert/` and " +
+							"`/$routing_key`.",
+					},
+					"routing_key": schema.StringAttribute{
+						Required: true,
+						Description: "Splunk On-Call routing key that " +
+							"selects the escalation policy (Settings > " +
+							"Routing Keys).",
+					},
+					"send_resolved": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "Send notifications when incident is resolved.",
+					},
+				},
+			},
 		},
 	}
 }

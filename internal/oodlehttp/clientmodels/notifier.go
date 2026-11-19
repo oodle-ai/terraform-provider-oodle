@@ -17,6 +17,7 @@ type Notifier struct {
 	GoogleChatConfig *oprom.GoogleChatConfig `json:"googlechat_config,omitempty" yaml:"googlechat_config,omitempty"`
 	MSTeamsV2Config  *oprom.MSTeamsV2Config  `json:"msteamsv2_config,omitempty" yaml:"msteamsv2_config,omitempty"`
 	RootlyConfig     *oprom.RootlyConfig     `json:"rootly_config,omitempty" yaml:"rootly_config,omitempty"`
+	VictorOpsConfig  *oprom.VictorOpsConfig  `json:"victorops_config,omitempty" yaml:"victorops_config,omitempty"`
 }
 
 func (n *Notifier) GetID() string {

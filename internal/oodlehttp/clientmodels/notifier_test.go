@@ -64,3 +64,29 @@ func TestMSTeamsV2NotifierWireFormat(t *testing.T) {
 		"send_resolved": false,
 	}, decoded["msteamsv2_config"])
 }
+
+// TestVictorOpsNotifierWireFormat pins the JSON key, the type integer, and the
+// API key, which must go out as it is and not as "<secret>".
+func TestVictorOpsNotifierWireFormat(t *testing.T) {
+	notifier := &Notifier{
+		Name: "victorops",
+		Type: NotifierConfigVictorOps,
+		VictorOpsConfig: &oprom.VictorOpsConfig{
+			APIKey:     "558e7ebc-0000-0000-0000-000000000000",
+			RoutingKey: "database",
+		},
+	}
+
+	encoded, err := json.Marshal(notifier)
+	assert.Nil(t, err)
+
+	var decoded map[string]any
+	assert.Nil(t, json.Unmarshal(encoded, &decoded))
+
+	assert.Equal(t, float64(8), decoded["type"])
+	assert.DeepEqual(t, map[string]any{
+		"api_key":       "558e7ebc-0000-0000-0000-000000000000",
+		"routing_key":   "database",
+		"send_resolved": false,
+	}, decoded["victorops_config"])
+}

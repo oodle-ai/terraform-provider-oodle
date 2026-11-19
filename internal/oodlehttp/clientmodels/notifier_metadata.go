@@ -17,6 +17,7 @@ const (
 	NotifierConfigGoogleChat NotifierType = 5
 	NotifierConfigMSTeamsV2  NotifierType = 6
 	NotifierConfigRootly     NotifierType = 7
+	NotifierConfigVictorOps  NotifierType = 8
 )
 
 var notifierTypeToName = map[NotifierType]string{
@@ -28,6 +29,7 @@ var notifierTypeToName = map[NotifierType]string{
 	NotifierConfigGoogleChat: "googlechat",
 	NotifierConfigMSTeamsV2:  "msteamsv2",
 	NotifierConfigRootly:     "rootly",
+	NotifierConfigVictorOps:  "victorops",
 }
 
 var notifierNameToType = map[string]NotifierType{}
