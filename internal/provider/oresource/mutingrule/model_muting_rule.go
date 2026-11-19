@@ -3,6 +3,7 @@ package mutingrule
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -53,6 +54,15 @@ func (m *mutingRuleResourceModel) SetID(id types.String) {
 	m.ID = id
 }
 
+// TakeNamesFrom copies the planned starts_at before a create or an
+// update reads the API answer, so FromClientModel can compare it with
+// the server's value. See keepStartsAt.
+func (m *mutingRuleResourceModel) TakeNamesFrom(
+	plan *mutingRuleResourceModel,
+) {
+	m.StartsAt = plan.StartsAt
+}
+
 func (m *mutingRuleResourceModel) FromClientModel(
 	ctx context.Context,
 	model *clientmodels.MutingRule,
@@ -61,7 +71,9 @@ func (m *mutingRuleResourceModel) FromClientModel(
 	m.ID = types.StringValue(model.ID)
 	m.Name = optionalString(model.Name)
 	m.Comment = optionalString(model.Comment)
-	m.StartsAt = optionalTimestamp(model.StartsAt)
+	m.StartsAt = keepStartsAt(
+		m.StartsAt, optionalTimestamp(model.StartsAt), time.Now(),
+	)
 	m.EndsAt = optionalTimestamp(model.EndsAt)
 	m.CreatedBy = optionalString(model.CreatedBy)
 	m.CreatedAt = optionalTimestamp(model.CreatedAt)
@@ -209,4 +221,36 @@ func optionalTimestamp(value string) types.String {
 	}
 
 	return optionalString(value)
+}
+
+// keepStartsAt picks the starts_at to store, given the value Terraform
+// already holds (state on a read, the plan on a create) and the one
+// the API returned.
+//
+// A one-off rule is an Alertmanager silence, and Alertmanager moves a
+// start time in the past forward to the time the silence was saved.
+// Storing that time would make every later plan replace the rule. So
+// the prior value is kept when the two are the same instant, or when
+// the server's value is later than the prior one but not in the
+// future: both then mean the rule is already in effect.
+func keepStartsAt(prior, server types.String, now time.Time) types.String {
+	if prior.IsNull() || prior.IsUnknown() || server.IsNull() {
+		return server
+	}
+
+	priorTime, err := time.Parse(time.RFC3339Nano, prior.ValueString())
+	if err != nil {
+		return server
+	}
+	serverTime, err := time.Parse(time.RFC3339Nano, server.ValueString())
+	if err != nil {
+		return server
+	}
+
+	if priorTime.Equal(serverTime) ||
+		(priorTime.Before(serverTime) && !serverTime.After(now)) {
+		return prior
+	}
+
+	return server
 }
