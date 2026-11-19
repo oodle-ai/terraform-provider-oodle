@@ -192,11 +192,24 @@ func (r *grafanaDashboardResource) Read(
 		return
 	}
 
-	configJSON, err := dashboard.GetConfigJSON()
+	remoteJSON, err := dashboard.GetConfigJSON()
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error serializing dashboard",
 			"Could not serialize dashboard JSON: "+err.Error(),
+		)
+		return
+	}
+
+	configJSON, err := configJSONForState(
+		remoteJSON,
+		state.ConfigJSON.ValueString(),
+		dashboard.GetID(),
+	)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error normalizing dashboard",
+			"Could not normalize dashboard JSON: "+err.Error(),
 		)
 		return
 	}
