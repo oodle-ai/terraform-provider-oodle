@@ -107,6 +107,14 @@ func TestValidateMetricNameFilters(t *testing.T) {
 			},
 		},
 		{
+			name: "missing namespace",
+			filters: []attr.Value{types.ObjectValueMust(metricNameFilterAttrTypes, map[string]attr.Value{
+				"namespace":    types.StringNull(),
+				"include_only": stringList("A"),
+				"exclude_only": null,
+			})},
+		},
+		{
 			name:    "Datadog metric name",
 			filters: []attr.Value{filter("AWS/EC2", stringList("aws.ec2.network_in"), null)},
 		},

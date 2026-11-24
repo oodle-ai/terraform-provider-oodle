@@ -178,19 +178,28 @@ func (r *awsIntegrationResource) Schema(_ context.Context, _ resource.SchemaRequ
 					"If you omit this attribute, Terraform does not manage the filters and keeps the ones set in " +
 					"the Oodle UI. Set it to [] to remove all filters: removing the attribute from the config " +
 					"keeps the last value.",
+				// Every nested attribute is Optional+Computed. When the config
+				// omits metric_name_filters and the stored value has a nested
+				// attribute that is not Computed, Terraform infers that the
+				// user removed the attribute and plans null. Filters set in
+				// the UI would then show a diff and be deleted at the next
+				// apply. ValidateConfig checks that namespace is set.
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"namespace": schema.StringAttribute{
-							Required:    true,
-							Description: "CloudWatch namespace of the filter (e.g. \"AWS/EC2\"). At most one filter for each namespace.",
+							Optional:    true,
+							Computed:    true,
+							Description: "Required. CloudWatch namespace of the filter (e.g. \"AWS/EC2\"). At most one filter for each namespace.",
 						},
 						"include_only": schema.ListAttribute{
 							Optional:    true,
+							Computed:    true,
 							ElementType: types.StringType,
 							Description: "Pull only the metrics whose name matches one of these patterns.",
 						},
 						"exclude_only": schema.ListAttribute{
 							Optional:    true,
+							Computed:    true,
 							ElementType: types.StringType,
 							Description: "Pull all metrics except those whose name matches one of these patterns.",
 						},

@@ -125,6 +125,13 @@ func validateMetricNameFilters(ctx context.Context, list types.List, diags *diag
 	for i, model := range models {
 		at := path.Root("metric_name_filters").AtListIndex(i)
 
+		if model.Namespace.IsNull() {
+			diags.AddAttributeError(
+				at.AtName("namespace"),
+				"Missing namespace in metric name filter",
+				"Set namespace, for example \"AWS/EC2\".",
+			)
+		}
 		if !model.Namespace.IsUnknown() && !model.Namespace.IsNull() {
 			namespace := model.Namespace.ValueString()
 			if _, ok := seen[namespace]; ok {

@@ -100,11 +100,8 @@ Required:
 <a id="nestedatt--metric_name_filters"></a>
 ### Nested Schema for `metric_name_filters`
 
-Required:
-
-- `namespace` (String) CloudWatch namespace of the filter (e.g. "AWS/EC2"). At most one filter for each namespace.
-
 Optional:
 
 - `exclude_only` (List of String) Pull all metrics except those whose name matches one of these patterns.
 - `include_only` (List of String) Pull only the metrics whose name matches one of these patterns.
+- `namespace` (String) Required. CloudWatch namespace of the filter (e.g. "AWS/EC2"). At most one filter for each namespace.
