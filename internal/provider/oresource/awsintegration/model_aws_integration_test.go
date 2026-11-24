@@ -41,6 +41,10 @@ func TestAwsIntegrationModelRoundTrip(t *testing.T) {
 				ResourceTypes: []string{"AWS/Lambda"},
 			},
 		},
+		MetricNameFilters: &[]clientmodels.CloudWatchMetricNameFilter{
+			{Namespace: "AWS/EC2", IncludeOnly: []string{"CPUUtilization", "Network*"}},
+			{Namespace: "AWS/RDS", ExcludeOnly: []string{"Aurora*"}},
+		},
 	}
 
 	resourceModel := &awsIntegrationResourceModel{}
@@ -177,6 +181,8 @@ func TestAwsIntegrationModelMinimal(t *testing.T) {
 		ResourceTypesSearchTagsList: []clientmodels.CloudWatchResourceTypeSearchTags{
 			{ResourceTypes: []string{"AWS/EC2"}},
 		},
+		// The server returns an empty list when no namespace has a filter.
+		MetricNameFilters: &[]clientmodels.CloudWatchMetricNameFilter{},
 	}
 
 	resourceModel := &awsIntegrationResourceModel{}

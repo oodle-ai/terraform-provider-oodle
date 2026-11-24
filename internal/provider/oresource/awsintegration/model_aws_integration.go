@@ -23,6 +23,9 @@ type awsIntegrationResourceModel struct {
 	LaunchCFStackRegion     types.String                  `tfsdk:"launch_cf_stack_region"`
 	LaunchCFStackURL        types.String                  `tfsdk:"launch_cf_stack_url"`
 	ResourceTypesSearchTags []resourceTypeSearchTagsModel `tfsdk:"resource_types_search_tags"`
+	// MetricNameFilters is a types.List because the attribute is
+	// Optional+Computed and is unknown on Create when the config omits it.
+	MetricNameFilters types.List `tfsdk:"metric_name_filters"`
 }
 
 type resourceTypeSearchTagsModel struct {
@@ -114,6 +117,8 @@ func (m *awsIntegrationResourceModel) FromClientModel(
 		row.SearchTags = list
 		m.ResourceTypesSearchTags[i] = row
 	}
+
+	m.MetricNameFilters = metricNameFiltersFromClient(cw.MetricNameFilters, diags)
 }
 
 func (m *awsIntegrationResourceModel) ToClientModel(
@@ -181,6 +186,12 @@ func (m *awsIntegrationResourceModel) ToClientModel(
 			cw.ResourceTypesSearchTagsList[i] = entry
 		}
 	}
+
+	metricNameFilters, err := metricNameFiltersToClient(ctx, m.MetricNameFilters)
+	if err != nil {
+		return err
+	}
+	cw.MetricNameFilters = metricNameFilters
 
 	model.TypeSpecificData.CloudWatchMetricPullIntegration = cw
 	return nil

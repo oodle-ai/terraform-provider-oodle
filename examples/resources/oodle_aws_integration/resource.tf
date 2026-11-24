@@ -26,4 +26,13 @@ resource "oodle_aws_integration" "prod" {
       resource_types = ["AWS/Logs"]
     },
   ]
+
+  # Optional. Limits the metrics pulled from each namespace, to lower the
+  # CloudWatch GetMetricData cost. Patterns match CloudWatch metric names.
+  # Omit the attribute to keep the filters set in the Oodle UI; set it to []
+  # to remove all filters.
+  metric_name_filters = [
+    { namespace = "AWS/EC2", include_only = ["CPUUtilization", "Network*"] },
+    { namespace = "AWS/RDS", exclude_only = ["Aurora*"] },
+  ]
 }
