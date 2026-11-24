@@ -4,8 +4,10 @@ import (
 	"context"
 	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -30,9 +32,10 @@ var (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &awsIntegrationResource{}
-	_ resource.ResourceWithConfigure   = &awsIntegrationResource{}
-	_ resource.ResourceWithImportState = &awsIntegrationResource{}
+	_ resource.Resource                   = &awsIntegrationResource{}
+	_ resource.ResourceWithConfigure      = &awsIntegrationResource{}
+	_ resource.ResourceWithImportState    = &awsIntegrationResource{}
+	_ resource.ResourceWithValidateConfig = &awsIntegrationResource{}
 )
 
 type awsIntegrationResource struct {
@@ -159,6 +162,67 @@ func (r *awsIntegrationResource) Schema(_ context.Context, _ resource.SchemaRequ
 					},
 				},
 			},
+			"metric_name_filters": schema.ListNestedAttribute{
+				Optional: true,
+				// Computed with UseStateForUnknown: when the config omits the
+				// attribute, the plan keeps the value that the last refresh
+				// read, so filters set in the Oodle UI stay and show no diff.
+				Computed: true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+				Description: "Limits the metrics that Oodle pulls from each CloudWatch namespace, to lower the " +
+					"CloudWatch GetMetricData cost in your AWS account. Each entry sets exactly one of include_only " +
+					"and exclude_only. Patterns match the metric names that Oodle shows, one for each statistic " +
+					"(for example aws_ec2_cpuutilization_maximum), so a filter can keep one statistic of a metric " +
+					"and drop the others. CloudWatch names (CPUUtilization) and Datadog names " +
+					"(aws.ec2.cpuutilization) are refused. `*` and `?` are wildcards and case is ignored. " +
+					"If you omit this attribute, Terraform does not manage the filters and keeps the ones set in " +
+					"the Oodle UI. Set it to [] to remove all filters: removing the attribute from the config " +
+					"keeps the last value.",
+				// Every nested attribute is Optional+Computed. When the config
+				// omits metric_name_filters and the stored value has a nested
+				// attribute that is not Computed, Terraform infers that the
+				// user removed the attribute and plans null. Filters set in
+				// the UI would then show a diff and be deleted at the next
+				// apply. ValidateConfig checks that namespace is set.
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"namespace": schema.StringAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "Required. CloudWatch namespace of the filter (e.g. \"AWS/EC2\"). At most one filter for each namespace.",
+						},
+						"include_only": schema.ListAttribute{
+							Optional:    true,
+							Computed:    true,
+							ElementType: types.StringType,
+							Description: "Pull only the metrics whose Oodle metric name matches one of these patterns.",
+						},
+						"exclude_only": schema.ListAttribute{
+							Optional:    true,
+							Computed:    true,
+							ElementType: types.StringType,
+							Description: "Pull all metrics except those whose Oodle metric name matches one of these patterns.",
+						},
+					},
+				},
+			},
 		},
 	}
+}
+
+// ValidateConfig reports metric name filter mistakes at plan time. The
+// server does the same checks, but only at apply time.
+func (r *awsIntegrationResource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
+	var filters types.List
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("metric_name_filters"), &filters)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	validateMetricNameFilters(ctx, filters, &resp.Diagnostics)
 }

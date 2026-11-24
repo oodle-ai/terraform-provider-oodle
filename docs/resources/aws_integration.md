@@ -41,6 +41,16 @@ resource "oodle_aws_integration" "prod" {
       resource_types = ["AWS/Logs"]
     },
   ]
+
+  # Optional. Limits the metrics pulled from each namespace, to lower the
+  # CloudWatch GetMetricData cost. Patterns match the metric names that
+  # Oodle shows, one for each statistic.
+  # Omit the attribute to keep the filters set in the Oodle UI; set it to []
+  # to remove all filters.
+  metric_name_filters = [
+    { namespace = "AWS/EC2", include_only = ["aws_ec2_cpuutilization_maximum", "aws_ec2_network*"] },
+    { namespace = "AWS/RDS", exclude_only = ["*_samplecount"] },
+  ]
 }
 ```
 
@@ -58,6 +68,7 @@ resource "oodle_aws_integration" "prod" {
 ### Optional
 
 - `launch_cf_stack_region` (String) Region used when constructing the saved CloudFormation launch URL displayed in the Oodle UI. Does not affect which regions metrics are pulled from. Defaults to us-west-2 if omitted.
+- `metric_name_filters` (Attributes List) Limits the metrics that Oodle pulls from each CloudWatch namespace, to lower the CloudWatch GetMetricData cost in your AWS account. Each entry sets exactly one of include_only and exclude_only. Patterns match the metric names that Oodle shows, one for each statistic (for example aws_ec2_cpuutilization_maximum), so a filter can keep one statistic of a metric and drop the others. CloudWatch names (CPUUtilization) and Datadog names (aws.ec2.cpuutilization) are refused. `*` and `?` are wildcards and case is ignored. If you omit this attribute, Terraform does not manage the filters and keeps the ones set in the Oodle UI. Set it to [] to remove all filters: removing the attribute from the config keeps the last value. (see [below for nested schema](#nestedatt--metric_name_filters))
 - `name` (String) Human-readable name for the integration. If omitted, the server assigns one.
 
 ### Read-Only
@@ -84,3 +95,14 @@ Required:
 
 - `key` (String) Tag key to match.
 - `value` (String) Tag value to match. May be a regular expression.
+
+
+
+<a id="nestedatt--metric_name_filters"></a>
+### Nested Schema for `metric_name_filters`
+
+Optional:
+
+- `exclude_only` (List of String) Pull all metrics except those whose Oodle metric name matches one of these patterns.
+- `include_only` (List of String) Pull only the metrics whose Oodle metric name matches one of these patterns.
+- `namespace` (String) Required. CloudWatch namespace of the filter (e.g. "AWS/EC2"). At most one filter for each namespace.

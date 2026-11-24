@@ -36,6 +36,19 @@ type CloudWatchMetricPullIntegration struct {
 	ExternalID                  string                             `json:"externalId,omitempty"`
 	Regions                     []string                           `json:"regions,omitempty"`
 	ResourceTypesSearchTagsList []CloudWatchResourceTypeSearchTags `json:"resourceTypesSearchTagsList,omitempty"`
+	// MetricNameFilters is a pointer because the server keeps the stored
+	// filters when the field is absent and removes them on an empty list.
+	// A nil pointer thus leaves filters set in the Oodle UI unchanged.
+	MetricNameFilters *[]CloudWatchMetricNameFilter `json:"metricNameFilters,omitempty"`
+}
+
+// CloudWatchMetricNameFilter limits the metrics that Oodle pulls from one
+// CloudWatch namespace. Exactly one of IncludeOnly and ExcludeOnly has
+// patterns.
+type CloudWatchMetricNameFilter struct {
+	Namespace   string   `json:"namespace"`
+	IncludeOnly []string `json:"includeOnly,omitempty"`
+	ExcludeOnly []string `json:"excludeOnly,omitempty"`
 }
 
 // CloudWatchResourceTypeSearchTags pairs a set of CloudWatch resource types
