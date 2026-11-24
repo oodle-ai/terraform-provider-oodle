@@ -42,8 +42,8 @@ func TestAwsIntegrationModelRoundTrip(t *testing.T) {
 			},
 		},
 		MetricNameFilters: &[]clientmodels.CloudWatchMetricNameFilter{
-			{Namespace: "AWS/EC2", IncludeOnly: []string{"CPUUtilization", "Network*"}},
-			{Namespace: "AWS/RDS", ExcludeOnly: []string{"Aurora*"}},
+			{Namespace: "AWS/EC2", IncludeOnly: []string{"aws_ec2_cpuutilization_maximum", "aws_ec2_network*"}},
+			{Namespace: "AWS/RDS", ExcludeOnly: []string{"*_samplecount"}},
 		},
 	}
 

@@ -3,7 +3,7 @@ package awsintegration
 import (
 	"context"
 	"fmt"
-	"strings"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -13,9 +13,11 @@ import (
 	"terraform-provider-oodle/internal/oodlehttp/clientmodels"
 )
 
-// datadogMetricNamePrefix starts every Datadog AWS metric name (for example
-// aws.ec2.network_in). No CloudWatch metric name starts with it.
-const datadogMetricNamePrefix = "aws."
+// oodleMetricNamePattern is the form of a pattern that can match an Oodle
+// metric name. Oodle names have only letters, digits and `_`, and start with
+// aws_. The server also checks that a pattern agrees with the prefix of its
+// namespace, for example aws_ec2_, because it owns the naming rules.
+var oodleMetricNamePattern = regexp.MustCompile(`^(?i:aws_|[*?])[A-Za-z0-9_*?]*$`)
 
 type metricNameFilterModel struct {
 	Namespace   types.String `tfsdk:"namespace"`
@@ -170,16 +172,19 @@ func validateMetricNameFilters(ctx context.Context, list types.List, diags *diag
 				if !ok || pattern.IsUnknown() || pattern.IsNull() {
 					continue
 				}
-				// A Datadog name never matches a CloudWatch name. An
-				// include_only list copied from datadog_integration_aws_account
-				// would stop all data for the namespace.
-				if strings.HasPrefix(strings.ToLower(pattern.ValueString()), datadogMetricNamePrefix) {
+				// A CloudWatch name (NetworkIn) or a Datadog name
+				// (aws.ec2.network_in) never matches an Oodle name. An
+				// include_only list of them, for example copied from
+				// datadog_integration_aws_account, would stop all data for
+				// the namespace.
+				if !oodleMetricNamePattern.MatchString(pattern.ValueString()) {
 					diags.AddAttributeError(
 						at.AtName(name).AtListIndex(j),
-						"Datadog metric name in metric name filter",
+						"Not an Oodle metric name in metric name filter",
 						fmt.Sprintf(
-							"Pattern %q is a Datadog metric name. Use the CloudWatch metric name, "+
-								"for example NetworkIn in place of aws.ec2.network_in.",
+							"Pattern %q cannot match an Oodle metric name. Use the names that Oodle shows, "+
+								"which have only letters, digits and _ and start with aws_, for example "+
+								"aws_ec2_cpuutilization_maximum in place of CPUUtilization or aws.ec2.cpuutilization.",
 							pattern.ValueString(),
 						),
 					)

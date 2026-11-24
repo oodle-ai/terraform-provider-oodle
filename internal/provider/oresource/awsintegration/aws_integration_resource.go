@@ -173,8 +173,10 @@ func (r *awsIntegrationResource) Schema(_ context.Context, _ resource.SchemaRequ
 				},
 				Description: "Limits the metrics that Oodle pulls from each CloudWatch namespace, to lower the " +
 					"CloudWatch GetMetricData cost in your AWS account. Each entry sets exactly one of include_only " +
-					"and exclude_only. Patterns match CloudWatch metric names (for example CPUUtilization), not " +
-					"Datadog names such as aws.ec2.cpuutilization; `*` and `?` are wildcards and case is ignored. " +
+					"and exclude_only. Patterns match the metric names that Oodle shows, one for each statistic " +
+					"(for example aws_ec2_cpuutilization_maximum), so a filter can keep one statistic of a metric " +
+					"and drop the others. CloudWatch names (CPUUtilization) and Datadog names " +
+					"(aws.ec2.cpuutilization) are refused. `*` and `?` are wildcards and case is ignored. " +
 					"If you omit this attribute, Terraform does not manage the filters and keeps the ones set in " +
 					"the Oodle UI. Set it to [] to remove all filters: removing the attribute from the config " +
 					"keeps the last value.",
@@ -195,13 +197,13 @@ func (r *awsIntegrationResource) Schema(_ context.Context, _ resource.SchemaRequ
 							Optional:    true,
 							Computed:    true,
 							ElementType: types.StringType,
-							Description: "Pull only the metrics whose name matches one of these patterns.",
+							Description: "Pull only the metrics whose Oodle metric name matches one of these patterns.",
 						},
 						"exclude_only": schema.ListAttribute{
 							Optional:    true,
 							Computed:    true,
 							ElementType: types.StringType,
-							Description: "Pull all metrics except those whose name matches one of these patterns.",
+							Description: "Pull all metrics except those whose Oodle metric name matches one of these patterns.",
 						},
 					},
 				},

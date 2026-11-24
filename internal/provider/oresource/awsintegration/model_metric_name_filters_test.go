@@ -77,8 +77,8 @@ func TestValidateMetricNameFilters(t *testing.T) {
 		{
 			name: "include and exclude on different namespaces",
 			filters: []attr.Value{
-				filter("AWS/EC2", stringList("CPU*"), null),
-				filter("AWS/RDS", null, stringList("Aurora*")),
+				filter("AWS/EC2", stringList("aws_ec2_cpuutilization_maximum", "AWS_EC2_Network*"), null),
+				filter("AWS/RDS", null, stringList("*_samplecount", "?ws_rds_*")),
 			},
 			valid: true,
 		},
@@ -97,26 +97,30 @@ func TestValidateMetricNameFilters(t *testing.T) {
 		},
 		{
 			name:    "both include and exclude",
-			filters: []attr.Value{filter("AWS/EC2", stringList("A"), stringList("B"))},
+			filters: []attr.Value{filter("AWS/EC2", stringList("aws_ec2_a"), stringList("aws_ec2_b"))},
 		},
 		{
 			name: "two filters for one namespace",
 			filters: []attr.Value{
-				filter("AWS/EC2", stringList("A"), null),
-				filter("AWS/EC2", null, stringList("B")),
+				filter("AWS/EC2", stringList("aws_ec2_a"), null),
+				filter("AWS/EC2", null, stringList("aws_ec2_b")),
 			},
 		},
 		{
 			name: "missing namespace",
 			filters: []attr.Value{types.ObjectValueMust(metricNameFilterAttrTypes, map[string]attr.Value{
 				"namespace":    types.StringNull(),
-				"include_only": stringList("A"),
+				"include_only": stringList("aws_ec2_a"),
 				"exclude_only": null,
 			})},
 		},
 		{
 			name:    "Datadog metric name",
 			filters: []attr.Value{filter("AWS/EC2", stringList("aws.ec2.network_in"), null)},
+		},
+		{
+			name:    "CloudWatch metric name",
+			filters: []attr.Value{filter("AWS/EC2", stringList("CPUUtilization"), null)},
 		},
 	}
 	for _, c := range cases {
