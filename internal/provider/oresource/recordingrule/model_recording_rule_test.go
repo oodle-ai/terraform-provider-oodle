@@ -14,12 +14,12 @@ import (
 
 func serverRule() *clientmodels.RecordingRuleEnvelope {
 	return &clientmodels.RecordingRuleEnvelope{RecordingRule: &clientmodels.RecordingRule{
-		Slug:           "checkout-request-rate",
+		ID:             "5d0c8b1a-3e2f-4a6b-9c7d-8e1f2a3b4c5d",
 		Name:           "Checkout request rate",
 		MetricName:     "service:http_requests:rate5m",
 		PrometheusExpr: "sum by (service) (rate(http_requests_total[5m]))",
 		IntervalSecs:   60,
-		ExecutionGroup: "checkout-request-rate",
+		ExecutionGroup: "5d0c8b1a-3e2f-4a6b-9c7d-8e1f2a3b4c5d",
 	}}
 }
 
@@ -27,7 +27,6 @@ func serverRule() *clientmodels.RecordingRuleEnvelope {
 func minimalPlan() *recordingRuleResourceModel {
 	return &recordingRuleResourceModel{
 		ID:             types.StringUnknown(),
-		Slug:           types.StringUnknown(),
 		Name:           types.StringValue("Checkout request rate"),
 		MetricName:     types.StringValue("service:http_requests:rate5m"),
 		PrometheusExpr: types.StringValue("sum by (service) (rate(http_requests_total[5m]))\n"),
@@ -47,8 +46,7 @@ func TestCreateWithDefaultsKeepsThePlan(t *testing.T) {
 	state.FromClientModel(ctx, serverRule(), &diags)
 	assert.False(t, diags.HasError())
 
-	assert.Equal(t, state.ID.ValueString(), "checkout-request-rate")
-	assert.Equal(t, state.Slug.ValueString(), "checkout-request-rate")
+	assert.Equal(t, state.ID.ValueString(), "5d0c8b1a-3e2f-4a6b-9c7d-8e1f2a3b4c5d")
 	// The server trimmed the heredoc newline. The state keeps the config.
 	assert.True(t, state.PrometheusExpr.Equal(plan.PrometheusExpr))
 	// The server filled in the defaults. The state keeps them unset.
@@ -66,7 +64,7 @@ func TestImportReadsEveryValue(t *testing.T) {
 
 	// An import starts from a state that only has the ID.
 	state := &recordingRuleResourceModel{
-		ID:             types.StringValue("checkout-request-rate"),
+		ID:             types.StringValue("5d0c8b1a-3e2f-4a6b-9c7d-8e1f2a3b4c5d"),
 		IntervalSecs:   types.Int64Null(),
 		ExecutionGroup: types.StringNull(),
 		Labels:         types.MapNull(types.StringType),
@@ -86,8 +84,7 @@ func TestImportReadsEveryValue(t *testing.T) {
 func TestReadReportsAChangeMadeOutsideTerraform(t *testing.T) {
 	ctx := context.Background()
 	state := minimalPlan()
-	state.ID = types.StringValue("checkout-request-rate")
-	state.Slug = types.StringValue("checkout-request-rate")
+	state.ID = types.StringValue("5d0c8b1a-3e2f-4a6b-9c7d-8e1f2a3b4c5d")
 
 	rule := serverRule()
 	rule.RecordingRule.PrometheusExpr = "sum(rate(http_requests_total[1m]))"
@@ -116,16 +113,16 @@ func TestToClientModelRequestBody(t *testing.T) {
 				`"prometheus_expr":"sum by (service) (rate(http_requests_total[5m]))\n"}}`,
 		},
 		{
-			name: "update sends the slug from the state",
+			name: "update sends the ID from the state",
 			model: func() *recordingRuleResourceModel {
 				m := minimalPlan()
-				m.ID = types.StringValue("checkout-request-rate")
+				m.ID = types.StringValue("5d0c8b1a-3e2f-4a6b-9c7d-8e1f2a3b4c5d")
 				m.IntervalSecs = types.Int64Value(120)
 				m.ExecutionGroup = types.StringValue("checkout")
 				m.Labels = labels
 				return m
 			}(),
-			want: `{"recording_rule":{"slug":"checkout-request-rate","name":"Checkout request rate",` +
+			want: `{"recording_rule":{"id":"5d0c8b1a-3e2f-4a6b-9c7d-8e1f2a3b4c5d","name":"Checkout request rate",` +
 				`"metric_name":"service:http_requests:rate5m",` +
 				`"prometheus_expr":"sum by (service) (rate(http_requests_total[5m]))\n",` +
 				`"interval_secs":120,"execution_group":"checkout","label_policy":{"add":{"team":"checkout"}}}}`,

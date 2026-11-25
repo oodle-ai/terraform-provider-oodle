@@ -16,7 +16,6 @@ const defaultIntervalSecs = 60
 
 type recordingRuleResourceModel struct {
 	ID             types.String `tfsdk:"id"`
-	Slug           types.String `tfsdk:"slug"`
 	Name           types.String `tfsdk:"name"`
 	MetricName     types.String `tfsdk:"metric_name"`
 	PrometheusExpr types.String `tfsdk:"prometheus_expr"`
@@ -59,8 +58,7 @@ func (m *recordingRuleResourceModel) FromClientModel(
 	rule := envelope.RecordingRule
 	prior := *m
 
-	m.ID = types.StringValue(rule.Slug)
-	m.Slug = types.StringValue(rule.Slug)
+	m.ID = types.StringValue(rule.ID)
 	m.Name = keepUntrimmed(prior.Name, rule.Name)
 	m.MetricName = keepUntrimmed(prior.MetricName, rule.MetricName)
 	m.PrometheusExpr = keepUntrimmed(prior.PrometheusExpr, rule.PrometheusExpr)
@@ -72,7 +70,7 @@ func (m *recordingRuleResourceModel) FromClientModel(
 		m.IntervalSecs = types.Int64Null()
 	}
 	m.ExecutionGroup = types.StringValue(rule.ExecutionGroup)
-	if prior.ExecutionGroup.IsNull() && rule.ExecutionGroup == rule.Slug {
+	if prior.ExecutionGroup.IsNull() && rule.ExecutionGroup == rule.ID {
 		m.ExecutionGroup = types.StringNull()
 	}
 
@@ -104,12 +102,10 @@ func (m *recordingRuleResourceModel) ToClientModel(
 		IntervalSecs:   m.IntervalSecs.ValueInt64(),
 		ExecutionGroup: m.ExecutionGroup.ValueString(),
 	}
-	// On update, the ID holds the slug from the state.
-	switch {
-	case !m.ID.IsNull() && !m.ID.IsUnknown():
-		rule.Slug = m.ID.ValueString()
-	case !m.Slug.IsNull() && !m.Slug.IsUnknown():
-		rule.Slug = m.Slug.ValueString()
+	// On update, the ID comes from the state. A create has none: the
+	// server makes it.
+	if !m.ID.IsNull() && !m.ID.IsUnknown() {
+		rule.ID = m.ID.ValueString()
 	}
 
 	if !m.Labels.IsNull() && !m.Labels.IsUnknown() {

@@ -3,12 +3,12 @@
 page_title: "oodle_recording_rule Resource - oodle"
 subcategory: ""
 description: |-
-  Manages a recording rule. A recording rule evaluates a PromQL expression on an interval and stores the result as a new metric. Use recording rules to make an expensive query cheap, or to record SLO error ratios that burn-rate monitors read. Import a rule by its slug.
+  Manages a recording rule. A recording rule evaluates a PromQL expression on an interval and stores the result as a new metric. Use recording rules to make an expensive query cheap, or to record SLO error ratios that burn-rate monitors read. Import a rule by its ID.
 ---
 
 # oodle_recording_rule (Resource)
 
-Manages a recording rule. A recording rule evaluates a PromQL expression on an interval and stores the result as a new metric. Use recording rules to make an expensive query cheap, or to record SLO error ratios that burn-rate monitors read. Import a rule by its slug.
+Manages a recording rule. A recording rule evaluates a PromQL expression on an interval and stores the result as a new metric. Use recording rules to make an expensive query cheap, or to record SLO error ratios that burn-rate monitors read. Import a rule by its ID.
 
 ## Example Usage
 
@@ -26,7 +26,6 @@ resource "oodle_recording_rule" "checkout_request_rate" {
 
 # Example: SLO error ratios that run in order in one execution group
 resource "oodle_recording_rule" "postbox_error_ratio_5m" {
-  slug            = "postbox-api-availability.ratio-rate5m"
   name            = "postbox api availability 5m"
   metric_name     = "slo:sli_error:ratio_rate5m"
   execution_group = "postbox-api-availability"
@@ -56,17 +55,16 @@ resource "oodle_recording_rule" "postbox_error_ratio_5m" {
 - `execution_group` (String) Name of a set of rules that run together, one after another, in the order of their creation. Put a rule that reads the metric of another rule in the same group. If you do not set it, the rule runs in a group of its own.
 - `interval_secs` (Number) How often the rule runs, in seconds, from 60 to 3600. The default is 60. All rules in one execution group run at the shortest interval of the group.
 - `labels` (Map of String) Labels to set on every series that the rule writes.
-- `slug` (String) Unique ID of the rule in the instance. If you do not set it, Oodle makes one from the name. A change of the slug replaces the rule.
 
 ### Read-Only
 
-- `id` (String) ID of the recording rule. It is the same as the slug.
+- `id` (String) ID of the recording rule. Oodle makes it when it creates the rule.
 
 ## Import
 
 Import is supported using the following syntax:
 
 ```shell
-# Import a recording rule by its slug.
-terraform import oodle_recording_rule.example checkout-request-rate
+# Import a recording rule by its ID.
+terraform import oodle_recording_rule.example 5d0c8b1a-3e2f-4a6b-9c7d-8e1f2a3b4c5d
 ```

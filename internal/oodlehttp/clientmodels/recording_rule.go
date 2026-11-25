@@ -3,8 +3,8 @@ package clientmodels
 // RecordingRule evaluates a PromQL expression on an interval and stores
 // the result as a new metric.
 type RecordingRule struct {
-	// Slug is the unique ID of the rule in the instance. It cannot change.
-	Slug string `json:"slug,omitempty"`
+	// ID is the unique ID that Oodle gives the rule. It cannot change.
+	ID string `json:"id,omitempty"`
 
 	// Name is the display name of the rule.
 	Name string `json:"name"`
@@ -37,10 +37,10 @@ type RecordingRuleEnvelope struct {
 	RecordingRule *RecordingRule `json:"recording_rule"`
 }
 
-// GetID returns the slug of the rule.
+// GetID returns the ID of the rule.
 func (e *RecordingRuleEnvelope) GetID() string {
 	if e.RecordingRule == nil {
 		return ""
 	}
-	return e.RecordingRule.Slug
+	return e.RecordingRule.ID
 }
