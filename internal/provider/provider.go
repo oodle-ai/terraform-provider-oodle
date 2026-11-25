@@ -39,6 +39,7 @@ import (
 	"terraform-provider-oodle/internal/provider/oresource/mutingschedule"
 	notificationPolicy "terraform-provider-oodle/internal/provider/oresource/notificationpolicy"
 	"terraform-provider-oodle/internal/provider/oresource/notifier"
+	"terraform-provider-oodle/internal/provider/oresource/recordingrule"
 	"terraform-provider-oodle/internal/provider/oresource/syntheticmonitor"
 )
 
@@ -247,6 +248,7 @@ func (p *oodleProvider) Resources(_ context.Context) []func() resource.Resource 
 		notificationPolicy.NewNotificationPolicyResource,
 		logmetrics.NewLogMetricsResource,
 		metricdroprule.NewMetricDropRuleResource,
+		recordingrule.NewRecordingRuleResource,
 		grafanafolder.NewGrafanaFolderResource,
 		grafanadashboard.NewGrafanaDashboardResource,
 		syntheticmonitor.NewSyntheticMonitorResource,
