@@ -11,7 +11,6 @@ resource "oodle_recording_rule" "checkout_request_rate" {
 
 # Example: SLO error ratios that run in order in one execution group
 resource "oodle_recording_rule" "postbox_error_ratio_5m" {
-  slug            = "postbox-api-availability.ratio-rate5m"
   name            = "postbox api availability 5m"
   metric_name     = "slo:sli_error:ratio_rate5m"
   execution_group = "postbox-api-availability"

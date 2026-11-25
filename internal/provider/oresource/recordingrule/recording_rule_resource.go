@@ -58,23 +58,13 @@ func (r *recordingRuleResource) Schema(_ context.Context, _ resource.SchemaReque
 		Description: "Manages a recording rule. A recording rule evaluates a PromQL expression on an " +
 			"interval and stores the result as a new metric. Use recording rules to make an expensive " +
 			"query cheap, or to record SLO error ratios that burn-rate monitors read. Import a rule " +
-			"by its slug.",
+			"by its ID.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "ID of the recording rule. It is the same as the slug.",
+				Description: "ID of the recording rule. Oodle makes it when it creates the rule.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"slug": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
-				Description: "Unique ID of the rule in the instance. If you do not set it, Oodle makes " +
-					"one from the name. A change of the slug replaces the rule.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
 			},
 			"name": schema.StringAttribute{
